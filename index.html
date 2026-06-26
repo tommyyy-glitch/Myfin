@@ -2934,12 +2934,20 @@ loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome()
 if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);setPriceStatus('ok',t('pricesupdated')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
 maybeAutoRefresh();
 setInterval(maybeAutoRefresh,60*60*1000); // re-check hourly so a long-running session still updates daily
-// Lock the app shell to the actual visible viewport height (fixes bottom-nav being cut off / blank band on iOS standalone)
+// Lock the app shell to the true full-screen height (fixes bottom-nav cut-off / blank band on iOS standalone).
+// On iOS standalone, innerHeight (small viewport) is short and 100vh (large viewport) overshoots; the real
+// full-screen height is screen.height. Use the largest sensible value, capped so it never exceeds the screen.
 (function(){
-  function lockH(){document.body.style.height=window.innerHeight+'px';}
+  function lockH(){
+    var sh=window.screen&&window.screen.height?window.screen.height:0;
+    var ih=window.innerHeight||0;
+    // Portrait phone shell: full screen height. Fall back to innerHeight if screen.height looks wrong.
+    var h=(sh>ih&&sh<ih+200)?sh:ih;
+    document.body.style.height=h+'px';
+  }
   lockH();
   window.addEventListener('resize',lockH);
-  window.addEventListener('orientationchange',function(){setTimeout(lockH,100);});
+  window.addEventListener('orientationchange',function(){setTimeout(lockH,150);});
   if(window.visualViewport)window.visualViewport.addEventListener('resize',lockH);
 })();
 </script>
