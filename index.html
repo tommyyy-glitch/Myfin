@@ -56,9 +56,7 @@ body{
   font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;
   background:var(--bg);color:var(--ink);
   margin:0;display:flex;flex-direction:column;
-  position:fixed;top:0;left:0;right:0;
-  height:100vh;height:100dvh;
-  overflow:hidden;overscroll-behavior:none;
+  position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden;overscroll-behavior:none;
   padding-left:var(--sl);padding-right:var(--sr);
   transition:background 0.6s ease;
 }
@@ -88,12 +86,15 @@ body{
 }
 .status-guard.show{opacity:1}
 .bottom-nav{
+  position:fixed;bottom:0;left:var(--sl);right:var(--sr);z-index:20;
   background:var(--nav-bg);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
   border-top:0.5px solid var(--bdr);
-  display:flex;width:100%;flex-shrink:0;
+  display:flex;
   padding:8px 10px;padding-bottom:calc(var(--sb) + 8px);
   gap:5px;align-items:center;
 }
+/* Reserve space at the bottom of every scroll area so content isn't hidden behind the fixed nav */
+.scroll-body{padding-bottom:calc(var(--sb) + 78px)!important}
 .tab-btn{
   flex:1;display:flex;align-items:center;justify-content:center;
   padding:9px 2px;border:none;background:none;cursor:pointer;
@@ -2934,22 +2935,6 @@ loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome()
 if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);setPriceStatus('ok',t('pricesupdated')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
 maybeAutoRefresh();
 setInterval(maybeAutoRefresh,60*60*1000); // re-check hourly so a long-running session still updates daily
-// Lock the app shell to the true full-screen height (fixes bottom-nav cut-off / blank band on iOS standalone).
-// On iOS standalone, innerHeight (small viewport) is short and 100vh (large viewport) overshoots; the real
-// full-screen height is screen.height. Use the largest sensible value, capped so it never exceeds the screen.
-(function(){
-  function lockH(){
-    var sh=window.screen&&window.screen.height?window.screen.height:0;
-    var ih=window.innerHeight||0;
-    // Portrait phone shell: full screen height. Fall back to innerHeight if screen.height looks wrong.
-    var h=(sh>ih&&sh<ih+200)?sh:ih;
-    document.body.style.height=h+'px';
-  }
-  lockH();
-  window.addEventListener('resize',lockH);
-  window.addEventListener('orientationchange',function(){setTimeout(lockH,150);});
-  if(window.visualViewport)window.visualViewport.addEventListener('resize',lockH);
-})();
 </script>
 </body>
 </html>
