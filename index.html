@@ -294,6 +294,30 @@ body.privacy .hero-val,body.privacy .hero-sub,body.privacy .hchip-val,body.priva
 </style>
 </head>
 <body class="light">
+<div id="saDebug" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ff2d55;color:#fff;font:12px/1.5 monospace;padding:6px 10px;white-space:pre-wrap;pointer-events:none"></div>
+<script>
+(function(){
+  var p=document.createElement('div');
+  p.style.cssText='position:absolute;visibility:hidden;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)';
+  document.body.appendChild(p);
+  function dump(){
+    var cs=getComputedStyle(p);
+    var rs=getComputedStyle(document.documentElement);
+    var vv=window.visualViewport||{};
+    document.getElementById('saDebug').textContent=
+      'SAFE-AREA DEBUG (iPhone 17)\n'+
+      'env top/bottom: '+cs.paddingTop+' / '+cs.paddingBottom+'\n'+
+      'env left/right: '+cs.paddingLeft+' / '+cs.paddingRight+'\n'+
+      '--st / --sb: '+rs.getPropertyValue('--st').trim()+' / '+rs.getPropertyValue('--sb').trim()+'\n'+
+      'innerH: '+window.innerHeight+'  visualVP.h: '+Math.round(vv.height||0)+'\n'+
+      'screen: '+screen.width+'x'+screen.height+'  dpr: '+window.devicePixelRatio+'\n'+
+      'standalone: '+(window.navigator.standalone===true);
+  }
+  dump();
+  window.addEventListener('resize',dump);
+  if(window.visualViewport){visualViewport.addEventListener('resize',dump);visualViewport.addEventListener('scroll',dump);}
+})();
+</script>
 
 <!-- HOME -->
 <div id="s-home" class="screen active" style="position:relative">
