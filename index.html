@@ -398,6 +398,7 @@ img,canvas,svg{max-width:100%;}
     <div class="hero-card" id="hero-section">
       <button id="ai-hero-btn" onclick="openAI()" style="position:absolute;top:calc(var(--st) + 22px);right:18px;z-index:3;display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.28);color:#fff;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer"><i class="ti ti-sparkles" style="font-size:14px"></i><span data-i="aiask"></span></button>
       <div style="position:relative;z-index:1">
+        <button id="profile-chip" onclick="openProfilesModal()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.28);color:#fff;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:14px;max-width:62%"><span id="profile-chip-emoji">👤</span><span id="profile-chip-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">我的帳戶</span><i class="ti ti-chevron-down" style="font-size:13px;opacity:0.8"></i></button>
         <div class="hero-label" data-i="networth"></div>
         <div class="hero-val" id="h-nw">HK$0</div>
         <div class="hero-sub" id="h-nw-sub">—</div>
@@ -893,6 +894,22 @@ img,canvas,svg{max-width:100%;}
 </nav>
 
 <!-- MODALS -->
+<div class="modal-wrap" id="m-profiles" onclick="closeM('m-profiles')"><div class="modal" onclick="event.stopPropagation()">
+  <button class="mclose" onclick="closeM('m-profiles')" aria-label="Close">&times;</button>
+  <div class="mhandle"></div><div class="mtitle">帳戶切換</div>
+  <div style="padding:6px 18px 22px">
+    <div id="profiles-list"></div>
+    <div style="border-top:0.5px solid var(--bdr);margin-top:10px;padding-top:14px">
+      <div style="font-size:12px;color:var(--ink3);font-weight:700;margin-bottom:8px">新增帳戶</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="newprof-emoji" placeholder="👤" maxlength="2" style="width:46px;height:42px;text-align:center;font-size:20px;border:1px solid var(--bdr2);border-radius:12px;background:var(--bg2);color:var(--ink)">
+        <input id="newprof-name" placeholder="帳戶名稱（如 家用 / 阿媽）" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:12px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px">
+        <button onclick="addProfile()" style="padding:10px 14px;background:var(--hero-grad);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer">新增</button>
+      </div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:10px">每個帳戶資料獨立計算，本機儲存，毋須登入。可用嚟分開睇自己同朋友/家人嘅資產同流水。</div>
+    </div>
+  </div>
+</div></div>
 <div class="modal-wrap" id="m-txn" onclick="closeM('m-txn')"><div class="modal" onclick="event.stopPropagation()">
   <button class="mclose" onclick="closeM('m-txn')" aria-label="Close">&times;</button>
   <div class="mhandle"></div><div class="mtitle" data-i="newtxn"></div>
@@ -1266,9 +1283,24 @@ function kindLabel(k){return t('kind'+(k||'other'))||'';}
 
 let S={txns:[],people:[],gamble:[],autopay:[],cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),curType:'expense',amtStr:'0',selCat:'food',selAcct:'cash',selAcctTo:'debit',apSelCat:'fitness',apSelAcct:'debit',mergeSelected:[],memberCount:2,lang:'zh',period:'month',activeTab:'home',walletPane:'txn',trendView:'total',catPeriodSpend:'week',catPeriodIncome:'week',dispCur:'HKD',privacy:false,pnlOrder:['poker','stock','crypto','pe'],pnlHidden:{},ai:{provider:'gemini',key:'',model:''},tuScores:[],friends:[],customSections:[],autoincome:[],changelog:[],_billInc:[],_billAmt:{}};
 
-function loadS(){try{const d=localStorage.getItem('fos8');if(d){const p=JSON.parse(d);Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
+// ── MULTI-ACCOUNT (local profiles; no login) ──
+// The "default" profile keeps using the original fos8 key, so existing data is never touched.
+function profilesMeta(){try{const m=JSON.parse(localStorage.getItem('fos_profiles'));if(m&&m.list&&m.list.length)return m;}catch(e){}return null;}
+function ensureProfiles(){let m=profilesMeta();if(!m){m={active:'default',list:[{id:'default',name:'我的帳戶',emoji:'👤'}]};localStorage.setItem('fos_profiles',JSON.stringify(m));}return m;}
+function saveProfilesMeta(m){localStorage.setItem('fos_profiles',JSON.stringify(m));}
+function activeProfileId(){return ensureProfiles().active;}
+function profileKey(id){id=id||activeProfileId();return id==='default'?'fos8':'fos8_p_'+id;}
+function profileDefaults(){return {txns:[],people:[],gamble:[],autopay:[],cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),portfolio:[],pnlOrder:['poker','stock','crypto','pe'],pnlHidden:{},customSections:[],autoincome:[],tuScores:[],friends:[],changelog:[],creditLimit:0,_billInc:[],_billAmt:{}};}
+function reloadActiveProfile(){Object.assign(S,profileDefaults());loadS();applyTheme();applyPrivacy();applyI18n();renderHome();updateFab();if(typeof refreshWallet==='function')refreshWallet();if(S.activeTab==='gamble')renderGamble();if(S.activeTab==='settings'&&typeof renderSettings==='function')renderSettings();renderProfileChip();}
+function switchProfile(id){if(id===activeProfileId()){closeM('m-profiles');return;}saveS();const m=ensureProfiles();m.active=id;saveProfilesMeta(m);reloadActiveProfile();closeM('m-profiles');}
+function addProfile(){const nmEl=document.getElementById('newprof-name'),emEl=document.getElementById('newprof-emoji');const nm=((nmEl&&nmEl.value)||'').trim()||'新帳戶';const em=((emEl&&emEl.value)||'').trim()||'👤';saveS();const id='p_'+Date.now();const m=ensureProfiles();m.list.push({id,name:nm,emoji:em});m.active=id;saveProfilesMeta(m);reloadActiveProfile();renderProfilesModal();}
+function deleteProfile(id){if(id==='default')return;const m=ensureProfiles();if(m.list.length<=1)return;if(!confirm('刪除呢個帳戶同佢所有資料？此動作無法復原。'))return;localStorage.removeItem(profileKey(id));m.list=m.list.filter(p=>p.id!==id);if(m.active===id){m.active=m.list[0].id;saveProfilesMeta(m);reloadActiveProfile();}else{saveProfilesMeta(m);}renderProfilesModal();}
+function renderProfileChip(){const m=ensureProfiles();const p=m.list.find(x=>x.id===m.active)||m.list[0];const e=document.getElementById('profile-chip-emoji'),n=document.getElementById('profile-chip-name');if(e)e.textContent=p.emoji||'👤';if(n)n.textContent=p.name||'帳戶';}
+function openProfilesModal(){renderProfilesModal();openM('m-profiles');}
+function renderProfilesModal(){const el=document.getElementById('profiles-list');if(!el)return;const m=ensureProfiles();el.innerHTML=m.list.map(p=>{const active=p.id===m.active;return `<div class="frow" style="gap:10px"><button onclick="switchProfile('${p.id}')" style="flex:1;display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--ink);cursor:pointer;text-align:left;font-size:15px;font-weight:600;min-width:0"><span style="font-size:22px;flex-shrink:0">${p.emoji||'👤'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>${active?'<span class="badge bg" style="flex-shrink:0">使用中</span>':''}</button>${p.id!=='default'?`<button onclick="deleteProfile('${p.id}')" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join('');}
+function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d);Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));}}
-function saveS(){try{localStorage.setItem('fos8',JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
+function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
 function t(k){return LANGS[S.lang][k]||LANGS.en[k]||k;}
 function catLabel(c){return S.lang==='en'?(c.labelEn||c.label):c.label;}
@@ -3049,7 +3081,7 @@ function drawCalcChart(series){
   ctx.beginPath();ctx.arc(x(series.length-1),y(series[series.length-1]),4,0,Math.PI*2);ctx.fillStyle='#1D9E75';ctx.fill();
 }
 
-loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();renderHome();updateFab();
+loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();renderHome();updateFab();renderProfileChip();
 // Show the last-known update time if we have one, then auto-refresh only if a day has passed.
 if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);setPriceStatus('ok',t('pricesupdated')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
 maybeAutoRefresh();
