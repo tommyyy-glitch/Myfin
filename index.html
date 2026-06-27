@@ -570,10 +570,10 @@ img,canvas,svg{max-width:100%;}
   <div class="nav-bar">
     <span class="nav-title" data-i="gamblepnl"></span>
     <div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end" id="pnl-addbtns">
-      <button class="nav-btn" style="background:var(--p2);color:var(--p3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('stock')">+ <span data-i="stocks"></span></button>
-      <button class="nav-btn" style="background:var(--a2);color:var(--a3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('crypto')">+ <span data-i="crypto"></span></button>
-      <button class="nav-btn" style="background:var(--g2);color:var(--g3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openGambleModal()">+ <span data-i="poker"></span></button>
-      <button class="nav-btn" style="background:var(--b2);color:var(--b3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPEModal()">+ PE</button>
+      <button class="nav-btn" data-sec="stock" style="background:var(--p2);color:var(--p3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('stock')">+ <span data-i="stocks"></span></button>
+      <button class="nav-btn" data-sec="crypto" style="background:var(--a2);color:var(--a3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('crypto')">+ <span data-i="crypto"></span></button>
+      <button class="nav-btn" data-sec="poker" style="background:var(--g2);color:var(--g3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openGambleModal()">+ <span data-i="poker"></span></button>
+      <button class="nav-btn" data-sec="pe" style="background:var(--b2);color:var(--b3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPEModal()">+ PE</button>
     </div>
   </div>
   <div class="scroll-body" style="padding:16px 20px 28px">
@@ -600,9 +600,9 @@ img,canvas,svg{max-width:100%;}
     <div class="glass-card" style="padding:16px;margin-bottom:12px">
       <div class="filter-chips" id="trend-toggle" style="margin-bottom:12px">
         <button class="fchip active" onclick="setTrend('total',this)" data-i="totaltrend"></button>
-        <button class="fchip" onclick="setTrend('stock',this)" data-i="stocks"></button>
-        <button class="fchip" onclick="setTrend('crypto',this)" data-i="crypto"></button>
-        <button class="fchip" onclick="setTrend('poker',this)" data-i="poker"></button>
+        <button class="fchip" data-sec="stock" onclick="setTrend('stock',this)" data-i="stocks"></button>
+        <button class="fchip" data-sec="crypto" onclick="setTrend('crypto',this)" data-i="crypto"></button>
+        <button class="fchip" data-sec="poker" onclick="setTrend('poker',this)" data-i="poker"></button>
       </div>
       <canvas id="trend-chart" width="600" height="220" style="width:100%;height:160px"></canvas>
     </div>
@@ -2287,6 +2287,8 @@ function applyPnlLayout(){
     const sec=document.getElementById('sec-'+id);
     if(sec){sec.style.display=hidden?'none':'';if(cont)cont.appendChild(sec);}
     if(row){const card=row.querySelector('[data-sec=\"'+id+'\"]');if(card){card.style.display=hidden?'none':'';row.appendChild(card);}}
+    const addbtn=document.querySelector('#pnl-addbtns [data-sec=\"'+id+'\"]');if(addbtn)addbtn.style.display=hidden?'none':'';
+    const chip=document.querySelector('#trend-toggle [data-sec=\"'+id+'\"]');if(chip)chip.style.display=hidden?'none':'';
   });
 }
 function toggleSecShow(id){S.pnlHidden=S.pnlHidden||{};S.pnlHidden[id]=!S.pnlHidden[id];saveS();renderPnlSecMgr();applyPnlLayout();}
