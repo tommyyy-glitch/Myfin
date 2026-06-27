@@ -103,6 +103,10 @@ body{
 }
 /* Floating bar overlays content, so reserve space at the bottom of every scroll area */
 .scroll-body{padding-bottom:calc(env(safe-area-inset-bottom) + 96px)!important}
+/* iOS standalone PWA: the layout viewport is ~59-62px shorter than the physical screen,
+   so fixed elements float that much too high. Drop the island + FAB down to the real bottom. */
+html.pwa-standalone .bottom-nav{bottom:calc(env(safe-area-inset-bottom) + 12px - 59px)}
+html.pwa-standalone .fab{bottom:calc(var(--sb) + 90px - 59px)}
 .tab-btn{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   padding:6px 2px;border:none;background:none;cursor:pointer;
@@ -115,7 +119,7 @@ body{
 .tab-btn.active{color:var(--g3);background:var(--g2)}
 .tab-btn i{display:block;font-size:23px;line-height:1}
 .fab{
-  position:fixed;bottom:calc(var(--sb) + 72px);right:calc(var(--sr) + 18px);
+  position:fixed;bottom:calc(var(--sb) + 90px);right:calc(var(--sr) + 18px);
   width:56px;height:56px;border-radius:50%;
   background:var(--hero-grad);color:#fff;border:none;cursor:pointer;
   display:flex;align-items:center;justify-content:center;font-size:30px;z-index:15;
@@ -1201,6 +1205,8 @@ function applyTheme(){
     mode=(h>=16||h<6)?'dark':'light';
   }
   document.body.className=mode;
+  // Match the root background so the strip below the floating bar (iOS home-indicator area) isn't blank
+  document.documentElement.style.background=(mode==='dark')?'#0e0e12':'#f0efe9';
 }
 function setTheme(m){
   S.theme=m;saveS();applyTheme();
