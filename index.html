@@ -2998,21 +2998,6 @@ loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome()
 if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);setPriceStatus('ok',t('pricesupdated')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
 maybeAutoRefresh();
 setInterval(maybeAutoRefresh,60*60*1000); // re-check hourly so a long-running session still updates daily
-// TEMP diagnostic: colors + readout
-(function(){
-  var nav=document.querySelector('.bottom-nav');
-  document.documentElement.style.background='#1565ff';      // html = BLUE (shows any void below nav)
-  nav.style.setProperty('background','#ff1744','important'); // nav = solid RED
-  nav.style.setProperty('backdrop-filter','none','important');
-  nav.style.setProperty('-webkit-backdrop-filter','none','important');
-  var d=document.createElement('div');
-  d.style.cssText='position:fixed;top:54px;left:8px;z-index:99999;background:#000;color:#0f0;font:11px/1.4 monospace;padding:5px 7px;border:1px solid #0f0;border-radius:6px;pointer-events:none;white-space:pre';
-  document.body.appendChild(d);
-  setTimeout(function(){
-    var nr=nav.getBoundingClientRect();var cs=getComputedStyle(nav);
-    d.textContent='BUILD=DIAG-v9\nnavPos='+cs.position+'\ngapBelowNav='+Math.round(window.innerHeight-nr.bottom)+'px\nih='+window.innerHeight+' sh='+screen.height;
-  },400);
-})();
 </script>
 </body>
 </html>
