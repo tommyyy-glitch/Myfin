@@ -2279,7 +2279,7 @@ function secName(id){
   const names={poker:'🂡 Poker',stock:'📈 '+t('stocks'),crypto:'₿ '+t('crypto'),pe:'🏢 '+t('privateequity')};
   if(names[id])return names[id];
   const c=(S.customSections||[]).find(x=>x.id===id);
-  if(c){const ic=c.base==='crypto'?'₿':c.base==='stock'?'📈':'🏢';return ic+' '+c.name;}
+  if(c){const ic=c.icon||(c.base==='crypto'?'₿':c.base==='stock'?'📈':'🏢');return ic+' '+c.name;}
   return id;
 }
 function applyPnlLayout(){
@@ -2291,8 +2291,18 @@ function applyPnlLayout(){
     if(sec){sec.style.display=hidden?'none':'';if(cont)cont.appendChild(sec);}
     if(row){const card=row.querySelector('[data-sec=\"'+id+'\"]');if(card){card.style.display=hidden?'none':'';row.appendChild(card);}}
     const addbtn=document.querySelector('#pnl-addbtns [data-sec=\"'+id+'\"]');if(addbtn)addbtn.style.display=hidden?'none':'';
-    const chip=document.querySelector('#trend-toggle [data-sec=\"'+id+'\"]');if(chip)chip.style.display=hidden?'none':'';
   });
+  renderTrendChips();
+}
+// Rebuild the trend-chart chips: 總計 + every visible section (incl. PE + custom)
+function renderTrendChips(){
+  const el=document.getElementById('trend-toggle');if(!el)return;
+  let cur=S.trendView||'total';
+  const visible=pnlOrderSafe().filter(id=>!(S.pnlHidden&&S.pnlHidden[id]));
+  if(cur!=='total'&&!visible.includes(cur)){cur='total';S.trendView='total';}
+  let html='<button class=\"fchip'+(cur==='total'?' active':'')+'\" onclick=\"setTrend(\\'total\\',this)\">'+t('totaltrend')+'</button>';
+  visible.forEach(id=>{html+='<button class=\"fchip'+(cur===id?' active':'')+'\" data-sec=\"'+id+'\" onclick=\"setTrend(\\''+id+'\\',this)\">'+secName(id)+'</button>';});
+  el.innerHTML=html;
 }
 function toggleSecShow(id){S.pnlHidden=S.pnlHidden||{};S.pnlHidden[id]=!S.pnlHidden[id];saveS();renderPnlSecMgr();applyPnlLayout();}
 function moveSec(id,dir){const o=pnlOrderSafe();const i=o.indexOf(id);const j=i+dir;if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];S.pnlOrder=o;saveS();renderPnlSecMgr();applyPnlLayout();}
@@ -2301,20 +2311,26 @@ function renderPnlSecMgr(){
   const o=pnlOrderSafe();
   const custom=(S.customSections||[]).map(c=>c.id);
   const rows=o.map((id,i)=>{const on=!(S.pnlHidden&&S.pnlHidden[id]);const isC=custom.includes(id);return `<div style="display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:0.5px solid var(--bdr)"><div style="flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${on?'':'opacity:0.4'}">${secName(id)}</div><button onclick="moveSec('${id}',-1)" ${i===0?'disabled':''} style="width:30px;height:30px;border:1.5px solid var(--bdr2);border-radius:8px;background:none;color:var(--ink2);cursor:pointer;${i===0?'opacity:0.3':''}">▲</button><button onclick="moveSec('${id}',1)" ${i===o.length-1?'disabled':''} style="width:30px;height:30px;border:1.5px solid var(--bdr2);border-radius:8px;background:none;color:var(--ink2);cursor:pointer;${i===o.length-1?'opacity:0.3':''}">▼</button><button class="toggle${on?' on':''}" onclick="toggleSecShow('${id}')"></button>${isC?`<button onclick="delCustomSection('${id}')" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join('');
-  const addForm=`<div style="display:flex;gap:6px;padding:11px 15px;align-items:center">
-    <input id="newsec-name" placeholder="${t('sectionnameph')}" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:10px;padding:8px;background:var(--bg2);color:var(--ink);font-size:13px">
-    <select id="newsec-base" style="border:1px solid var(--bdr2);border-radius:10px;padding:8px;background:var(--bg2);color:var(--ink);font-size:13px;-webkit-appearance:none">
-      <option value="pe">${t('privateequity')}</option><option value="stock">${t('stocks')}</option><option value="crypto">${t('crypto')}</option>
-    </select>
-    <button onclick="addCustomSection()" style="padding:8px 12px;background:var(--hero-grad);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">${t('add')}</button>
+  const emojis=['🏠','🏢','📈','₿','🪙','🎯','💎','🚗','🛢️','🏦','🌐','🎨','⚽','🍷'];
+  const addForm=`<div style="padding:11px 15px">
+    <div style="display:flex;gap:6px;align-items:center">
+      <input id="newsec-icon" placeholder="🏷️" maxlength="2" style="width:42px;height:38px;text-align:center;font-size:20px;border:1px solid var(--bdr2);border-radius:10px;padding:0;background:var(--bg2);color:var(--ink)">
+      <input id="newsec-name" placeholder="${t('sectionnameph')}" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:10px;padding:8px;background:var(--bg2);color:var(--ink);font-size:13px">
+      <select id="newsec-base" style="border:1px solid var(--bdr2);border-radius:10px;padding:8px;background:var(--bg2);color:var(--ink);font-size:13px;-webkit-appearance:none">
+        <option value="pe">${t('privateequity')}</option><option value="stock">${t('stocks')}</option><option value="crypto">${t('crypto')}</option>
+      </select>
+      <button onclick="addCustomSection()" style="padding:8px 12px;background:var(--hero-grad);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">${t('add')}</button>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${emojis.map(e=>`<button type="button" onclick="document.getElementById('newsec-icon').value='${e}'" style="font-size:18px;padding:5px 7px;border:1px solid var(--bdr);border-radius:9px;background:var(--bg2);cursor:pointer">${e}</button>`).join('')}</div>
   </div>`;
   el.innerHTML=rows+addForm;
 }
 function addCustomSection(){
   const nm=(document.getElementById('newsec-name').value||'').trim();if(!nm)return;
   const base=document.getElementById('newsec-base').value||'pe';
+  const icon=(document.getElementById('newsec-icon').value||'').trim();
   const id='cs_'+Date.now()+'_'+Math.floor(Math.random()*9999);
-  S.customSections=S.customSections||[];S.customSections.push({id,name:nm,base});
+  S.customSections=S.customSections||[];S.customSections.push({id,name:nm,base,icon});
   S.pnlOrder=pnlOrderSafe();
   saveS();renderPnlSecMgr();if(S.activeTab==='gamble')renderGamble();
 }
@@ -2338,22 +2354,18 @@ function drawTrend(){
   const canvas=document.getElementById('trend-chart');if(!canvas)return;
   const view=S.trendView||'total';
   // gather dated P&L events
-  let events=[];
-  if(view==='total'||view==='stock'){
-    S.portfolio.filter(p=>p.type==='stock'&&p.exitPrice).forEach(p=>events.push({date:p.date||today(),v:p.valueHKD-p.costHKD}));
-  }
-  if(view==='total'||view==='crypto'){
-    S.portfolio.filter(p=>p.type==='crypto'&&p.exitPrice).forEach(p=>events.push({date:p.date||today(),v:p.valueHKD-p.costHKD}));
-  }
-  if(view==='total'||view==='poker'){
-    S.gamble.filter(g=>!g.open).forEach(g=>events.push({date:g.date||today(),v:(g.cashoutHKD||0)-g.buyinHKD}));
-  }
-  // also include open positions' unrealized P&L as the latest point so the line reflects current state
-  let openPnl=0;
-  if(view==='total'||view==='stock')openPnl+=S.portfolio.filter(p=>p.type==='stock'&&!p.exitPrice).reduce((a,p)=>a+(p.valueHKD-p.costHKD),0);
-  if(view==='total'||view==='crypto')openPnl+=S.portfolio.filter(p=>p.type==='crypto'&&!p.exitPrice).reduce((a,p)=>a+(p.valueHKD-p.costHKD),0);
+  let events=[]; let openPnl=0;
+  const cust=(S.customSections||[]).find(c=>c.id===view);
+  const addPort=(filt)=>{S.portfolio.filter(filt).forEach(p=>{if(p.exitPrice){events.push({date:p.date||today(),v:p.valueHKD-p.costHKD});}else{openPnl+=(p.valueHKD-p.costHKD);}});};
+  const addPoker=()=>{S.gamble.filter(g=>!g.open).forEach(g=>events.push({date:g.date||today(),v:(g.cashoutHKD||0)-g.buyinHKD}));};
+  if(view==='total'){addPort(p=>p.type==='stock');addPort(p=>p.type==='crypto');addPoker();}
+  else if(view==='stock'){addPort(p=>p.type==='stock');}
+  else if(view==='crypto'){addPort(p=>p.type==='crypto');}
+  else if(view==='pe'){addPort(p=>p.type==='pe');}
+  else if(view==='poker'){addPoker();}
+  else if(cust){addPort(p=>String(p.secId)===String(view));}
   events.sort((a,b)=>a.date<b.date?-1:1);
-  const color=view==='stock'?'#534AB7':view==='crypto'?'#BA7517':view==='poker'?'#1D9E75':'#0F6E56';
+  const color=view==='stock'?'#534AB7':view==='crypto'?'#BA7517':view==='poker'?'#1D9E75':view==='pe'?'#185FA5':cust?'#1D9E75':'#0F6E56';
   let cum=0;const pts=[0];
   events.forEach(e=>{cum+=e.v;pts.push(cum);});
   pts.push(cum+openPnl); // final point includes current unrealized
@@ -2598,8 +2610,8 @@ function renderGamble(){
       addbtns.appendChild(b);
     });
   }
-  drawTrend();
   applyPnlLayout();
+  drawTrend();
 }
 // open the right add-modal targeted at a custom section
 function addToSection(secId,base){
