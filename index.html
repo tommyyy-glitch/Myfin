@@ -2310,7 +2310,7 @@ function renderPnlSecMgr(){
   const el=document.getElementById('pnl-sec-mgr');if(!el)return;
   const o=pnlOrderSafe();
   const custom=(S.customSections||[]).map(c=>c.id);
-  const rows=o.map((id,i)=>{const on=!(S.pnlHidden&&S.pnlHidden[id]);const isC=custom.includes(id);return `<div style="display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:0.5px solid var(--bdr)"><div style="flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${on?'':'opacity:0.4'}">${secName(id)}</div><button onclick="moveSec('${id}',-1)" ${i===0?'disabled':''} style="width:30px;height:30px;border:1.5px solid var(--bdr2);border-radius:8px;background:none;color:var(--ink2);cursor:pointer;${i===0?'opacity:0.3':''}">▲</button><button onclick="moveSec('${id}',1)" ${i===o.length-1?'disabled':''} style="width:30px;height:30px;border:1.5px solid var(--bdr2);border-radius:8px;background:none;color:var(--ink2);cursor:pointer;${i===o.length-1?'opacity:0.3':''}">▼</button><button class="toggle${on?' on':''}" onclick="toggleSecShow('${id}')"></button>${isC?`<button onclick="delCustomSection('${id}')" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join('');
+  const rows=o.map((id,i)=>{const on=!(S.pnlHidden&&S.pnlHidden[id]);const isC=custom.includes(id);return `<div style="display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:0.5px solid var(--bdr)"><div style="flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${on?'':'opacity:0.4'}">${secName(id)}</div><button onclick="moveSec('${id}',-1)" ${i===0?'disabled':''} style="width:30px;height:30px;border:1.5px solid var(--bdr2);border-radius:8px;background:none;color:var(--ink2);cursor:pointer;${i===0?'opacity:0.3':''}">▲</button><button onclick="moveSec('${id}',1)" ${i===o.length-1?'disabled':''} style="width:30px;height:30px;border:1.5px solid var(--bdr2);border-radius:8px;background:none;color:var(--ink2);cursor:pointer;${i===o.length-1?'opacity:0.3':''}">▼</button><button class="toggle${on?' on':''}" onclick="toggleSecShow('${id}')"></button><button onclick="trashSec('${id}')" title="${isC?t('act_delete'):t('exclude')}" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer"><i class="ti ti-trash"></i></button></div>`;}).join('');
   const emojis=['🏠','🏢','📈','₿','🪙','🎯','💎','🚗','🛢️','🏦','🌐','🎨','⚽','🍷'];
   const addForm=`<div style="padding:11px 15px">
     <div style="display:flex;gap:6px;align-items:center">
@@ -2341,6 +2341,12 @@ function delCustomSection(id){
   if(S.pnlHidden)delete S.pnlHidden[id];
   S.pnlOrder=(S.pnlOrder||[]).filter(x=>x!==id);
   saveS();renderPnlSecMgr();if(S.activeTab==='gamble')renderGamble();
+}
+// Trash in the section manager: custom sections are deleted; built-in (poker/stock/crypto/pe) are hidden (re-enable with the toggle)
+function trashSec(id){
+  const isCustom=(S.customSections||[]).some(c=>c.id===id);
+  if(isCustom){delCustomSection(id);return;}
+  S.pnlHidden=S.pnlHidden||{};S.pnlHidden[id]=true;saveS();renderPnlSecMgr();applyPnlLayout();
 }
 function pickEmoji(btn){document.getElementById('new-cat-icon').value=btn.textContent.trim();}
 
