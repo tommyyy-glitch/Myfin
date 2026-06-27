@@ -79,7 +79,9 @@ body{
 .scroll-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 0 20px;width:100%}
 .status-guard{
   position:absolute;top:0;left:0;right:0;height:var(--st);
-  background:var(--nav-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  background:linear-gradient(to bottom,var(--nav-bg),transparent);
+  -webkit-mask:linear-gradient(to bottom,#000 55%,transparent);mask:linear-gradient(to bottom,#000 55%,transparent);
+  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
   z-index:30;pointer-events:none;opacity:0;transition:opacity 0.2s;
 }
 .status-guard.show{opacity:1}
@@ -101,10 +103,6 @@ body{
 }
 /* Floating bar overlays content, so reserve space at the bottom of every scroll area */
 .scroll-body{padding-bottom:calc(env(safe-area-inset-bottom) + 96px)!important}
-/* iOS standalone PWA: the layout viewport is ~59-62px shorter than the physical screen,
-   so fixed elements float that much too high. Drop the island + FAB down to the real bottom. */
-html.pwa-standalone .bottom-nav{bottom:calc(env(safe-area-inset-bottom) + 12px - 59px)}
-html.pwa-standalone .fab{bottom:calc(var(--sb) + 90px - 59px)}
 .tab-btn{
   flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
   padding:6px 2px;border:none;background:none;cursor:pointer;
