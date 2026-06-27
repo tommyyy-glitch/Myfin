@@ -2300,8 +2300,8 @@ function renderTrendChips(){
   let cur=S.trendView||'total';
   const visible=pnlOrderSafe().filter(id=>!(S.pnlHidden&&S.pnlHidden[id]));
   if(cur!=='total'&&!visible.includes(cur)){cur='total';S.trendView='total';}
-  let html='<button class=\"fchip'+(cur==='total'?' active':'')+'\" onclick=\"setTrend(\\'total\\',this)\">'+t('totaltrend')+'</button>';
-  visible.forEach(id=>{html+='<button class=\"fchip'+(cur===id?' active':'')+'\" data-sec=\"'+id+'\" onclick=\"setTrend(\\''+id+'\\',this)\">'+secName(id)+'</button>';});
+  let html=`<button class="fchip${cur==='total'?' active':''}" onclick="setTrend('total',this)">${t('totaltrend')}</button>`;
+  visible.forEach(id=>{html+=`<button class="fchip${cur===id?' active':''}" data-sec="${id}" onclick="setTrend('${id}',this)">${secName(id)}</button>`;});
   el.innerHTML=html;
 }
 function toggleSecShow(id){S.pnlHidden=S.pnlHidden||{};S.pnlHidden[id]=!S.pnlHidden[id];saveS();renderPnlSecMgr();applyPnlLayout();}
