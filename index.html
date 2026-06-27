@@ -76,6 +76,9 @@ body{
   transition:transform 0.1s,opacity 0.1s;
 }
 .nav-btn:active{transform:scale(0.95);opacity:0.85}
+/* P&L add-buttons: full text by default, emoji-only when space is tight (phones) */
+#pnl-addbtns .ab-em{display:none}
+@media (max-width:460px){#pnl-addbtns .ab-tx{display:none}#pnl-addbtns .ab-em{display:inline}#pnl-addbtns .nav-btn{font-size:15px;padding:7px 11px}}
 .scroll-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 0 20px;width:100%}
 .status-guard{
   position:absolute;top:0;left:0;right:0;height:var(--st);
@@ -570,10 +573,10 @@ img,canvas,svg{max-width:100%;}
   <div class="nav-bar">
     <span class="nav-title" data-i="gamblepnl"></span>
     <div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end" id="pnl-addbtns">
-      <button class="nav-btn" data-sec="stock" style="background:var(--p2);color:var(--p3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('stock')">+ <span data-i="stocks"></span></button>
-      <button class="nav-btn" data-sec="crypto" style="background:var(--a2);color:var(--a3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('crypto')">+ <span data-i="crypto"></span></button>
-      <button class="nav-btn" data-sec="poker" style="background:var(--g2);color:var(--g3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openGambleModal()">+ <span data-i="poker"></span></button>
-      <button class="nav-btn" data-sec="pe" style="background:var(--b2);color:var(--b3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPEModal()">+ PE</button>
+      <button class="nav-btn" data-sec="stock" style="background:var(--p2);color:var(--p3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('stock')">+<span class="ab-tx"> <span data-i="stocks"></span></span><span class="ab-em">📈</span></button>
+      <button class="nav-btn" data-sec="crypto" style="background:var(--a2);color:var(--a3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('crypto')">+<span class="ab-tx"> <span data-i="crypto"></span></span><span class="ab-em">₿</span></button>
+      <button class="nav-btn" data-sec="poker" style="background:var(--g2);color:var(--g3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openGambleModal()">+<span class="ab-tx"> <span data-i="poker"></span></span><span class="ab-em">🂡</span></button>
+      <button class="nav-btn" data-sec="pe" style="background:var(--b2);color:var(--b3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPEModal()">+<span class="ab-tx"> PE</span><span class="ab-em">🏢</span></button>
     </div>
   </div>
   <div class="scroll-body" style="padding:16px 20px 28px">
