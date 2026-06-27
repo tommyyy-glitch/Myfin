@@ -17,7 +17,7 @@
   --b:#185FA5;--b2:#E6F1FB;--b3:#0C447C;
   --a:#BA7517;--a2:#FAEEDA;--a3:#854F0B;
   --p:#534AB7;--p2:#EEEDFE;--p3:#3C3489;
-  --st:max(env(safe-area-inset-top,0px),59px);
+  --st:env(safe-area-inset-top,0px);
   --sb:max(env(safe-area-inset-bottom,0px),34px);
   --sl:env(safe-area-inset-left,0px);
   --sr:env(safe-area-inset-right,0px);
@@ -310,7 +310,7 @@ img,canvas,svg{max-width:100%;}
 
 /* tiny phones / split-screen: avoid horizontal overflow and clipped labels */
 @media (max-width:380px){
-  :root{--st:max(env(safe-area-inset-top,0px),42px);--sb:max(env(safe-area-inset-bottom,0px),22px);}
+  :root{--st:env(safe-area-inset-top,0px);--sb:max(env(safe-area-inset-bottom,0px),22px);}
   .nav-bar{padding-left:14px;padding-right:14px;padding-top:calc(var(--st) + 10px);}
   .nav-title{font-size:16px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .nav-btn{padding:6px 10px;font-size:12px;}
