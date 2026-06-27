@@ -327,16 +327,35 @@ img,canvas,svg{max-width:100%;}
   .amt-disp{font-size:44px;}
 }
 
-/* normal phones: stop dense inline rows from pushing wider than viewport */
-@media (max-width:520px){
+/* Modern phones (390–430px iPhones, most Androids) */
+@media (min-width:400px) and (max-width:520px){
   .scroll-body{max-width:100vw;}
-  .glass-card,.metric-card,.banner{min-width:0;}
-  .frow{min-width:0;}
-  .fval{min-width:0;}
-  .rtitle,.rsub,.legend-label{min-width:0;}
-  #ai-hero-btn{max-width:42%;overflow:hidden;white-space:nowrap;}
-}
 
+  .glass-card,
+  .metric-card,
+  .banner{
+    min-width:0;
+  }
+
+  .frow{
+    min-width:0;
+    gap:12px;
+  }
+
+  .fval{min-width:0;}
+
+  .rtitle,
+  .rsub,
+  .legend-label{
+    min-width:0;
+  }
+
+  #ai-hero-btn{
+    max-width:48%;
+    overflow:hidden;
+    white-space:nowrap;
+  }
+}
 /* tablet / desktop: center the phone-first app and prevent over-wide stretched cards */
 @media (min-width:760px){
   body{align-items:center;background:radial-gradient(circle at top,var(--bg2),var(--bg));}
