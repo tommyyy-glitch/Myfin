@@ -1001,12 +1001,13 @@ img,canvas,svg{max-width:100%;}
 
 <div class="modal-wrap" id="m-ai" onclick="closeM('m-ai')"><div class="modal" onclick="event.stopPropagation()">
   <button class="mclose" onclick="closeM('m-ai')" aria-label="Close">&times;</button>
-  <div class="mhandle"></div><div class="mtitle"><i class="ti ti-sparkles" style="vertical-align:-2px"></i> <span data-i="aiassist"></span></div>
-  <div class="fsec">
-    <textarea id="ai-prompt" rows="3" data-i-ph="aiph" style="width:100%;border:1.5px solid var(--bdr2);border-radius:14px;padding:12px;background:var(--bg2);color:var(--ink);font-size:15px;resize:none;font-family:inherit"></textarea>
+  <div class="mhandle"></div>
+  <div class="mtitle" style="display:flex;align-items:center;justify-content:space-between;padding-right:50px"><span><i class="ti ti-sparkles" style="vertical-align:-2px"></i> <span data-i="aiassist"></span></span><button onclick="clearAiChat()" style="font-size:12px;font-weight:600;color:var(--ink3);background:none;border:1px solid var(--bdr2);border-radius:14px;padding:4px 11px;cursor:pointer">清除</button></div>
+  <div id="ai-messages" style="padding:10px 16px;max-height:52vh;min-height:140px;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px"></div>
+  <div style="display:flex;gap:8px;align-items:flex-end;padding:10px 16px calc(env(safe-area-inset-bottom) + 14px);border-top:0.5px solid var(--bdr)">
+    <textarea id="ai-prompt" rows="1" data-i-ph="aiph" style="flex:1;min-width:0;border:1.5px solid var(--bdr2);border-radius:18px;padding:10px 14px;background:var(--bg2);color:var(--ink);font-size:15px;resize:none;font-family:inherit;max-height:120px" onkeydown="aiKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+    <button onclick="askAI()" aria-label="Send" style="flex-shrink:0;width:42px;height:42px;border-radius:50%;background:var(--hero-grad);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:19px"><i class="ti ti-arrow-up"></i></button>
   </div>
-  <button class="sbtn" onclick="askAI()" data-i="aiask"></button>
-  <div id="ai-answer" style="padding:14px 18px 4px;font-size:14px;line-height:1.5;white-space:pre-wrap;color:var(--ink)"></div>
 </div></div>
 
 <div class="modal-wrap" id="m-browse" onclick="closeM('m-browse')"><div class="modal" onclick="event.stopPropagation()">
@@ -2903,8 +2904,9 @@ function saveAi(){
   saveS();const el=document.getElementById('ai-key-status');if(el)el.textContent=S.ai.key?t('keysaved'):t('keycleared');
 }
 function openAI(){
+  S.ai=S.ai||{};S.ai.history=S.ai.history||[];
   const pr=document.getElementById('ai-prompt');if(pr)pr.placeholder=t('aiph');
-  const ans=document.getElementById('ai-answer');if(ans)ans.textContent=(S.ai&&S.ai.key)?'':t('ainokey');
+  renderAiMessages();
   document.getElementById('m-ai').classList.add('open');
 }
 function buildAiContext(){
@@ -2918,17 +2920,22 @@ function buildAiContext(){
   S.txns.slice(0,40).forEach(tx=>L.push('- '+tx.date+' '+tx.type+' '+(tx.catLabel||'')+' '+tx.cur+tx.amount+(tx.note?' ('+tx.note+')':'')+(tx.excluded?' [excluded]':'')));
   return L.join('\n');
 }
-async function callAI(ai,prompt){
+// messages = [{role:'user'|'assistant',content}], system = string
+async function callAI(ai,messages,system){
   const p=ai.provider||'gemini';
   if(p==='gemini'){
     const model=ai.model||'gemini-1.5-flash';
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(ai.key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})});
+    const body={contents:messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}))};
+    if(system)body.systemInstruction={parts:[{text:system}]};
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(ai.key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
     const j=await r.json();if(j.error)throw new Error(j.error.message||'error');
     return ((((j.candidates||[])[0]||{}).content||{}).parts||[]).map(x=>x.text).join('');
   }
   if(p==='anthropic'){
     const model=ai.model||'claude-3-5-haiku-latest';
-    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ai.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify({model,max_tokens:1024,messages:[{role:'user',content:prompt}]})});
+    const body={model,max_tokens:1024,messages:messages.map(m=>({role:m.role,content:m.content}))};
+    if(system)body.system=system;
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ai.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
     const j=await r.json();if(j.error)throw new Error(j.error.message||'error');
     return (j.content||[]).map(x=>x.text).join('');
   }
@@ -2936,19 +2943,35 @@ async function callAI(ai,prompt){
   const COMPAT={deepseek:{url:'https://api.deepseek.com/chat/completions',model:'deepseek-chat'},xai:{url:'https://api.x.ai/v1/chat/completions',model:'grok-3-mini'}};
   const cfg=COMPAT[p]||COMPAT.deepseek;
   const model=ai.model||cfg.model;
-  const r=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ai.key},body:JSON.stringify({model,messages:[{role:'user',content:prompt}]})});
+  const msgs=(system?[{role:'system',content:system}]:[]).concat(messages.map(m=>({role:m.role,content:m.content})));
+  const r=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ai.key},body:JSON.stringify({model,messages:msgs})});
   const j=await r.json();if(j.error)throw new Error((j.error&&(j.error.message||j.error))||'error');
   return (((j.choices||[])[0]||{}).message||{}).content||'';
 }
+function aiEsc(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+function renderAiMessages(){
+  const box=document.getElementById('ai-messages');if(!box)return;
+  S.ai=S.ai||{};const h=S.ai.history||[];
+  if(!h.length){box.innerHTML='<div style="color:var(--ink3);font-size:13px;text-align:center;padding:20px 8px;line-height:1.6">'+(S.ai.key?'問我關於你財務嘅問題，或者叫我幫你記帳（例如:「午餐 58 八達通」）。':t('ainokey'))+'</div>';return;}
+  box.innerHTML=h.map(function(m){var me=m.role==='user';return '<div style="align-self:'+(me?'flex-end':'flex-start')+';max-width:86%;background:'+(me?'var(--g2)':'var(--bg2)')+';color:'+(me?'var(--g3)':'var(--ink)')+';border:0.5px solid var(--bdr);border-radius:16px;padding:9px 13px;font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word">'+aiEsc(m.content)+'</div>';}).join('');
+  box.scrollTop=box.scrollHeight;
+}
+function clearAiChat(){if(!confirm('清除對話記錄？'))return;S.ai=S.ai||{};S.ai.history=[];saveS();renderAiMessages();}
+function aiKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();askAI();}}
 async function askAI(){
-  const ai=S.ai||{};const ans=document.getElementById('ai-answer');
-  if(!ai.key){ans.textContent=t('ainokey');return;}
-  const q=document.getElementById('ai-prompt').value.trim();if(!q)return;
-  ans.textContent=t('aithinking');
-  const sys='You are a personal-finance assistant embedded in the user\'s budgeting app. Answer concisely and practically using ONLY the data provided. You are not a licensed financial advisor; avoid definitive investment instructions.';
-  const prompt=sys+'\n\n=== USER FINANCIAL DATA ===\n'+buildAiContext()+'\n\n=== QUESTION ===\n'+q;
-  try{const txt=await callAI(ai,prompt);ans.textContent=txt||t('aierr');}
-  catch(e){ans.textContent=t('aierr')+': '+((e&&e.message)||e);}
+  S.ai=S.ai||{};S.ai.history=S.ai.history||[];const ai=S.ai;
+  const inp=document.getElementById('ai-prompt');const q=(inp.value||'').trim();if(!q)return;
+  if(!ai.key){ai.history.push({role:'assistant',content:t('ainokey')});renderAiMessages();return;}
+  ai.history.push({role:'user',content:q});
+  inp.value='';inp.style.height='auto';
+  ai.history.push({role:'assistant',content:'…'});
+  renderAiMessages();
+  const sys='You are a personal-finance assistant embedded in the user\'s budgeting app. Answer concisely and practically, in the user\'s language, using the financial data below where relevant. You are not a licensed financial advisor; avoid definitive investment instructions.\n\n=== USER FINANCIAL DATA ===\n'+buildAiContext();
+  const convo=ai.history.filter(function(m){return m.content!=='…';}).map(function(m){return {role:m.role,content:m.content};});
+  try{const txt=await callAI(ai,convo,sys);ai.history[ai.history.length-1]={role:'assistant',content:txt||t('aierr')};}
+  catch(e){ai.history[ai.history.length-1]={role:'assistant',content:t('aierr')+': '+((e&&e.message)||e)};}
+  if(ai.history.length>40)ai.history=ai.history.slice(-40);
+  saveS();renderAiMessages();
 }
 // ─── CREDIT (TU) ESTIMATE — rough, clearly labelled ──────────
 function addTuScore(){
