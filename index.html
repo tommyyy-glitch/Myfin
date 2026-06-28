@@ -548,6 +548,7 @@ img,canvas,svg{max-width:100%;}
           <div><div class="mlabel" data-i="totaldebt"></div><div style="font-size:15px;font-weight:700;color:var(--r3)" id="acct-total-debt">HK$0</div></div>
         </div>
       </div>
+      <select id="acct-filter" onchange="setAcctFilter(this.value)" style="width:100%;border:1px solid var(--bdr2);border-radius:12px;padding:10px 12px;background:var(--bg2);color:var(--ink2);font-size:13px;-webkit-appearance:none;margin-bottom:10px"></select>
       <div class="glass-card" id="acct-bal-list"></div>
     </div>
     <!-- PANE: A/R -->
@@ -1454,8 +1455,18 @@ function renderAcctBalances(){
   document.getElementById('acct-total-bal').textContent=fmt(total);
   const taEl=document.getElementById('acct-total-asset');if(taEl)taEl.textContent=fmt(totalAssets());
   const tdEl=document.getElementById('acct-total-debt');if(tdEl)tdEl.textContent=fmt(totalDebt());
+  // filter / sort the list (the totals above stay overall)
+  const fsel=S.acctFilter||'all';
+  const fopts=[['all',S.lang==='en'?'All accounts':'全部戶口'],['hkd',S.lang==='en'?'HKD only':'只顯示 HKD 戶口'],['foreign',S.lang==='en'?'Foreign currency':'只顯示外幣戶口'],['cash',S.lang==='en'?'Cash only':'只顯示現金'],['az',S.lang==='en'?'Name A → Z':'名稱 A → Z'],['amount',S.lang==='en'?'By balance ↓':'按結餘 高→低']];
+  const fel=document.getElementById('acct-filter');if(fel)fel.innerHTML=fopts.map(o=>`<option value="${o[0]}"${o[0]===fsel?' selected':''}>${o[1]}</option>`).join('');
+  let viewAccts=accts.slice();
+  if(fsel==='hkd')viewAccts=viewAccts.filter(a=>(a.cur||'HKD')==='HKD');
+  else if(fsel==='foreign')viewAccts=viewAccts.filter(a=>(a.cur||'HKD')!=='HKD');
+  else if(fsel==='cash')viewAccts=viewAccts.filter(a=>(a.kind||'')==='cash');
+  else if(fsel==='az')viewAccts.sort((a,b)=>acctLabel(a).localeCompare(acctLabel(b)));
+  else if(fsel==='amount')viewAccts.sort((a,b)=>acctBalance(b.id)-acctBalance(a.id));
   const listEl=document.getElementById('acct-bal-list');
-  listEl.innerHTML=accts.length?accts.map(ac=>{
+  listEl.innerHTML=viewAccts.length?viewAccts.map(ac=>{
     const bal=acctBalance(ac.id);const f=acctFlows(ac.id);
     const debt=acctDebt(ac.id);
     const balColor=bal<0?'var(--r)':'var(--ink)';
@@ -2774,6 +2785,7 @@ function pickAcctEmoji(btn){document.getElementById('new-acct-icon').value=btn.t
 function addAcct(){const icon=document.getElementById('new-acct-icon').value.trim()||'💳';const name=document.getElementById('new-acct-name').value.trim();if(!name)return;let id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!id)id='acct_'+Date.now();if(!S.accounts)S.accounts=[];const kind=document.getElementById('new-acct-kind').value;const isInvest=kind==='invest';const cur=document.getElementById('new-acct-cur').value||'HKD';if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,cur});['new-acct-icon','new-acct-name'].forEach(x=>document.getElementById(x).value='');document.getElementById('new-acct-cur').value='HKD';saveS();renderSettings();}
 function setAcctCur(id,cur){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.cur=cur;saveS();renderSettings();renderHome();refreshWallet();}
 function fmtCur(n,cur){cur=cur||'HKD';const v=cur==='HKD'?n:n/(FX[cur]||1);return (CUR_SYM[cur]||(cur+' '))+Math.round(v).toLocaleString();}
+function setAcctFilter(v){S.acctFilter=v;renderAcctBalances();}
 function setAcctKind(id,kind){const a=(S.accounts||[]).find(x=>x.id===id);if(a){a.kind=kind;a.isInvest=(kind==='invest');}saveS();renderSettings();renderHome();}
 function deleteAcct(id){if((S.accounts||[]).length<=1)return;S.accounts=S.accounts.filter(a=>a.id!==id);if(S.selAcct===id)S.selAcct=S.accounts[0]?.id;saveS();renderSettings();}
 function renderMergeChips(){document.getElementById('merge-chips').innerHTML=S.cats.map(c=>`<div class="cat-chip${S.mergeSelected.includes(c.id)?' merge-sel':''}" onclick="toggleMergeSel('${c.id}')"><span style="font-size:20px">${c.icon}</span><span>${catLabel(c)}</span></div>`).join('');updateMergePreview();}
