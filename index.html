@@ -2987,12 +2987,43 @@ async function askAI(){
   inp.value='';inp.style.height='auto';
   ai.history.push({role:'assistant',content:'…'});
   renderAiMessages();
-  const sys='You are a personal-finance assistant embedded in the user\'s budgeting app. Answer concisely and practically, in the user\'s language, using the financial data below where relevant. You are not a licensed financial advisor; avoid definitive investment instructions.\n\n=== USER FINANCIAL DATA ===\n'+buildAiContext();
+  const catList=S.cats.map(function(c){return c.label;}).join(', ');
+  const acctList=(S.accounts||[]).map(function(a){return a.label;}).join(', ');
+  const sys='You are a personal-finance assistant embedded in the user\'s budgeting app. Answer concisely and practically, in the user\'s language, using the financial data below where relevant. You are not a licensed financial advisor; avoid definitive investment instructions.\n\nYou can also LOG a transaction for the user. When the user clearly wants to record an expense or income (e.g. "lunch 58 octopus", "出咗糧 20000"), briefly confirm in words, then append at the VERY END of your reply exactly ONE line:\n[[TXN]]{"type":"expense|income","amount":NUMBER,"cur":"HKD|RMB|USD|JPY","category":"<closest from list>","account":"<closest from list>","note":"...","date":"YYYY-MM-DD"}\nUse today ('+today()+') if no date given. Only add the [[TXN]] line when the user actually wants to record something.\nCATEGORIES: '+catList+'\nACCOUNTS: '+acctList+'\n\n=== USER FINANCIAL DATA ===\n'+buildAiContext();
   const convo=ai.history.filter(function(m){return m.content!=='…';}).map(function(m){return {role:m.role,content:m.content};});
-  try{const txt=await callAI(ai,convo,sys);ai.history[ai.history.length-1]={role:'assistant',content:txt||t('aierr')};}
-  catch(e){ai.history[ai.history.length-1]={role:'assistant',content:t('aierr')+': '+((e&&e.message)||e)};}
+  try{
+    const txt=await callAI(ai,convo,sys);
+    const mm=(txt||'').match(/\[\[TXN\]\]\s*(\{[\s\S]*?\})/);
+    const visible=mm?((txt.replace(mm[0],'').trim())||'好,幫你準備咗呢筆。'):(txt||t('aierr'));
+    ai.history[ai.history.length-1]={role:'assistant',content:visible};
+    if(ai.history.length>40)ai.history=ai.history.slice(-40);
+    saveS();renderAiMessages();
+    if(mm)tryApplyAiTxn(mm[1]);
+    return;
+  }catch(e){ai.history[ai.history.length-1]={role:'assistant',content:t('aierr')+': '+((e&&e.message)||e)};}
   if(ai.history.length>40)ai.history=ai.history.slice(-40);
   saveS();renderAiMessages();
+}
+function pushAiMsg(text){S.ai=S.ai||{};S.ai.history=S.ai.history||[];S.ai.history.push({role:'assistant',content:text});if(S.ai.history.length>40)S.ai.history=S.ai.history.slice(-40);saveS();renderAiMessages();}
+// Parse an AI [[TXN]] action, confirm, then create the transaction
+function tryApplyAiTxn(jsonStr){
+  let a;try{a=JSON.parse(jsonStr);}catch(e){return;}
+  const amount=parseFloat(a&&a.amount)||0;if(!amount)return;
+  const type=a.type==='income'?'income':'expense';
+  const cur=(a.cur||'HKD').toString().toUpperCase();
+  const catName=(a.category||a.cat||'').toString().toLowerCase().trim();
+  let cat=S.cats.find(function(c){return [c.label,c.labelEn].concat(c.aliases||[]).some(function(x){return x&&x.toString().toLowerCase()===catName;});});
+  if(!cat&&catName)cat=S.cats.find(function(c){return [c.label,c.labelEn].some(function(x){return x&&x.toString().toLowerCase().indexOf(catName)>=0;});});
+  if(!cat)cat=getCat('food')||S.cats[S.cats.length-1];
+  const acctName=(a.account||a.acct||'').toString().toLowerCase().trim();
+  let ac=(S.accounts||[]).find(function(x){return [x.label,x.labelEn,x.id].some(function(v){return v&&v.toString().toLowerCase()===acctName;});});
+  if(!ac&&acctName)ac=(S.accounts||[]).find(function(x){return [x.label,x.labelEn].some(function(v){return v&&v.toString().toLowerCase().indexOf(acctName)>=0;});});
+  if(!ac)ac=(S.accounts||[])[0];
+  const summary=(type==='income'?'收入':'支出')+' '+fmtCur(toHKD(amount,cur),cur)+(cur!=='HKD'?'':'')+' · '+(cat?cat.icon+' '+catLabel(cat):'')+' · '+(ac?ac.icon+' '+acctLabel(ac):'')+(a.note?' · '+a.note:'');
+  if(!confirm('記低呢筆?\n\n'+summary)){pushAiMsg('已取消,冇記低。');return;}
+  S.txns.unshift({id:Date.now()+Math.random(),type:type,amount:amount,amtHKD:parseFloat(toHKD(amount,cur).toFixed(2)),cur:cur,catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:ac?ac.id:'',acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:a.note||'',date:a.date||today(),oneOff:false});
+  saveS();renderHome();if(typeof refreshWallet==='function')refreshWallet();
+  pushAiMsg('✅ 已記低:'+summary);
 }
 // ─── CREDIT (TU) ESTIMATE — rough, clearly labelled ──────────
 function addTuScore(){
