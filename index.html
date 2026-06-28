@@ -821,6 +821,12 @@ img,canvas,svg{max-width:100%;}
           <option value="cash" data-i="kindcash"></option><option value="debit" data-i="kinddebit"></option><option value="credit" data-i="kindcredit"></option><option value="bank" data-i="kindbank"></option><option value="ewallet" data-i="kindewallet"></option><option value="invest" data-i="kindinvest"></option><option value="other" data-i="kindother"></option>
         </select>
       </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--ink2)" data-i="currency"></span>
+        <select id="new-acct-cur" style="flex:1;border:1px solid var(--bdr2);border-radius:10px;padding:9px;background:var(--bg2);color:var(--ink);font-size:14px;-webkit-appearance:none">
+          <option value="HKD">HKD · HK$</option><option value="RMB">RMB · CN¥</option><option value="USD">USD · US$</option><option value="JPY">JPY · JP¥</option>
+        </select>
+      </div>
       <div style="display:flex;flex-wrap:wrap;gap:6px" id="acct-emoji-quick">
         <button onclick="pickAcctEmoji(this)" style="font-size:20px;padding:6px 8px;border:1px solid var(--bdr);border-radius:10px;background:var(--bg2);cursor:pointer">💵</button>
         <button onclick="pickAcctEmoji(this)" style="font-size:20px;padding:6px 8px;border:1px solid var(--bdr);border-radius:10px;background:var(--bg2);cursor:pointer">💳</button>
@@ -1322,7 +1328,7 @@ function fillInvestSelect(selId,selectedId){
 // Cash component of an account = opening + income in − expense out + transfers in − transfers out
 // Pure cash movements from manual transactions (income/expense/transfers) + opening balance
 function acctCashTxns(acctId){
-  let bal=parseFloat((S.accounts.find(a=>a.id===acctId)||{}).opening||0);
+  const _ac=(S.accounts.find(a=>a.id===acctId)||{});let bal=toHKD(parseFloat(_ac.opening||0),_ac.cur||'HKD');
   S.txns.forEach(tx=>{
     if(tx.excluded)return; // excluded items don't count toward balances
     if(tx.type==='income'&&tx.acctId===acctId)bal+=tx.amtHKD;
@@ -1467,15 +1473,15 @@ function renderAcctBalances(){
       <div class="ibox" style="background:var(--bg2);font-size:22px">${ac.icon}</div>
       <div class="rinfo"><div class="rtitle">${acctLabel(ac)}${invBadge}${debtBadge}${exAcctBadge}</div>
         <div class="rsub">${sub}</div></div>
-      <div style="text-align:right"><div style="font-size:17px;font-weight:700;color:${balColor}">${fmt(bal)}</div>
-        <div style="font-size:11px;color:var(--ink3);margin-top:2px">${t('acctbalance')}</div></div>
+      <div style="text-align:right"><div style="font-size:17px;font-weight:700;color:${balColor}">${fmtCur(bal,ac.cur)}</div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:2px">${(ac.cur&&ac.cur!=='HKD')?'≈ '+fmtCur(bal,'HKD'):t('acctbalance')}</div></div>
     </div>`;
   }).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noacctyet')}</div>`;
 }
 function openOpeningModal(acctId){
   S._openingAcct=acctId;
   const ac=getAcct(acctId);
-  document.getElementById('opening-acct-name').textContent=ac.icon+' '+acctLabel(ac);
+  document.getElementById('opening-acct-name').textContent=ac.icon+' '+acctLabel(ac)+((ac.cur&&ac.cur!=='HKD')?' ('+ac.cur+')':'');
   document.getElementById('opening-val').value=ac.opening||'';
   document.getElementById('m-opening').classList.add('open');
 }
@@ -2759,12 +2765,15 @@ function renderAcctMgr(){
   const el=document.getElementById('acct-mgr');if(!el)return;
   el.innerHTML=(S.accounts||[]).map(a=>{
     const opts=ACCT_KINDS.map(k=>`<option value="${k}"${(a.kind||'other')===k?' selected':''}>${kindLabel(k)}</option>`).join('');
-    return `<div style="display:flex;align-items:center;padding:12px 15px;gap:8px;border-bottom:0.5px solid var(--bdr);${a.excluded?'opacity:0.55;':''}"><div style="font-size:20px;width:26px;flex-shrink:0">${a.icon}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${acctLabel(a)}${a.excluded?`<span class="badge bgr" style="margin-left:6px">${t('excluded')}</span>`:''}</div><select onchange="setAcctKind('${a.id}',this.value)" style="margin-top:5px;width:100%;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${opts}</select></div><button onclick="toggleAcctExclude('${a.id}')" title="${t('excludetip')}" style="padding:6px 9px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:${a.excluded?'var(--a3)':'var(--ink3)'};font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0">${a.excluded?t('included'):t('exclude')}</button><button onclick="deleteAcct('${a.id}')" style="padding:6px 8px;border:none;background:none;color:var(--r3);font-size:19px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button></div>`;
+    const curOpts=['HKD','RMB','USD','JPY'].map(c=>`<option value="${c}"${(a.cur||'HKD')===c?' selected':''}>${c}</option>`).join('');
+    return `<div style="display:flex;align-items:center;padding:12px 15px;gap:8px;border-bottom:0.5px solid var(--bdr);${a.excluded?'opacity:0.55;':''}"><div style="font-size:20px;width:26px;flex-shrink:0">${a.icon}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${acctLabel(a)}${a.excluded?`<span class="badge bgr" style="margin-left:6px">${t('excluded')}</span>`:''}</div><div style="display:flex;gap:6px;margin-top:5px"><select onchange="setAcctKind('${a.id}',this.value)" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${opts}</select><select onchange="setAcctCur('${a.id}',this.value)" style="width:74px;flex-shrink:0;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${curOpts}</select></div></div><button onclick="toggleAcctExclude('${a.id}')" title="${t('excludetip')}" style="padding:6px 9px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:${a.excluded?'var(--a3)':'var(--ink3)'};font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0">${a.excluded?t('included'):t('exclude')}</button><button onclick="deleteAcct('${a.id}')" style="padding:6px 8px;border:none;background:none;color:var(--r3);font-size:19px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button></div>`;
   }).join('');
 }
 function toggleAcctExclude(id){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.excluded=!a.excluded;saveS();renderSettings();renderHome();refreshWallet();}
 function pickAcctEmoji(btn){document.getElementById('new-acct-icon').value=btn.textContent.trim();}
-function addAcct(){const icon=document.getElementById('new-acct-icon').value.trim()||'💳';const name=document.getElementById('new-acct-name').value.trim();if(!name)return;let id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!id)id='acct_'+Date.now();if(!S.accounts)S.accounts=[];const kind=document.getElementById('new-acct-kind').value;const isInvest=kind==='invest';if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind});['new-acct-icon','new-acct-name'].forEach(x=>document.getElementById(x).value='');saveS();renderSettings();}
+function addAcct(){const icon=document.getElementById('new-acct-icon').value.trim()||'💳';const name=document.getElementById('new-acct-name').value.trim();if(!name)return;let id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!id)id='acct_'+Date.now();if(!S.accounts)S.accounts=[];const kind=document.getElementById('new-acct-kind').value;const isInvest=kind==='invest';const cur=document.getElementById('new-acct-cur').value||'HKD';if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,cur});['new-acct-icon','new-acct-name'].forEach(x=>document.getElementById(x).value='');document.getElementById('new-acct-cur').value='HKD';saveS();renderSettings();}
+function setAcctCur(id,cur){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.cur=cur;saveS();renderSettings();renderHome();refreshWallet();}
+function fmtCur(n,cur){cur=cur||'HKD';const v=cur==='HKD'?n:n/(FX[cur]||1);return (CUR_SYM[cur]||(cur+' '))+Math.round(v).toLocaleString();}
 function setAcctKind(id,kind){const a=(S.accounts||[]).find(x=>x.id===id);if(a){a.kind=kind;a.isInvest=(kind==='invest');}saveS();renderSettings();renderHome();}
 function deleteAcct(id){if((S.accounts||[]).length<=1)return;S.accounts=S.accounts.filter(a=>a.id!==id);if(S.selAcct===id)S.selAcct=S.accounts[0]?.id;saveS();renderSettings();}
 function renderMergeChips(){document.getElementById('merge-chips').innerHTML=S.cats.map(c=>`<div class="cat-chip${S.mergeSelected.includes(c.id)?' merge-sel':''}" onclick="toggleMergeSel('${c.id}')"><span style="font-size:20px">${c.icon}</span><span>${catLabel(c)}</span></div>`).join('');updateMergePreview();}
