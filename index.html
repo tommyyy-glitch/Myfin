@@ -1335,7 +1335,7 @@ function renderProfileChip(){const m=ensureProfiles();const p=m.list.find(x=>x.i
 function openProfilesModal(){renderProfilesModal();document.getElementById('m-profiles').classList.add('open');}
 function renderProfilesModal(){const el=document.getElementById('profiles-list');if(!el)return;const m=ensureProfiles();el.innerHTML=m.list.map(p=>{const active=p.id===m.active;return `<div class="frow" style="gap:10px"><button onclick="switchProfile('${p.id}')" style="flex:1;display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--ink);cursor:pointer;text-align:left;font-size:15px;font-weight:600;min-width:0"><span style="font-size:22px;flex-shrink:0">${p.emoji||'👤'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>${active?'<span class="badge bg" style="flex-shrink:0">使用中</span>':''}</button>${p.id!=='default'?`<button onclick="deleteProfile('${p.id}')" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join('');}
 function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d);Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
-(S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));}}
+(S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));}}
 function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
 function t(k){return LANGS[S.lang][k]||LANGS.en[k]||k;}
@@ -1353,6 +1353,11 @@ function fillInvestSelect(selId,selectedId){
   if(!accts.length){el.innerHTML=`<option value="">${t('noinvestacct')}</option>`;return;}
   el.innerHTML=accts.map(a=>`<option value="${a.id}"${a.id===selectedId?' selected':''}>${a.icon} ${acctLabel(a)}</option>`).join('');
 }
+function _normName(x){return String(x||'').toLowerCase().replace(/\s+/g,'').trim();}
+function sectionObj(secId){return (S.customSections||[]).find(c=>String(c.id)===String(secId));}
+function accountForSection(secId){const cs=sectionObj(secId);if(!cs)return null;const key=_normName(cs.name);if(!key)return null;return (S.accounts||[]).find(a=>_normName(a.label)===key||_normName(a.labelEn)===key)||null;}
+function defaultAcctForSection(secId,fallbackId){const match=accountForSection(secId);return (match&&match.isInvest)?match.id:(fallbackId||investAccts()[0]?.id||'');}
+function syncSectionAccountLinks(){let changed=false;(S.portfolio||[]).forEach(p=>{if(!p.secId)return;const ac=accountForSection(p.secId);if(ac&&ac.isInvest&&p.acctId!==ac.id){p.acctId=ac.id;p.acctLabel=acctLabel(ac);p.acctIcon=ac.icon;changed=true;}});return changed;}
 function fillAcctSelect(selId,selectedId){const el=document.getElementById(selId);if(!el)return;el.innerHTML=(S.accounts||[]).map(a=>`<option value="${a.id}"${a.id===selectedId?' selected':''}>${a.icon} ${acctLabel(a)}</option>`).join('');}
 function rpSignedHKD(p){return (p.dir==='p'?-1:1)*(parseFloat(p.amtHKD||0));}
 function rpGroups(list){const m={};(list||[]).forEach(p=>{const k=(p.friendId||p.name||'').toString().trim().toLowerCase();if(!m[k])m[k]={key:k,name:p.name,items:[],net:0};m[k].items.push(p);m[k].net+=rpSignedHKD(p);});return Object.values(m).sort((a,b)=>Math.abs(b.net)-Math.abs(a.net));}
@@ -2299,7 +2304,7 @@ function drawSparkline(canvasId, vals, color){
   ctx.beginPath();ctx.arc(lx,ly,3,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
 }
 
-function openPortModal(type,editId){
+function openPortModal(type,editId,defaultSecId){
   document.getElementById('port-type').value=type;
   document.getElementById('port-edit-id').value=editId||'';
   document.getElementById('port-modal-title').textContent=editId?t(type==='stock'?'addstock':'addcrypto')+' (edit)':t(type==='stock'?'addstock':'addcrypto');
@@ -2324,8 +2329,8 @@ function openPortModal(type,editId){
   } else {
     ['port-name','port-qty','port-entry','port-current','port-exit','port-budget','port-apisym','port-notes','port-div'].forEach(id=>document.getElementById(id).value='');
     document.getElementById('port-divfreq').value='none';
-    fillInvestSelect('port-acct',investAccts()[0]?.id);
-    document.getElementById('port-secid').value='';
+    fillInvestSelect('port-acct',defaultAcctForSection(defaultSecId,investAccts()[0]?.id));
+    document.getElementById('port-secid').value=defaultSecId||'';
     document.getElementById('port-margin-toggle').classList.remove('on');
   }
   applyI18n();
@@ -2452,7 +2457,7 @@ function confirmSell(){
   saveS();closeM('m-sell');renderGamble();renderHome();refreshWallet();
 }
 // ── PRIVATE EQUITY ──
-function openPEModal(editId){
+function openPEModal(editId,defaultSecId){
   const p=editId?(S.portfolio||[]).find(x=>String(x.id)===String(editId)):null;
   document.getElementById('pe-edit-id').value=editId||'';
   document.getElementById('pe-modal-title').textContent=t('privateequity');
@@ -2462,10 +2467,10 @@ function openPEModal(editId){
   document.getElementById('pe-valuation').value=p?p.valuation:'';
   document.getElementById('pe-cur').value=p?p.cur:'HKD';
   document.getElementById('pe-notes').value=p?(p.notes||''):'';
-  document.getElementById('pe-secid').value=p?(p.secId||''):'';
+  document.getElementById('pe-secid').value=p?(p.secId||''):(defaultSecId||'');
   document.getElementById('pe-div').value=p?(p.divPct||''):'';
   document.getElementById('pe-divfreq').value=divFreqCode(p&&p.divFreq);
-  fillInvestSelect('pe-acct',p?p.acctId:(investAccts()[0]||{}).id);
+  fillInvestSelect('pe-acct',p?p.acctId:defaultAcctForSection(defaultSecId,(investAccts()[0]||{}).id));
   applyI18n();document.getElementById('m-pe').classList.add('open');
 }
 function savePE(){
@@ -2621,6 +2626,7 @@ function drawTrend(){
 }
 function renderGamble(){
   if(!S.portfolio)S.portfolio=[];
+  syncSectionAccountLinks();
   // ── POKER ──
   const closed=S.gamble.filter(g=>!g.open);
   const pokerIn=S.gamble.reduce((a,g)=>a+g.buyinHKD,0);
@@ -2850,8 +2856,8 @@ function renderGamble(){
 }
 // open the right add-modal targeted at a custom section
 function addToSection(secId,base){
-  if(base==='pe'){openPEModal();document.getElementById('pe-secid').value=secId;}
-  else{openPortModal(base==='crypto'?'crypto':'stock');document.getElementById('port-secid').value=secId;}
+  if(base==='pe')openPEModal(null,secId);
+  else openPortModal(base==='crypto'?'crypto':'stock',null,secId);
 }
 function renderAutopay(){
   const active=S.autopay.filter(ap=>ap.active);
