@@ -1358,7 +1358,13 @@ function rpSignedHKD(p){return (p.dir==='p'?-1:1)*(parseFloat(p.amtHKD||0));}
 function rpGroups(list){const m={};(list||[]).forEach(p=>{const k=(p.friendId||p.name||'').toString().trim().toLowerCase();if(!m[k])m[k]={key:k,name:p.name,items:[],net:0};m[k].items.push(p);m[k].net+=rpSignedHKD(p);});return Object.values(m).sort((a,b)=>Math.abs(b.net)-Math.abs(a.net));}
 function rpAssetTotal(){return rpGroups((S.people||[]).filter(p=>!p.settled)).reduce((a,g)=>a+Math.max(g.net,0),0);}
 function rpDebtTotal(){return rpGroups((S.people||[]).filter(p=>!p.settled)).reduce((a,g)=>a+Math.max(-g.net,0),0);}
-function addRPMove(p,phase){const amtHKD=Math.abs(parseFloat(p.amtHKD||0));if(!amtHKD||!p.acctId)return;const ac=getAcct(p.acctId);const receivable=p.dir!=='p';const direction=(phase==='open')?(receivable?'out':'in'):(receivable?'in':'out');S.txns.unshift({id:Date.now()+Math.random(),type:'ar_move',direction,amount:Math.abs(p.amount||0),amtHKD,cur:p.cur||'HKD',acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(phase==='open'?t('aropen'):t('arsettle'))+' · '+p.name+(p.desc?' · '+p.desc:''),date:today(),fromRP:p.id,oneOff:true});}
+function addRPMove(p,phase){const amtHKD=Math.abs(parseFloat(p.amtHKD||0));if(!amtHKD||!p.acctId)return null;const ac=getAcct(p.acctId);const receivable=p.dir!=='p';const direction=(phase==='open')?(receivable?'out':'in'):(receivable?'in':'out');const tx={id:Date.now()+Math.random(),type:'ar_move',direction,amount:Math.abs(p.amount||0),amtHKD,cur:p.cur||'HKD',acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(phase==='open'?t('aropen'):t('arsettle'))+' · '+p.name+(p.desc?' · '+p.desc:''),date:p.date||today(),fromRP:p.id,rpPhase:phase,oneOff:true};S.txns.unshift(tx);return tx;}
+function removeRPMovesFor(ids,phase){const set=new Set([].concat(ids).filter(x=>x!=null).map(x=>String(x)));S.txns=S.txns.filter(tx=>{if(!txIsRPFlow(tx))return true;if(phase&&tx.rpPhase!==phase)return true;return !set.has(String(tx.fromRP));});}
+// R/P wallet moves are real cash movements inside the selected account, but NOT income/spending.
+// This also catches older saved rows that were created as income/expense but tagged with fromRP/group R/P metadata.
+function txIsRPFlow(tx){if(!tx)return false;if(tx.type==='ar_move')return true;if(tx.fromRP||tx.rpPhase)return true;if(tx.isGroupBill&&String(tx.note||'').includes('R/P'))return true;return false;}
+function txReportable(tx){return !!tx&&!tx.excluded&&!txIsRPFlow(tx)&&tx.type!=='transfer';}
+function txCashFlowSign(tx){if(tx.type==='income')return 1;if(tx.type==='expense')return -1;return 0;}
 function syncAutoPayFromTxn(tx){if(!tx||!tx.autoPayId)return;const ap=(S.autopay||[]).find(a=>String(a.id)===String(tx.autoPayId));if(!ap)return;ap.name=tx.note||ap.name;ap.amount=tx.amount;ap.cur=tx.cur;ap.catId=tx.catId||ap.catId;ap.acctId=tx.acctId||'';ap.acct=tx.acctLabel||'';ap.acctIcon=tx.acctIcon||'';}
 function refreshAllViews(){renderHome();if(S.activeTab==='gamble')renderGamble();refreshWallet();if(S.activeTab==='settings'){renderAutopay();renderAutoincome();}}
 // Cash component of an account = opening + income in − expense out + transfers in − transfers out
@@ -1445,28 +1451,34 @@ function acctAvailableCash(acctId,excludeId){
   });
   return c;
 }
-// Full account equity = realized cash + current value of open positions − outstanding margin debt
+function acctHasOpenInvest(acctId){return acctOpenValue(acctId)>0||acctMarginDebt(acctId)>0;}
+// Full account equity = realized cash + current value of open positions − outstanding margin debt.
+// Important: use linked positions as the source of truth too, not only the account's isInvest flag.
+// This fixes old accounts such as N8 that may hold P&L positions but were not marked investment.
 function acctBalance(acctId){
   const ac=S.accounts.find(a=>a.id===acctId)||{};
+  const hasInv=!!ac.isInvest||acctHasOpenInvest(acctId);
   let bal=acctCash(acctId);
-  if(ac.isInvest)bal+=acctOpenValue(acctId)-acctMarginDebt(acctId);
+  if(hasInv)bal+=acctOpenValue(acctId)-acctMarginDebt(acctId);
   return bal;
 }
 // ── DEBT SYSTEM ──
 // Debt owed against an account = outstanding margin borrowed + any overdrawn (negative) cash
 function acctDebt(acctId){
   const ac=S.accounts.find(a=>a.id===acctId)||{};
+  const hasInv=!!ac.isInvest||acctHasOpenInvest(acctId);
   const cash=acctCash(acctId);
-  let debt=ac.isInvest?acctMarginDebt(acctId):0;
+  let debt=hasInv?acctMarginDebt(acctId):0;
   if(cash<0)debt+=(-cash);
   return debt;
 }
 // Asset value held in an account = positive cash + market value of open positions
 function acctAsset(acctId){
   const ac=S.accounts.find(a=>a.id===acctId)||{};
+  const hasInv=!!ac.isInvest||acctHasOpenInvest(acctId);
   const cash=acctCash(acctId);
   let asset=cash>0?cash:0;
-  if(ac.isInvest)asset+=acctOpenValue(acctId);
+  if(hasInv)asset+=acctOpenValue(acctId);
   return asset;
 }
 // Global totals across all accounts (excluded accounts are skipped)
@@ -1598,7 +1610,7 @@ function setCatPeriod(kind,period,btn){
 }
 function renderCatPie(kind){
   const period=kind==='spend'?S.catPeriodSpend:S.catPeriodIncome;
-  const txns=txnsInPeriod(period,kind).filter(tx=>!tx.excluded&&tx.type===(kind==='spend'?'expense':'income')&&(kind==='income'||!tx.oneOff));
+  const txns=txnsInPeriod(period,kind).filter(tx=>txReportable(tx)&&tx.type===(kind==='spend'?'expense':'income')&&(kind==='income'||!tx.oneOff));
   const totals={};
   txns.forEach(tx=>{const lab=tx.catLabel||(S.lang==='en'?'Other':'其他');totals[lab]=(totals[lab]||0)+tx.amtHKD;});
   const data=Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([label,v])=>({label,v}));
@@ -1643,7 +1655,7 @@ function drawWealth(){
   }
   let cum=0;
   const pts=buckets.map(b=>{
-    const sum=S.txns.filter(tx=>!tx.excluded&&tx.type!=='transfer'&&b.match(tx)).reduce((a,tx)=>a+(tx.type==='income'?tx.amtHKD:-tx.amtHKD),0);
+    const sum=S.txns.filter(tx=>txReportable(tx)&&b.match(tx)).reduce((a,tx)=>a+(txCashFlowSign(tx)*tx.amtHKD),0);
     cum+=sum;return {label:b.label,val:cum};
   });
   const vals=pts.map(p=>p.val);
@@ -2056,11 +2068,16 @@ function saveAR(){
   const editId=S._editArId;
   if(editId){
     const p=S.people.find(x=>String(x.id)===String(editId));
-    if(p){p.name=name;p.amount=amt;p.amtHKD=amtHKD;p.cur=cur;p.desc=desc;p.date=date;p.dir=dir;p.acctId=acctId;p.acctLabel=ac?acctLabel(ac):'';p.acctIcon=ac?ac.icon:'';}
+    if(p){
+      // Rebuild the opening wallet movement so edited amount/account/direction stays in sync.
+      removeRPMovesFor([p.id],'open');
+      p.name=name;p.amount=amt;p.amtHKD=amtHKD;p.cur=cur;p.desc=desc;p.date=date;p.dir=dir;p.acctId=acctId;p.acctLabel=ac?acctLabel(ac):'';p.acctIcon=ac?ac.icon:'';
+      if(!p.settled){const openTx=addRPMove(p,'open');p.openTxnId=openTx?openTx.id:null;}
+    }
     S._editArId=null;
   } else {
     const rec={id:Date.now(),name,amount:amt,amtHKD,cur,desc,date,settled:false,dir,acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:''};
-    S.people.unshift(rec);addRPMove(rec,'open');
+    const openTx=addRPMove(rec,'open');rec.openTxnId=openTx?openTx.id:null;S.people.unshift(rec);
   }
   ['ar-name','ar-amt','ar-desc'].forEach(id=>document.getElementById(id).value='');
   saveS();closeM('m-ar');setWalletPane('ar');refreshAllViews();
@@ -2083,15 +2100,16 @@ function renderSettleAcctChips(){
 function selSettleAcct(id,el){S._settleAcct=id;document.querySelectorAll('#settle-acct-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
 function confirmSettle(){
   const p=S.people.find(x=>String(x.id)===String(S._settleId));if(!p){closeM('m-settle');return;}
-  const ac=getAcct(S._settleAcct);if(ac){p.acctId=ac.id;p.acctLabel=acctLabel(ac);p.acctIcon=ac.icon;addRPMove(p,'settle');p.settleTxnId=S.txns[0]&&S.txns[0].fromRP===p.id?S.txns[0].id:null;p.settleAcctId=ac.id;}
+  const ac=getAcct(S._settleAcct);if(ac){p.acctId=ac.id;p.acctLabel=acctLabel(ac);p.acctIcon=ac.icon;const stx=addRPMove(p,'settle');p.settleTxnId=stx?stx.id:null;p.settleAcctId=ac.id;}
   p.settled=true;
   saveS();closeM('m-settle');setWalletPane('ar');refreshAllViews();
 }
 function recallAR(id){
   const p=S.people.find(x=>String(x.id)===String(id));if(!p)return;
-  if(p.settleTxnId){S.txns=S.txns.filter(x=>String(x.id)!==String(p.settleTxnId));p.settleTxnId=null;p.settleAcctId=null;}
-  p.settled=false;
-  saveS();filterAR('all',null);renderHome();refreshWallet();
+  if(p.settleTxnId){S.txns=S.txns.filter(x=>String(x.id)!==String(p.settleTxnId));}
+  else removeRPMovesFor([p.id],'settle');
+  p.settleTxnId=null;p.settleAcctId=null;p.settled=false;
+  saveS();setWalletPane('ar');refreshAllViews();
 }
 // Saved friends + flexible bill split (equal by default, any share editable)
 function renderBillFriends(){
@@ -2174,13 +2192,13 @@ function skipTransfer(txnId){const tx=S.txns.find(x=>x.id===txnId);if(tx)tx._res
 function renderHome(){
   const nwLbl=document.querySelector('.hero-label[data-i="networth"]');
   if(nwLbl)nwLbl.textContent=t('networth').replace('HKD',S.dispCur||'HKD');
-  const periTxns=getPeriodTxns().filter(tx=>!tx.excluded);
+  const periTxns=getPeriodTxns().filter(txReportable);
   const income=periTxns.filter(tx=>tx.type==='income').reduce((a,tx)=>a+tx.amtHKD,0);
   const expAll=periTxns.filter(tx=>tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
   const cf=income-expAll;
   // All-time net cash from every transaction (income - expense), includes auto-pay generated txns
-  const allIncome=S.txns.filter(tx=>tx.type==='income'&&!tx.excluded).reduce((a,tx)=>a+tx.amtHKD,0);
-  const allExpense=S.txns.filter(tx=>tx.type==='expense'&&!tx.excluded).reduce((a,tx)=>a+tx.amtHKD,0);
+  const allIncome=S.txns.filter(tx=>txReportable(tx)&&tx.type==='income').reduce((a,tx)=>a+tx.amtHKD,0);
+  const allExpense=S.txns.filter(tx=>txReportable(tx)&&tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
   const openingTotal=(S.accounts||[]).filter(ac=>!ac.excluded).reduce((a,ac)=>a+parseFloat(ac.opening||0),0);
   const netCash=openingTotal+allIncome-allExpense;
   const arOwed=rpAssetTotal();
@@ -2240,13 +2258,14 @@ function filterAR(type,btn){
   let list=type==='pending'?groups:type==='settled'?rpGroups(S.people.filter(p=>p.settled)):type==='group'?rpGroups(S.people.filter(p=>p.isGroupSplit&&!p.settled)):[...groups,...rpGroups(S.people.filter(p=>p.settled))];
   document.getElementById('ar-list').innerHTML=list.length?list.map((g,i)=>{const ci=i%8;const init=(g.name||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const settled=g.items.every(p=>p.settled);const urg=!settled&&g.items.some(p=>p.urgent);const isPay=g.net<0;const amtCol=isPay?'var(--r)':(urg?'var(--r)':'var(--g)');const detail=g.items.map(p=>(p.dir==='p'?'−':'+')+fmt(p.amtHKD)+(p.desc?' · '+p.desc:'')).join('<br>');const ids=g.items.filter(p=>!p.settled).map(p=>p.id).join(',');return `<div class="crow${urg?' alert-row':''}"><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div class="rinfo"><div class="rtitle">${g.name}${isPay?`<span class="badge br">${t('payable')}</span>`:''}${g.items.some(p=>p.isGroupSplit)?`<span class="badge bp">${t('group')}</span>`:''}${urg?`<span class="badge br">${t('pending')}</span>`:''}</div><div class="rsub">${detail||'—'}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">${settled?`<span class="badge bg">${t('settled')}</span>`:`<span style="font-size:15px;font-weight:700;color:${amtCol}">${isPay?'−':'+'}${fmt(Math.abs(g.net))}</span><button class="settle-btn${urg?' urgent':''}" onclick="settleGroup('${ids}')">${isPay?t('settlepay'):'Settle ✓'}</button>`}</div>${settled?`<button onclick="recallGroup('${g.items.map(p=>p.id).join(',')}')" title="${t('recallbtn')}" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-arrow-back-up"></i></button>`:`<button onclick="editAR('${g.items[0].id}')" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-pencil"></i></button>`}<button onclick="deleteARGroup('${encodeURIComponent(g.key)}')" style="padding:6px 7px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-trash"></i></button></div>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
 }
-function settleGroup(ids){String(ids).split(',').filter(Boolean).forEach(id=>{const p=S.people.find(x=>String(x.id)===String(id));if(p&&!p.settled){S._settleAcct=p.acctId||p.settleAcctId||S._settleAcct||((S.accounts&&S.accounts[0])?S.accounts[0].id:'');addRPMove(p,'settle');p.settled=true;p.settleTxnId=S.txns[0]&&S.txns[0].fromRP===p.id?S.txns[0].id:null;p.settleAcctId=S._settleAcct;}});saveS();setWalletPane('ar');refreshAllViews();}
+function settleGroup(ids){String(ids).split(',').filter(Boolean).forEach(id=>{const p=S.people.find(x=>String(x.id)===String(id));if(p&&!p.settled){S._settleAcct=p.acctId||p.settleAcctId||S._settleAcct||((S.accounts&&S.accounts[0])?S.accounts[0].id:'');const stx=addRPMove(p,'settle');p.settled=true;p.settleTxnId=stx?stx.id:null;p.settleAcctId=S._settleAcct;}});saveS();setWalletPane('ar');refreshAllViews();}
 function recallGroup(ids){String(ids).split(',').filter(Boolean).forEach(id=>recallAR(id));}
-function deleteARGroup(key){key=decodeURIComponent(key);if(!confirm(t('deltxnq')))return;S.people=S.people.filter(p=>(p.friendId||p.name||'').toString().trim().toLowerCase()!==key);saveS();setWalletPane('ar');refreshAllViews();}
+function deleteARGroup(key){key=decodeURIComponent(key);if(!confirm(t('deltxnq')))return;const doomed=S.people.filter(p=>(p.friendId||p.name||'').toString().trim().toLowerCase()===key);const ids=doomed.map(p=>p.id);const gids=[...new Set(doomed.map(p=>p.groupId).filter(Boolean))];removeRPMovesFor(ids);S.txns=S.txns.filter(tx=>!(txIsRPFlow(tx)&&gids.includes(tx.groupId)));S.people=S.people.filter(p=>(p.friendId||p.name||'').toString().trim().toLowerCase()!==key);saveS();setWalletPane('ar');refreshAllViews();}
 function deleteAR(id){
   if(!confirm(t('deltxnq')))return;
+  removeRPMovesFor([id]);
   S.people=S.people.filter(x=>String(x.id)!==String(id));
-  saveS();filterAR('all',null);renderHome();
+  saveS();setWalletPane('ar');refreshAllViews();
 }
 // ─── MINI SPARKLINE ────────────────────────────────────────
 function drawSparkline(canvasId, vals, color){
@@ -2866,10 +2885,10 @@ function renderCalendar(){
   // per-day net flow (income − expense), excluding excluded txns and transfers
   const net={};
   S.txns.forEach(tx=>{
-    if(tx.excluded||tx.type==='transfer')return;
+    if(!txReportable(tx))return;
     const d=new Date(tx.date);if(d.getFullYear()!==y||d.getMonth()!==m)return;
     const day=d.getDate();
-    net[day]=(net[day]||0)+(tx.type==='income'?tx.amtHKD:-tx.amtHKD);
+    net[day]=(net[day]||0)+(txCashFlowSign(tx)*tx.amtHKD);
   });
   const monthName=S.lang==='en'?['January','February','March','April','May','June','July','August','September','October','November','December'][m]:(m+1)+'月';
   document.getElementById('cal-title').textContent=monthName+' '+y;
@@ -2905,9 +2924,9 @@ function calDayDetail(day){
   const det=document.getElementById('cal-detail');if(!det)return;
   const {y,m}=_calMonth;
   const ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(day).padStart(2,'0');
-  const rows=S.txns.filter(tx=>tx.date===ds&&tx.type!=='transfer').sort((a,b)=>(a.id||0)-(b.id||0));
-  const inc=rows.filter(t=>t.type==='income'&&!t.excluded).reduce((a,t)=>a+t.amtHKD,0);
-  const exp=rows.filter(t=>t.type==='expense'&&!t.excluded).reduce((a,t)=>a+t.amtHKD,0);
+  const rows=S.txns.filter(tx=>tx.date===ds&&txReportable(tx)).sort((a,b)=>(a.id||0)-(b.id||0));
+  const inc=rows.filter(t=>t.type==='income').reduce((a,t)=>a+t.amtHKD,0);
+  const exp=rows.filter(t=>t.type==='expense').reduce((a,t)=>a+t.amtHKD,0);
   let html=`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 4px 8px"><strong style="font-size:14px">${ds}</strong><span style="font-size:13px"><span style="color:var(--g3)">+${fmt(inc)}</span> · <span style="color:var(--r3)">−${fmt(exp)}</span></span></div>`;
   if(!rows.length)html+=`<div style="text-align:center;padding:14px;color:var(--ink3);font-size:13px">${t('notxn')}</div>`;
   else html+=rows.map(tx=>{
