@@ -1021,7 +1021,12 @@ img,canvas,svg{max-width:100%;}
   <div class="mhandle"></div>
   <div class="mtitle" style="display:flex;align-items:center;justify-content:space-between;padding-right:50px"><span><i class="ti ti-sparkles" style="vertical-align:-2px"></i> <span data-i="aiassist"></span></span><button onclick="clearAiChat()" style="font-size:12px;font-weight:600;color:var(--ink3);background:none;border:1px solid var(--bdr2);border-radius:14px;padding:4px 11px;cursor:pointer">清除</button></div>
   <div id="ai-messages" style="padding:10px 16px;max-height:52vh;min-height:140px;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px"></div>
-  <div style="display:flex;gap:8px;align-items:flex-end;padding:10px 16px calc(env(safe-area-inset-bottom) + 14px);border-top:0.5px solid var(--bdr)">
+  <div style="padding:8px 16px 0;border-top:0.5px solid var(--bdr);display:flex;align-items:center;gap:8px">
+    <label for="ai-file" style="display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--bdr2);border-radius:20px;padding:6px 11px;background:var(--surf2);color:var(--ink2);font-size:12px;font-weight:700;cursor:pointer"><i class="ti ti-paperclip" style="font-size:14px"></i><span data-i="attachment"></span></label>
+    <input id="ai-file" type="file" accept="image/*,.pdf,.txt,.csv,.json" onchange="setAiAttachment(this.files[0])" style="position:absolute;left:-9999px;width:1px;height:1px;opacity:0">
+    <div id="ai-file-status" style="font-size:11px;color:var(--ink3);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></div>
+  </div>
+  <div style="display:flex;gap:8px;align-items:flex-end;padding:8px 16px calc(env(safe-area-inset-bottom) + 14px)">
     <textarea id="ai-prompt" rows="1" data-i-ph="aiph" style="flex:1;min-width:0;border:1.5px solid var(--bdr2);border-radius:18px;padding:10px 14px;background:var(--bg2);color:var(--ink);font-size:15px;resize:none;font-family:inherit;max-height:120px" onkeydown="aiKey(event)" oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
     <button onclick="askAI()" aria-label="Send" style="flex-shrink:0;width:42px;height:42px;border-radius:50%;background:var(--hero-grad);color:#fff;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:19px"><i class="ti ti-arrow-up"></i></button>
   </div>
@@ -1103,6 +1108,7 @@ img,canvas,svg{max-width:100%;}
     <div class="frow"><span class="flbl" data-i="name"></span><input class="fval" id="ar-name" data-ph="nameph"></div>
     <div class="frow"><span class="flbl" data-i="amount"></span><input class="fval" type="number" id="ar-amt" placeholder="0.00" style="text-align:right"></div>
     <div class="frow"><span class="flbl" data-i="currency"></span><select class="fval" id="ar-cur"><option>HKD</option><option>RMB</option><option>USD</option><option>JPY</option></select></div>
+    <div class="frow"><span class="flbl" data-i="account"></span><select class="fval" id="ar-acct"></select></div>
     <div class="frow"><span class="flbl" data-i="for"></span><input class="fval" id="ar-desc" data-ph="forph"></div>
     <div class="frow"><span class="flbl" data-i="date"></span><input class="fval" type="date" id="ar-date"></div>
   </div>
@@ -1125,6 +1131,7 @@ img,canvas,svg{max-width:100%;}
   <div class="fsec">
     <div class="frow"><span class="flbl" data-i="title"></span><input class="fval" id="gb-title" data-ph="billtitleph"></div>
     <div class="frow"><span class="flbl" data-i="totalHKD"></span><input class="fval" type="number" id="gb-total" placeholder="1000" style="text-align:right" oninput="renderBillAmounts()"></div>
+    <div class="frow"><span class="flbl" data-i="account"></span><select class="fval" id="gb-acct"></select></div>
     <div class="frow"><span class="flbl" data-i="date"></span><input class="fval" type="date" id="gb-date"></div>
   </div>
   <div style="padding:13px 18px 5px"><span style="font-size:14px;font-weight:600" data-i="peopleinclme"></span></div>
@@ -1271,8 +1278,8 @@ const CB={food:'#FAECE7',transport:'#E6F1FB',daily:'#FAEEDA',entertainment:'#EEE
 const PIE_COLORS=['#1D9E75','#D85A30','#185FA5','#534AB7','#BA7517','#2E86AB','#E84855','#6B4226','#7C3AED','#059669'];
 
 const LANGS={
-  zh:{home:'主頁',txns:'記帳',auto:'自動',settings:'設定',networth:'總資產 (HKD)',cashflow:'現金流',arowed:'應收',payable:'應付',dirrecv:'應收 · 人欠我',dirpay:'應付 · 我欠人',settlepay:'還清 ✓',week:'本週',month:'本月',year:'今年',alltime:'全部',totalspend:'總支出',income:'收入',spendbycat:'支出分類',wealthtrend:'資產趨勢',granday:'日',granweek:'週',granmonth:'月',recallbtn:'撤回',recent:'最近記錄',argroup:'應收 + 埋單',splitbill:'分帳',outstanding:'未收回',gamblepnl:'投資損益',addsession:'+ 記錄',alltimepnl:'累計損益 (HKD)',totalbuyin:'總投入',totalcashout:'總收回',byvenue:'按場所',sessions:'記錄',autopay:'自動繳費',addbill:'+ 賬單',monthlytotal:'每月總額',activebills:'啟用中',upcoming:'即將到期',allbills:'所有賬單',language:'語言',mergecats:'合併類別',mergehint:'選擇2個或以上類別→合併',addalias:'新增別名',addcat:'新增類別',allcats:'所有類別',newtxn:'新增記錄',expense:'支出',transfer:'轉帳',note:'備註',currency:'貨幣',date:'日期',person:'對象',oneofflbl:'單次消費 — 排除月均計算',save:'儲存',addar:'新增應收 / 應付',name:'姓名',amount:'金額',for:'用途',title:'標題',totalHKD:'總額 (HKD)',peopleinclme:'參與者（包括你）',addperson:'+ 加人',creategroup:'建立分帳',splitbillhint:'你墊付全數 — 平均分攤',venue:'場所',buyin:'投入',cashout:'收回',notes:'備註',savesession:'儲存記錄',newsession:'新增德州撲克記錄',newautopay:'新增自動賬單',autopayhint:'每月指定日期自動記帳',billname:'賬單名稱',payday:'扣款日',account:'帳戶',saveautopay:'儲存',mergebtn:'合併所選',savealias:'儲存別名',add:'新增',pending:'未付',group:'群組',settled:'已結清',all:'全部',oneoff:'單次',mergenameph:'新類別名稱',aliasph:'別名（如 賭, N8）',catnameph:'類別名稱',noteph:'如 港鐵, 午飯...',personph:'姓名（→ 應收帳款）',forph:'如 晚飯, 演唱會...',billtitleph:'如 Megan家晚飯',cashoutph:'空白代表仍開局',notesph:'MTT, 現金局...',billnameph:'如 健身會籍',accountph:'如 HSBC, Hang, 八達通',autopaydue:'自動繳費即將到期',transferresolver:'轉帳 → 應收帳款',addtoar:'加入應收',skip:'跳過',groupunpaid:'個群組未收回',nothisperiod:'此期間暫無支出',notxn:'暫無記錄',noar:'暫無記錄',nosessions:'暫無記錄',nobills:'暫無賬單',openstr:'開局中',closedstr:'已結算',awaitcashout:'等待收回金額',activebadge:'啟用中',pausedbadge:'已暫停',pause:'暫停',resume:'恢復',yourshare:'你的份額',eachowes:'每人應付',totalar:'總應收',people:'人',nameph:'朋友姓名',addstock:'新增股票',addcrypto:'新增加密貨幣',ticker:'代碼',entryprice:'入場價',exitprice:'離場價(選填)',qty:'數量',budgetprice:'目標價',currentprice:'現價',portpnllabel:'投資組合損益分佈',nostockyet:'未有股票倉位',nocryptoyet:'未有加密貨幣倉位',quickemoji:'快速選擇表情',deletepos:'刪除',editpos:'更新現價',acctfrom:'資金來源 / 戶口',accounts:'戶口管理',addacct:'新增戶口',acctnameph:'戶口名稱（如 滙豐卡, 現金）',allaccts:'所有戶口',toexcel:'匯出 Excel',dataexport:'資料匯出',exporthint:'將所有記錄匯出成 Excel 檔案',account_col:'戶口',acctto:'轉入 / 目標戶口',transferhint:'戶口之間調動資金（如 現金 → 銀行卡）',sametransfererr:'轉出與轉入戶口不能相同',addacctchip:'新增戶口',recurlbl:'設為自動每月扣款',recurday:'每月扣款日',wallet:'錢包',fundaccts:'資金戶口',acctbalance:'戶口結餘',totalbalance:'總結餘 (HKD)',openingbal:'初始結餘',setopening:'設定初始結餘',balancehint:'結餘 = 初始 + 收入 − 支出 ± 轉帳',inflow:'流入',outflow:'流出',single:'單次',editbalance:'調整初始結餘',saveopening:'儲存',noacctyet:'未有戶口',investacct:'投資資金戶口',isinvestq:'這是投資戶口嗎？',isinvesthint:'投資戶口可連接 P&L 持倉（股票 / 加密貨幣 / 撲克）',yes:'是，投資戶口',no:'否，普通戶口',noinvestacct:'未有投資戶口 — 請先在資金戶口建立一個',positioncash:'現金',deployed:'已投入',connectacct:'連接投資戶口',deltxnq:'確定刪除此記錄？',portfvalue:'持倉市值',totaltrend:'總計',usemargin:'使用孖展 (Margin)？',marginhint:'戶口現金不足時，可用孖展借入買入',insufficient:'戶口現金不足。開啟孖展或減少金額。',marginbadge:'孖展',endpos:'平倉',endposq:'以現價平倉？將持倉按現價轉為現金。',totalworth:'總市值',marginused:'已用孖展',pnlbreakdown:'損益',totalasset:'總資產',fixedasset:'固定資產',totaldebt:'總負債',netbalance:'淨結餘',debtbadge:'負債',incomebycat:'收入分類',customrange:'自訂',rangeto:'至',apply:'套用',nothisincome:'此期間暫無收入',theme:'主題',themelight:'淺色',themedark:'深色',themeauto:'自動',refreshprices:'更新報價',pricesupdated:'已更新',pricesfail:'更新失敗（用上次報價）',stockapi:'股票報價 API',stockapihint:'貼上 Twelve Data 免費 API key 以自動更新股票價格（留空則手動輸入）。',savekey:'儲存',stockapinote:'在 twelvedata.com 免費註冊（免信用卡）。Key 只儲存在此裝置，不會寫入程式碼。',keysaved:'已儲存 API key',keycleared:'已清除 API key',apisym:'API 代碼',apisymph:'美股留空；港股如 0700:XHKG',excluded:'已排除',exclude:'排除',included:'計入',excludetip:'從總額中排除 / 重新計入',dispcur:'顯示貨幣',privacyon:'顯示金額',privacyoff:'隱藏金額',calendar:'每日結餘',caltitle:'每日現金流',calhint:'綠色＝當日淨流入；紅色＝淨流出',live:'即時',sell:'賣出',sellpos:'部分賣出',sellqty:'賣出數量',sellprice:'賣出價',sellavail:'可賣',soldlot:'已賣出',sellerr:'數量或價格無效',privateequity:'未上市股權',pctowned:'持股 %',invested:'投入成本',valuation:'目前估值',holdings:'項目',pnlsections:'損益分頁（顯示 / 排序）',aiassist:'AI 助手',aiprovider:'AI 供應商',aikey:'AI API Key',aimodel:'模型（選填）',aiask:'問 AI',aiph:'問關於你財務的問題…',aithinking:'思考中…',ainokey:'請先在設定加入 AI API key',aierr:'AI 呼叫失敗',credit:'信用評分 (TU)',addscore:'記錄分數',estscore:'推算分數',creditlimit:'信用卡總額度',creditdisc:'此為粗略推算，非官方分數',utilisation:'信用卡使用率',officialscore:'官方分數',friends:'朋友',browse:'瀏覽',browsetitle:'瀏覽可用標的',search:'搜尋代碼 / 名稱…',noresults:'沒有結果',notonplan:'此市場在你的 API 方案未必提供 — 仍可手動新增。',loadingdata:'載入中…',addmanual:'手動新增',poker:'撲克',stocks:'股票',crypto:'加密貨幣',sessionspnl:'場次損益',unrealisedpnl:'未實現損益',costlbl:'成本',valuelbl:'市值',positionslbl:'倉位',unitslbl:'股',entrylbl:'入場',exitlbl:'離場',targetlbl:'目標',txnsunit:'筆',tickerph:'TSLA、BTC、0700…',penotesph:'輪次、條款…',portnotesph:'交易所、錢包…',tuscoreph:'TU 分數',penameph:'如 FWP',calc:'試算',calctitle:'複利 / 定投試算',initialamt:'初始本金',dcaamt:'定投金額',growthrate:'預期增長 %',permonth:'每月',peryear:'每年',years:'年期',compound:'複利',continuous:'連續增長',calculate:'計算',futurevalue:'未來價值',contributed:'總投入',totalgrowth:'總增長',sectionnameph:'分頁名稱（如 物業投資）',pokerdetail:'牌局細節（選填）',blinds:'盲注',blindsph:'如 1/2',maxplayers:'最大人數',bbsize:'每個 BB 金額',resultbb:'輸贏 (BB)',resultbbph:'贏 +、輸 −',autoincome:'自動收入',addincome:'新增收入',incomename:'收入名稱',frequency:'頻率',freqnone:'單次',freqday:'每日',freqmonth:'每月',freqquarter:'每 3 個月',freqhalf:'每 6 個月',freqyear:'每年',peryearshort:'/年',linkposition:'連結持倉（選填）',dividendhint:'股息 / 利息等定期收入',accttype:'戶口類型',kindcash:'現金',kinddebit:'扣賬卡',kindcredit:'信用卡',kindbank:'銀行戶口',kindewallet:'電子錢包',kindinvest:'投資戶口',kindother:'其他',dividend:'股息 / 利息',divamount:'股息金額',divyield:'股息率 %',divnone:'不自動',recordnow:'立即記錄一次',budget:'預算成本',record:'記錄',history:'變動記錄',nohistory:'暫無記錄',act_add:'新增',act_edit:'修改',act_sell:'賣出',act_delete:'刪除'},
-  en:{home:'Home',txns:'Txns',auto:'Auto',settings:'Settings',networth:'Net worth (HKD)',cashflow:'Cash flow',arowed:'Receivable',payable:'Payable',dirrecv:'Receivable · owed to me',dirpay:'Payable · I owe',settlepay:'Settle ✓',week:'Week',month:'Month',year:'Year',alltime:'All time',totalspend:'Total spend',income:'Income',spendbycat:'Spend by category',wealthtrend:'Wealth trend',granday:'Day',granweek:'Week',granmonth:'Month',recallbtn:'Recall',recent:'Recent',argroup:'A/R + Group Bills',splitbill:'Split bill',outstanding:'Outstanding',gamblepnl:'Invest P&L',addsession:'+ Session',alltimepnl:'All-time P&L (HKD)',totalbuyin:'Total buy-in',totalcashout:'Total cashout',byvenue:'By venue',sessions:'Sessions',autopay:'Auto-pay',addbill:'+ Bill',monthlytotal:'Monthly total',activebills:'Active bills',upcoming:'Upcoming',allbills:'All recurring bills',language:'Language',mergecats:'Merge categories',mergehint:'Tap 2+ categories → merge',addalias:'Add alias',addcat:'Add category',allcats:'All categories',newtxn:'New transaction',expense:'Expense',income:'Income',transfer:'Transfer',note:'Note',currency:'Currency',date:'Date',person:'Person',oneofflbl:'One-off — exclude from monthly avg',save:'Save',addar:'Add R/P entry',name:'Name',amount:'Amount',for:'For',title:'Title',totalHKD:'Total (HKD)',peopleinclme:'People (incl. you)',addperson:'+ Person',creategroup:'Create group bill',splitbillhint:'You paid full — split equally',venue:'Venue',buyin:'Buy-in',cashout:'Cashout',notes:'Notes',savesession:'Save session',newsession:'New poker session',newautopay:'New auto-pay bill',autopayhint:'Auto-records as expense monthly',billname:'Bill name',payday:'Pay on day',account:'Account',saveautopay:'Save auto-pay',mergebtn:'Merge selected',savealias:'Save alias',add:'Add',pending:'Pending',group:'Group',settled:'Settled',all:'All',oneoff:'One-off',mergenameph:'New category name',aliasph:'Alias (e.g. 賭, N8)',catnameph:'Category name',noteph:'e.g. MTR, lunch...',personph:'Name (→ A/R)',forph:'e.g. dinner, concert...',billtitleph:"e.g. dinner at Megan's",cashoutph:'leave blank if still open',notesph:'MTT, cash game...',billnameph:"e.g. Gold's Gym",accountph:'e.g. HSBC, Hang, Octopus',autopaydue:'Auto-pay due soon',transferresolver:'Transfer → A/R resolver',addtoar:'Add to A/R',skip:'Skip',groupunpaid:' group unpaid',nothisperiod:'No expenses this period',notxn:'No transactions yet',noar:'No entries yet',nosessions:'No sessions yet',nobills:'No bills yet',openstr:'open',closedstr:'closed',awaitcashout:'awaiting cashout',activebadge:'active',pausedbadge:'paused',pause:'Pause',resume:'Resume',yourshare:'Your share',eachowes:'Each owes you',totalar:'Total A/R',people:'people',nameph:"Friend's name",addstock:'Add Stock',addcrypto:'Add Crypto',ticker:'Ticker / Name',entryprice:'Entry price',exitprice:'Exit price (opt.)',qty:'Qty / Units',budgetprice:'Target price',currentprice:'Current price',portpnllabel:'Portfolio P&L breakdown',nostockyet:'No stock positions yet',nocryptoyet:'No crypto positions yet',quickemoji:'Quick emoji',deletepos:'Delete',editpos:'Update price',acctfrom:'From account',accounts:'Accounts',addacct:'Add account',acctnameph:'Account name (e.g. HSBC card, Cash)',allaccts:'All accounts',toexcel:'Export to Excel',dataexport:'Data export',exporthint:'Export all your records to an Excel file',account_col:'Account',acctto:'To account',transferhint:'Move money between your accounts (e.g. Cash → Bank card)',sametransfererr:'From and To accounts must differ',addacctchip:'Add account',recurlbl:'Make this a monthly auto-payment',recurday:'Auto-pay on day',wallet:'Wallet',fundaccts:'Accounts',acctbalance:'Account balance',totalbalance:'Total balance (HKD)',openingbal:'Opening balance',setopening:'Set opening balance',balancehint:'Balance = opening + income − expense ± transfers',inflow:'In',outflow:'Out',single:'One-off',editbalance:'Adjust opening balance',saveopening:'Save',noacctyet:'No accounts yet',investacct:'Investment account',isinvestq:'Is this an investment account?',isinvesthint:'Investment accounts can fund P&L positions (stocks / crypto / poker)',yes:'Yes, investment',no:'No, regular',noinvestacct:'No investment account yet — create one in Accounts first',positioncash:'Cash',deployed:'Deployed',connectacct:'Connect investment account',deltxnq:'Delete this record?',portfvalue:'Portfolio value',totaltrend:'Total',usemargin:'Use margin?',marginhint:'If account cash is short, borrow on margin to enter',insufficient:'Not enough cash in account. Turn on margin or lower the amount.',marginbadge:'margin',endpos:'End position',endposq:'End at current price? Converts the position to cash at its current price.',totalworth:'Total worth',marginused:'Margin used',pnlbreakdown:'P&L',totalasset:'Total assets',fixedasset:'Fixed assets',totaldebt:'Total debt',netbalance:'Net balance',debtbadge:'debt',incomebycat:'Income by category',customrange:'Custom',rangeto:'to',apply:'Apply',nothisincome:'No income this period',theme:'Theme',themelight:'Light',themedark:'Dark',themeauto:'Auto',refreshprices:'Refresh prices',pricesupdated:'Updated',pricesfail:'Update failed (using last prices)',stockapi:'Stock price API',stockapihint:'Paste a free Twelve Data API key to auto-update stock prices (leave blank to keep stocks manual).',savekey:'Save',stockapinote:'Sign up free at twelvedata.com (no credit card). The key is stored only on this device, never written into the code.',keysaved:'API key saved',keycleared:'API key cleared',apisym:'API symbol',apisymph:'US: leave blank; HK e.g. 0700:XHKG',excluded:'Excluded',exclude:'Exclude',included:'Include',excludetip:'Exclude from / include in totals',dispcur:'Display currency',privacyon:'Show amounts',privacyoff:'Hide amounts',calendar:'Daily balance',caltitle:'Daily cash flow',calhint:'Green = net in that day, red = net out',live:'live',sell:'Sell',sellpos:'Sell position',sellqty:'Sell qty',sellprice:'Sell price',sellavail:'Avail',soldlot:'Sold',sellerr:'Invalid quantity or price',privateequity:'Private equity',pctowned:'% owned',invested:'Invested',valuation:'Valuation',holdings:'Holdings',pnlsections:'P&L sections (show / order)',aiassist:'AI assistant',aiprovider:'AI provider',aikey:'AI API key',aimodel:'Model (optional)',aiask:'Ask AI',aiph:'Ask about your finances…',aithinking:'Thinking…',ainokey:'Add an AI API key in Settings first',aierr:'AI request failed',credit:'Credit score (TU)',addscore:'Log score',estscore:'Estimated score',creditlimit:'Total card limit',creditdisc:'Rough estimate, not an official score',utilisation:'Card utilisation',officialscore:'Official score',friends:'Friends',browse:'Browse',browsetitle:'Browse available instruments',search:'Search ticker / name…',noresults:'No results',notonplan:'This market may not be available on your API plan — you can still add it manually.',loadingdata:'Loading…',addmanual:'Add manually',poker:'Poker',stocks:'Stocks',crypto:'Crypto',sessionspnl:'Sessions P&L',unrealisedpnl:'Unrealised P&L',costlbl:'Cost',valuelbl:'Value',positionslbl:'Positions',unitslbl:'units',entrylbl:'Entry',exitlbl:'Exit',targetlbl:'Target',txnsunit:'txns',tickerph:'TSLA, BTC, 0700…',penotesph:'Round, terms…',portnotesph:'Exchange, wallet…',tuscoreph:'TU score',penameph:'e.g. FWP',calc:'Project',calctitle:'Compound & DCA calculator',initialamt:'Initial',dcaamt:'DCA amount',growthrate:'Expected growth %',permonth:'per month',peryear:'per year',years:'Years',compound:'Compound',continuous:'Continuous',calculate:'Calculate',futurevalue:'Future value',contributed:'Total contributed',totalgrowth:'Total growth',sectionnameph:'Section name (e.g. Housing investment)',pokerdetail:'Hand details (optional)',blinds:'Blinds',blindsph:'e.g. 1/2',maxplayers:'Max players',bbsize:'Value per BB',resultbb:'Result (BB)',resultbbph:'win +, lose −',autoincome:'Auto income',addincome:'Add income',incomename:'Income name',frequency:'Frequency',freqnone:'One-off',freqday:'Daily',freqmonth:'Monthly',freqquarter:'Every 3 months',freqhalf:'Every 6 months',freqyear:'Yearly',peryearshort:'/yr',linkposition:'Link position (optional)',dividendhint:'Recurring income like dividends / interest',accttype:'Account type',kindcash:'Cash',kinddebit:'Debit card',kindcredit:'Credit card',kindbank:'Bank account',kindewallet:'E-wallet',kindinvest:'Investment',kindother:'Other',dividend:'Dividend / interest',divamount:'Dividend amount',divyield:'Dividend yield %',divnone:'No auto',recordnow:'Record one now',budget:'Budget cost',record:'Record',history:'Change history',nohistory:'No records yet',act_add:'Added',act_edit:'Edited',act_sell:'Sold',act_delete:'Deleted'}
+  zh:{home:'主頁',txns:'記帳',auto:'自動',settings:'設定',networth:'總資產 (HKD)',cashflow:'現金流',arowed:'應收',payable:'應付',dirrecv:'應收 · 人欠我',dirpay:'應付 · 我欠人',settlepay:'還清 ✓',week:'本週',month:'本月',year:'今年',alltime:'全部',totalspend:'總支出',income:'收入',spendbycat:'支出分類',wealthtrend:'資產趨勢',granday:'日',granweek:'週',granmonth:'月',recallbtn:'撤回',recent:'最近記錄',argroup:'應收 + 埋單',splitbill:'分帳',outstanding:'未收回',gamblepnl:'投資損益',addsession:'+ 記錄',alltimepnl:'累計損益 (HKD)',totalbuyin:'總投入',totalcashout:'總收回',byvenue:'按場所',sessions:'記錄',autopay:'自動繳費',addbill:'+ 賬單',monthlytotal:'每月總額',activebills:'啟用中',upcoming:'即將到期',allbills:'所有賬單',language:'語言',mergecats:'合併類別',mergehint:'選擇2個或以上類別→合併',addalias:'新增別名',addcat:'新增類別',allcats:'所有類別',newtxn:'新增記錄',expense:'支出',transfer:'轉帳',note:'備註',currency:'貨幣',date:'日期',person:'對象',oneofflbl:'單次消費 — 排除月均計算',save:'儲存',addar:'新增應收 / 應付',name:'姓名',amount:'金額',for:'用途',title:'標題',totalHKD:'總額 (HKD)',peopleinclme:'參與者（包括你）',addperson:'+ 加人',creategroup:'建立分帳',splitbillhint:'你墊付全數 — 平均分攤',venue:'場所',buyin:'投入',cashout:'收回',notes:'備註',savesession:'儲存記錄',newsession:'新增德州撲克記錄',newautopay:'新增自動賬單',autopayhint:'每月指定日期自動記帳',billname:'賬單名稱',payday:'扣款日',account:'帳戶',saveautopay:'儲存',mergebtn:'合併所選',savealias:'儲存別名',add:'新增',pending:'未付',group:'群組',settled:'已結清',all:'全部',oneoff:'單次',mergenameph:'新類別名稱',aliasph:'別名（如 賭, N8）',catnameph:'類別名稱',noteph:'如 港鐵, 午飯...',personph:'姓名（→ 應收帳款）',forph:'如 晚飯, 演唱會...',billtitleph:'如 Megan家晚飯',cashoutph:'空白代表仍開局',notesph:'MTT, 現金局...',billnameph:'如 健身會籍',accountph:'如 HSBC, Hang, 八達通',autopaydue:'自動繳費即將到期',transferresolver:'轉帳 → 應收帳款',addtoar:'加入應收',skip:'跳過',groupunpaid:'個群組未收回',nothisperiod:'此期間暫無支出',notxn:'暫無記錄',noar:'暫無記錄',nosessions:'暫無記錄',nobills:'暫無賬單',openstr:'開局中',closedstr:'已結算',awaitcashout:'等待收回金額',activebadge:'啟用中',pausedbadge:'已暫停',pause:'暫停',resume:'恢復',yourshare:'你的份額',eachowes:'每人應付',totalar:'總應收',people:'人',nameph:'朋友姓名',addstock:'新增股票',addcrypto:'新增加密貨幣',ticker:'代碼',entryprice:'入場價',exitprice:'離場價(選填)',qty:'數量',budgetprice:'目標價',currentprice:'現價',portpnllabel:'投資組合損益分佈',nostockyet:'未有股票倉位',nocryptoyet:'未有加密貨幣倉位',quickemoji:'快速選擇表情',deletepos:'刪除',editpos:'更新現價',acctfrom:'資金來源 / 戶口',accounts:'戶口管理',addacct:'新增戶口',acctnameph:'戶口名稱（如 滙豐卡, 現金）',allaccts:'所有戶口',toexcel:'匯出 Excel',dataexport:'資料匯出',exporthint:'將所有記錄匯出成 Excel 檔案',account_col:'戶口',acctto:'轉入 / 目標戶口',transferhint:'戶口之間調動資金（如 現金 → 銀行卡）',sametransfererr:'轉出與轉入戶口不能相同',addacctchip:'新增戶口',recurlbl:'設為自動每月扣款',recurday:'每月扣款日',wallet:'錢包',fundaccts:'資金戶口',acctbalance:'戶口結餘',totalbalance:'總結餘 (HKD)',openingbal:'初始結餘',setopening:'設定初始結餘',balancehint:'結餘 = 初始 + 收入 − 支出 ± 轉帳',inflow:'流入',outflow:'流出',single:'單次',editbalance:'調整初始結餘',saveopening:'儲存',noacctyet:'未有戶口',investacct:'投資資金戶口',isinvestq:'這是投資戶口嗎？',isinvesthint:'投資戶口可連接 P&L 持倉（股票 / 加密貨幣 / 撲克）',yes:'是，投資戶口',no:'否，普通戶口',noinvestacct:'未有投資戶口 — 請先在資金戶口建立一個',positioncash:'現金',deployed:'已投入',connectacct:'連接投資戶口',deltxnq:'確定刪除此記錄？',portfvalue:'持倉市值',totaltrend:'總計',usemargin:'使用孖展 (Margin)？',marginhint:'戶口現金不足時，可用孖展借入買入',insufficient:'戶口現金不足。開啟孖展或減少金額。',marginbadge:'孖展',endpos:'平倉',endposq:'以現價平倉？將持倉按現價轉為現金。',totalworth:'總市值',marginused:'已用孖展',pnlbreakdown:'損益',totalasset:'總資產',fixedasset:'固定資產',totaldebt:'總負債',netbalance:'淨結餘',debtbadge:'負債',incomebycat:'收入分類',customrange:'自訂',rangeto:'至',apply:'套用',nothisincome:'此期間暫無收入',theme:'主題',themelight:'淺色',themedark:'深色',themeauto:'自動',refreshprices:'更新報價',pricesupdated:'已更新',pricesfail:'更新失敗（用上次報價）',stockapi:'股票報價 API',stockapihint:'貼上 Twelve Data 免費 API key 以自動更新股票價格（留空則手動輸入）。',savekey:'儲存',stockapinote:'在 twelvedata.com 免費註冊（免信用卡）。Key 只儲存在此裝置，不會寫入程式碼。',keysaved:'已儲存 API key',keycleared:'已清除 API key',apisym:'API 代碼',apisymph:'美股留空；港股如 0700:XHKG',excluded:'已排除',exclude:'排除',included:'計入',excludetip:'從總額中排除 / 重新計入',dispcur:'顯示貨幣',privacyon:'顯示金額',privacyoff:'隱藏金額',calendar:'每日結餘',caltitle:'每日現金流',calhint:'綠色＝當日淨流入；紅色＝淨流出',live:'即時',sell:'賣出',sellpos:'部分賣出',sellqty:'賣出數量',sellprice:'賣出價',sellavail:'可賣',soldlot:'已賣出',sellerr:'數量或價格無效',privateequity:'未上市股權',pctowned:'持股 %',invested:'投入成本',valuation:'目前估值',holdings:'項目',pnlsections:'損益分頁（顯示 / 排序）',aiassist:'AI 助手',aiprovider:'AI 供應商',aikey:'AI API Key',aimodel:'模型（選填）',aiask:'問 AI',aiph:'問關於你財務的問題…',aithinking:'思考中…',ainokey:'請先在設定加入 AI API key',aierr:'AI 呼叫失敗',credit:'信用評分 (TU)',addscore:'記錄分數',estscore:'推算分數',creditlimit:'信用卡總額度',creditdisc:'此為粗略推算，非官方分數',utilisation:'信用卡使用率',officialscore:'官方分數',friends:'朋友',browse:'瀏覽',browsetitle:'瀏覽可用標的',search:'搜尋代碼 / 名稱…',noresults:'沒有結果',notonplan:'此市場在你的 API 方案未必提供 — 仍可手動新增。',loadingdata:'載入中…',addmanual:'手動新增',poker:'撲克',stocks:'股票',crypto:'加密貨幣',sessionspnl:'場次損益',unrealisedpnl:'未實現損益',costlbl:'成本',valuelbl:'市值',positionslbl:'倉位',unitslbl:'股',entrylbl:'入場',exitlbl:'離場',targetlbl:'目標',txnsunit:'筆',tickerph:'TSLA、BTC、0700…',penotesph:'輪次、條款…',portnotesph:'交易所、錢包…',tuscoreph:'TU 分數',penameph:'如 FWP',calc:'試算',calctitle:'複利 / 定投試算',initialamt:'初始本金',dcaamt:'定投金額',growthrate:'預期增長 %',permonth:'每月',peryear:'每年',years:'年期',compound:'複利',continuous:'連續增長',calculate:'計算',futurevalue:'未來價值',contributed:'總投入',totalgrowth:'總增長',sectionnameph:'分頁名稱（如 物業投資）',pokerdetail:'牌局細節（選填）',blinds:'盲注',blindsph:'如 1/2',maxplayers:'最大人數',bbsize:'每個 BB 金額',resultbb:'輸贏 (BB)',resultbbph:'贏 +、輸 −',autoincome:'自動收入',addincome:'新增收入',incomename:'收入名稱',frequency:'頻率',freqnone:'單次',freqday:'每日',freqmonth:'每月',freqquarter:'每 3 個月',freqhalf:'每 6 個月',freqyear:'每年',peryearshort:'/年',linkposition:'連結持倉（選填）',dividendhint:'股息 / 利息等定期收入',accttype:'戶口類型',kindcash:'現金',kinddebit:'扣賬卡',kindcredit:'信用卡',kindbank:'銀行戶口',kindewallet:'電子錢包',kindinvest:'投資戶口',kindother:'其他',dividend:'股息 / 利息',divamount:'股息金額',divyield:'股息率 %',divnone:'不自動',recordnow:'立即記錄一次',budget:'預算成本',record:'記錄',history:'變動記錄',nohistory:'暫無記錄',act_add:'新增',act_edit:'修改',act_sell:'賣出',act_delete:'刪除',attachment:'附件',aifiletoobig:'檔案太大（最多 4MB，不會寫入本機歷史）',aideepseeknovision:'DeepSeek 暫未支援圖片/vision，請移除附件後再問',aropen:'R/P 開單',arsettle:'R/P 結清'},
+  en:{home:'Home',txns:'Txns',auto:'Auto',settings:'Settings',networth:'Net worth (HKD)',cashflow:'Cash flow',arowed:'Receivable',payable:'Payable',dirrecv:'Receivable · owed to me',dirpay:'Payable · I owe',settlepay:'Settle ✓',week:'Week',month:'Month',year:'Year',alltime:'All time',totalspend:'Total spend',income:'Income',spendbycat:'Spend by category',wealthtrend:'Wealth trend',granday:'Day',granweek:'Week',granmonth:'Month',recallbtn:'Recall',recent:'Recent',argroup:'A/R + Group Bills',splitbill:'Split bill',outstanding:'Outstanding',gamblepnl:'Invest P&L',addsession:'+ Session',alltimepnl:'All-time P&L (HKD)',totalbuyin:'Total buy-in',totalcashout:'Total cashout',byvenue:'By venue',sessions:'Sessions',autopay:'Auto-pay',addbill:'+ Bill',monthlytotal:'Monthly total',activebills:'Active bills',upcoming:'Upcoming',allbills:'All recurring bills',language:'Language',mergecats:'Merge categories',mergehint:'Tap 2+ categories → merge',addalias:'Add alias',addcat:'Add category',allcats:'All categories',newtxn:'New transaction',expense:'Expense',income:'Income',transfer:'Transfer',note:'Note',currency:'Currency',date:'Date',person:'Person',oneofflbl:'One-off — exclude from monthly avg',save:'Save',addar:'Add R/P entry',name:'Name',amount:'Amount',for:'For',title:'Title',totalHKD:'Total (HKD)',peopleinclme:'People (incl. you)',addperson:'+ Person',creategroup:'Create group bill',splitbillhint:'You paid full — split equally',venue:'Venue',buyin:'Buy-in',cashout:'Cashout',notes:'Notes',savesession:'Save session',newsession:'New poker session',newautopay:'New auto-pay bill',autopayhint:'Auto-records as expense monthly',billname:'Bill name',payday:'Pay on day',account:'Account',saveautopay:'Save auto-pay',mergebtn:'Merge selected',savealias:'Save alias',add:'Add',pending:'Pending',group:'Group',settled:'Settled',all:'All',oneoff:'One-off',mergenameph:'New category name',aliasph:'Alias (e.g. 賭, N8)',catnameph:'Category name',noteph:'e.g. MTR, lunch...',personph:'Name (→ A/R)',forph:'e.g. dinner, concert...',billtitleph:"e.g. dinner at Megan's",cashoutph:'leave blank if still open',notesph:'MTT, cash game...',billnameph:"e.g. Gold's Gym",accountph:'e.g. HSBC, Hang, Octopus',autopaydue:'Auto-pay due soon',transferresolver:'Transfer → A/R resolver',addtoar:'Add to A/R',skip:'Skip',groupunpaid:' group unpaid',nothisperiod:'No expenses this period',notxn:'No transactions yet',noar:'No entries yet',nosessions:'No sessions yet',nobills:'No bills yet',openstr:'open',closedstr:'closed',awaitcashout:'awaiting cashout',activebadge:'active',pausedbadge:'paused',pause:'Pause',resume:'Resume',yourshare:'Your share',eachowes:'Each owes you',totalar:'Total A/R',people:'people',nameph:"Friend's name",addstock:'Add Stock',addcrypto:'Add Crypto',ticker:'Ticker / Name',entryprice:'Entry price',exitprice:'Exit price (opt.)',qty:'Qty / Units',budgetprice:'Target price',currentprice:'Current price',portpnllabel:'Portfolio P&L breakdown',nostockyet:'No stock positions yet',nocryptoyet:'No crypto positions yet',quickemoji:'Quick emoji',deletepos:'Delete',editpos:'Update price',acctfrom:'From account',accounts:'Accounts',addacct:'Add account',acctnameph:'Account name (e.g. HSBC card, Cash)',allaccts:'All accounts',toexcel:'Export to Excel',dataexport:'Data export',exporthint:'Export all your records to an Excel file',account_col:'Account',acctto:'To account',transferhint:'Move money between your accounts (e.g. Cash → Bank card)',sametransfererr:'From and To accounts must differ',addacctchip:'Add account',recurlbl:'Make this a monthly auto-payment',recurday:'Auto-pay on day',wallet:'Wallet',fundaccts:'Accounts',acctbalance:'Account balance',totalbalance:'Total balance (HKD)',openingbal:'Opening balance',setopening:'Set opening balance',balancehint:'Balance = opening + income − expense ± transfers',inflow:'In',outflow:'Out',single:'One-off',editbalance:'Adjust opening balance',saveopening:'Save',noacctyet:'No accounts yet',investacct:'Investment account',isinvestq:'Is this an investment account?',isinvesthint:'Investment accounts can fund P&L positions (stocks / crypto / poker)',yes:'Yes, investment',no:'No, regular',noinvestacct:'No investment account yet — create one in Accounts first',positioncash:'Cash',deployed:'Deployed',connectacct:'Connect investment account',deltxnq:'Delete this record?',portfvalue:'Portfolio value',totaltrend:'Total',usemargin:'Use margin?',marginhint:'If account cash is short, borrow on margin to enter',insufficient:'Not enough cash in account. Turn on margin or lower the amount.',marginbadge:'margin',endpos:'End position',endposq:'End at current price? Converts the position to cash at its current price.',totalworth:'Total worth',marginused:'Margin used',pnlbreakdown:'P&L',totalasset:'Total assets',fixedasset:'Fixed assets',totaldebt:'Total debt',netbalance:'Net balance',debtbadge:'debt',incomebycat:'Income by category',customrange:'Custom',rangeto:'to',apply:'Apply',nothisincome:'No income this period',theme:'Theme',themelight:'Light',themedark:'Dark',themeauto:'Auto',refreshprices:'Refresh prices',pricesupdated:'Updated',pricesfail:'Update failed (using last prices)',stockapi:'Stock price API',stockapihint:'Paste a free Twelve Data API key to auto-update stock prices (leave blank to keep stocks manual).',savekey:'Save',stockapinote:'Sign up free at twelvedata.com (no credit card). The key is stored only on this device, never written into the code.',keysaved:'API key saved',keycleared:'API key cleared',apisym:'API symbol',apisymph:'US: leave blank; HK e.g. 0700:XHKG',excluded:'Excluded',exclude:'Exclude',included:'Include',excludetip:'Exclude from / include in totals',dispcur:'Display currency',privacyon:'Show amounts',privacyoff:'Hide amounts',calendar:'Daily balance',caltitle:'Daily cash flow',calhint:'Green = net in that day, red = net out',live:'live',sell:'Sell',sellpos:'Sell position',sellqty:'Sell qty',sellprice:'Sell price',sellavail:'Avail',soldlot:'Sold',sellerr:'Invalid quantity or price',privateequity:'Private equity',pctowned:'% owned',invested:'Invested',valuation:'Valuation',holdings:'Holdings',pnlsections:'P&L sections (show / order)',aiassist:'AI assistant',aiprovider:'AI provider',aikey:'AI API key',aimodel:'Model (optional)',aiask:'Ask AI',aiph:'Ask about your finances…',aithinking:'Thinking…',ainokey:'Add an AI API key in Settings first',aierr:'AI request failed',credit:'Credit score (TU)',addscore:'Log score',estscore:'Estimated score',creditlimit:'Total card limit',creditdisc:'Rough estimate, not an official score',utilisation:'Card utilisation',officialscore:'Official score',friends:'Friends',browse:'Browse',browsetitle:'Browse available instruments',search:'Search ticker / name…',noresults:'No results',notonplan:'This market may not be available on your API plan — you can still add it manually.',loadingdata:'Loading…',addmanual:'Add manually',poker:'Poker',stocks:'Stocks',crypto:'Crypto',sessionspnl:'Sessions P&L',unrealisedpnl:'Unrealised P&L',costlbl:'Cost',valuelbl:'Value',positionslbl:'Positions',unitslbl:'units',entrylbl:'Entry',exitlbl:'Exit',targetlbl:'Target',txnsunit:'txns',tickerph:'TSLA, BTC, 0700…',penotesph:'Round, terms…',portnotesph:'Exchange, wallet…',tuscoreph:'TU score',penameph:'e.g. FWP',calc:'Project',calctitle:'Compound & DCA calculator',initialamt:'Initial',dcaamt:'DCA amount',growthrate:'Expected growth %',permonth:'per month',peryear:'per year',years:'Years',compound:'Compound',continuous:'Continuous',calculate:'Calculate',futurevalue:'Future value',contributed:'Total contributed',totalgrowth:'Total growth',sectionnameph:'Section name (e.g. Housing investment)',pokerdetail:'Hand details (optional)',blinds:'Blinds',blindsph:'e.g. 1/2',maxplayers:'Max players',bbsize:'Value per BB',resultbb:'Result (BB)',resultbbph:'win +, lose −',autoincome:'Auto income',addincome:'Add income',incomename:'Income name',frequency:'Frequency',freqnone:'One-off',freqday:'Daily',freqmonth:'Monthly',freqquarter:'Every 3 months',freqhalf:'Every 6 months',freqyear:'Yearly',peryearshort:'/yr',linkposition:'Link position (optional)',dividendhint:'Recurring income like dividends / interest',accttype:'Account type',kindcash:'Cash',kinddebit:'Debit card',kindcredit:'Credit card',kindbank:'Bank account',kindewallet:'E-wallet',kindinvest:'Investment',kindother:'Other',dividend:'Dividend / interest',divamount:'Dividend amount',divyield:'Dividend yield %',divnone:'No auto',recordnow:'Record one now',budget:'Budget cost',record:'Record',history:'Change history',nohistory:'No records yet',act_add:'Added',act_edit:'Edited',act_sell:'Sold',act_delete:'Deleted',attachment:'Attach',aifiletoobig:'File too large (max 4MB, not saved to local history)',aideepseeknovision:'DeepSeek has no vision support here. Remove the attachment and ask again.',aropen:'R/P opened',arsettle:'R/P settled'}
 };
 
 const DEF_CATS=[
@@ -1346,6 +1353,14 @@ function fillInvestSelect(selId,selectedId){
   if(!accts.length){el.innerHTML=`<option value="">${t('noinvestacct')}</option>`;return;}
   el.innerHTML=accts.map(a=>`<option value="${a.id}"${a.id===selectedId?' selected':''}>${a.icon} ${acctLabel(a)}</option>`).join('');
 }
+function fillAcctSelect(selId,selectedId){const el=document.getElementById(selId);if(!el)return;el.innerHTML=(S.accounts||[]).map(a=>`<option value="${a.id}"${a.id===selectedId?' selected':''}>${a.icon} ${acctLabel(a)}</option>`).join('');}
+function rpSignedHKD(p){return (p.dir==='p'?-1:1)*(parseFloat(p.amtHKD||0));}
+function rpGroups(list){const m={};(list||[]).forEach(p=>{const k=(p.friendId||p.name||'').toString().trim().toLowerCase();if(!m[k])m[k]={key:k,name:p.name,items:[],net:0};m[k].items.push(p);m[k].net+=rpSignedHKD(p);});return Object.values(m).sort((a,b)=>Math.abs(b.net)-Math.abs(a.net));}
+function rpAssetTotal(){return rpGroups((S.people||[]).filter(p=>!p.settled)).reduce((a,g)=>a+Math.max(g.net,0),0);}
+function rpDebtTotal(){return rpGroups((S.people||[]).filter(p=>!p.settled)).reduce((a,g)=>a+Math.max(-g.net,0),0);}
+function addRPMove(p,phase){const amtHKD=Math.abs(parseFloat(p.amtHKD||0));if(!amtHKD||!p.acctId)return;const ac=getAcct(p.acctId);const receivable=p.dir!=='p';const direction=(phase==='open')?(receivable?'out':'in'):(receivable?'in':'out');S.txns.unshift({id:Date.now()+Math.random(),type:'ar_move',direction,amount:Math.abs(p.amount||0),amtHKD,cur:p.cur||'HKD',acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(phase==='open'?t('aropen'):t('arsettle'))+' · '+p.name+(p.desc?' · '+p.desc:''),date:today(),fromRP:p.id,oneOff:true});}
+function syncAutoPayFromTxn(tx){if(!tx||!tx.autoPayId)return;const ap=(S.autopay||[]).find(a=>String(a.id)===String(tx.autoPayId));if(!ap)return;ap.name=tx.note||ap.name;ap.amount=tx.amount;ap.cur=tx.cur;ap.catId=tx.catId||ap.catId;ap.acctId=tx.acctId||'';ap.acct=tx.acctLabel||'';ap.acctIcon=tx.acctIcon||'';}
+function refreshAllViews(){renderHome();if(S.activeTab==='gamble')renderGamble();refreshWallet();if(S.activeTab==='settings'){renderAutopay();renderAutoincome();}}
 // Cash component of an account = opening + income in − expense out + transfers in − transfers out
 // Pure cash movements from manual transactions (income/expense/transfers) + opening balance
 function acctCashTxns(acctId){
@@ -1357,6 +1372,8 @@ function acctCashTxns(acctId){
     else if(tx.type==='transfer'){
       if(tx.acctId===acctId)bal-=tx.amtHKD;
       if(tx.toAcctId===acctId)bal+=tx.amtHKD;
+    } else if(tx.type==='ar_move'&&tx.acctId===acctId){
+      bal+=(tx.direction==='in'?tx.amtHKD:-tx.amtHKD);
     }
   });
   return bal;
@@ -1465,6 +1482,8 @@ function acctFlows(acctId){
     else if(tx.type==='transfer'){
       if(tx.toAcctId===acctId)inn+=tx.amtHKD;
       if(tx.acctId===acctId)out+=tx.amtHKD;
+    } else if(tx.type==='ar_move'&&tx.acctId===acctId){
+      if(tx.direction==='in')inn+=tx.amtHKD;else out+=tx.amtHKD;
     }
   });
   return {inn,out};
@@ -1837,13 +1856,14 @@ function editTxn(id){
   document.getElementById('m-txn').classList.add('open');
 }
 function toggleRecur(){const tg=document.getElementById('recur-toggle');tg.classList.toggle('on');document.getElementById('recur-day-wrap').style.display=tg.classList.contains('on')?'block':'none';}
-function openARModal(){S._editArId=null;['ar-name','ar-amt','ar-desc'].forEach(id=>document.getElementById(id).value='');document.getElementById('ar-cur').value='HKD';document.getElementById('ar-date').value=today();setArDir('r');const ttl=document.querySelector('#m-ar .mtitle');if(ttl){ttl.setAttribute('data-i','addar');ttl.textContent=t('addar');}document.getElementById('m-ar').classList.add('open');}
+function openARModal(){S._editArId=null;['ar-name','ar-amt','ar-desc'].forEach(id=>document.getElementById(id).value='');document.getElementById('ar-cur').value='HKD';fillAcctSelect('ar-acct',S.selAcct);document.getElementById('ar-date').value=today();setArDir('r');const ttl=document.querySelector('#m-ar .mtitle');if(ttl){ttl.setAttribute('data-i','addar');ttl.textContent=t('addar');}document.getElementById('m-ar').classList.add('open');}
 function editAR(id){
   const p=S.people.find(x=>String(x.id)===String(id));if(!p)return;
   S._editArId=p.id;
   document.getElementById('ar-name').value=p.name||'';
   document.getElementById('ar-amt').value=p.amount||'';
   document.getElementById('ar-cur').value=p.cur||'HKD';
+  fillAcctSelect('ar-acct',p.acctId||S.selAcct);
   document.getElementById('ar-desc').value=p.desc||'';
   document.getElementById('ar-date').value=p.date||today();
   setArDir(p.dir==='p'?'p':'r');
@@ -1852,7 +1872,7 @@ function editAR(id){
 }
 function quickRP(name){openARModal();const el=document.getElementById('ar-name');if(el)el.value=name;const amt=document.getElementById('ar-amt');if(amt)amt.focus();}
 function setArDir(d,btn){S.arDir=d;const r=document.getElementById('ar-dir-r'),p=document.getElementById('ar-dir-p');if(r&&p){r.classList.toggle('active',d==='r');p.classList.toggle('active',d==='p');}}
-function openGroupModal(){document.getElementById('gb-date').value=today();document.getElementById('gb-total').value='';document.getElementById('gb-title').value='';S._billInc=[];S._billAmt={};document.getElementById('gb-newfriend').placeholder=t('nameph');renderBillFriends();document.getElementById('m-group').classList.add('open');}
+function openGroupModal(){document.getElementById('gb-date').value=today();document.getElementById('gb-total').value='';document.getElementById('gb-title').value='';fillAcctSelect('gb-acct',S.selAcct);S._billInc=[];S._billAmt={};document.getElementById('gb-newfriend').placeholder=t('nameph');renderBillFriends();document.getElementById('m-group').classList.add('open');}
 function openGambleModal(editId){
   const g=editId?(S.gamble||[]).find(x=>String(x.id)===String(editId)):null;
   document.getElementById('g-edit-id').value=editId||'';
@@ -1968,13 +1988,17 @@ function txnRow(tx){
   const exBtn=`<button onclick="toggleTxnExclude('${tx.id}')" title="${t('excludetip')}" style="padding:6px 6px;border:none;background:none;color:${tx.excluded?'var(--a3)':'var(--ink3)'};font-size:16px;cursor:pointer;flex-shrink:0"><i class="ti ti-${tx.excluded?'eye-off':'eye'}"></i></button>`;
   const delBtn=`<button onclick="deleteTxn('${tx.id}')" style="padding:6px 7px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`;
   const editBtn=`<button onclick="editTxn('${tx.id}')" style="padding:6px 6px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0"><i class="ti ti-pencil"></i></button>`;
+  if(tx.type==='ar_move'){
+    const incoming=tx.direction==='in';
+    return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--p2)">${incoming?'↙':'↗'}</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}<span class="badge bp">R/P</span></div><div class="rsub">${tx.date} · ${tx.cur}${tx.acctLabel?` · ${tx.acctIcon||''} ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${incoming?'pos':'neg'}">${incoming?'+':'-'}${sym}${tx.amount.toLocaleString()}</span>${exBtn}${delBtn}</div></div>`;
+  }
   if(tx.type==='transfer'){
     return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--b2)">⇄</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}</div><div class="rsub">${tx.date} · ${tx.acctIcon||''} ${tx.acctLabel||''} → ${tx.toAcctIcon||''} ${tx.toAcctLabel||''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount" style="color:var(--b3)">⇄ ${sym}${tx.amount.toLocaleString()}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
   }
   const cat=getCat(tx.catId);
   return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${cat.icon}</div><div class="rinfo"><div class="rtitle">${tx.note}${tx.oneOff?`<span class="badge ba">${t('oneoff')}</span>`:''}${tx.autoPayId?'<span class="badge bb">auto</span>':''}${tx.isGroupBill?`<span class="badge bp">${t('group')}</span>`:''}${exBadge}</div><div class="rsub">${tx.date} · ${tx.cur}${tx.acctLabel?` · ${tx.acctIcon||''} ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${cls}">${sign}${sym}${tx.amount.toLocaleString()}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
 }
-function toggleTxnExclude(id){const tx=S.txns.find(x=>String(x.id)===String(id));if(tx)tx.excluded=!tx.excluded;saveS();renderHome();refreshWallet();}
+function toggleTxnExclude(id){const tx=S.txns.find(x=>String(x.id)===String(id));if(tx){tx.excluded=!tx.excluded;syncAutoPayFromTxn(tx);}saveS();refreshAllViews();}
 function deleteTxn(id){
   if(!confirm(t('deltxnq')))return;
   S.txns=S.txns.filter(x=>String(x.id)!==String(id));
@@ -1995,29 +2019,29 @@ function saveTxn(){
       acctId:fromAcct.id,acctLabel:acctLabel(fromAcct),acctIcon:fromAcct.icon,
       toAcctId:toAcct.id,toAcctLabel:acctLabel(toAcct),toAcctIcon:toAcct.icon,
       note,date:document.getElementById('t-date').value,oneOff:false};
-    if(editId){const i=S.txns.findIndex(x=>String(x.id)===String(editId));if(i>=0)S.txns[i]={...S.txns[i],...tx};}
+    if(editId){const i=S.txns.findIndex(x=>String(x.id)===String(editId));if(i>=0){tx.autoPayId=S.txns[i].autoPayId;S.txns[i]={...S.txns[i],...tx};syncAutoPayFromTxn(S.txns[i]);}}
     else S.txns.unshift(tx);
     S._editTxnId=null;
-    saveS();closeM('m-txn');renderHome();refreshWallet();return;
+    saveS();closeM('m-txn');refreshAllViews();return;
   }
   const cat=getCat(S.selCat);
   const acct=getAcct(S.selAcct);
   const tx={id:editId||Date.now(),type:S.curType,amount:amt,amtHKD,cur,catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:acct?acct.id:'',acctLabel:acct?acctLabel(acct):'',acctIcon:acct?acct.icon:'',note:document.getElementById('t-note').value||catLabel(cat),date:document.getElementById('t-date').value,oneOff:document.getElementById('oneoff-toggle').classList.contains('on')};
   if(editId){
-    const i=S.txns.findIndex(x=>String(x.id)===String(editId));if(i>=0)S.txns[i]={...S.txns[i],...tx};
+    const i=S.txns.findIndex(x=>String(x.id)===String(editId));if(i>=0){tx.autoPayId=S.txns[i].autoPayId;S.txns[i]={...S.txns[i],...tx};syncAutoPayFromTxn(S.txns[i]);}
     S._editTxnId=null;
-    saveS();closeM('m-txn');renderHome();refreshWallet();return;
+    saveS();closeM('m-txn');refreshAllViews();return;
   }
   S.txns.unshift(tx);
   // If "recurring" is ticked, also register a monthly auto-payment shown in Settings
   if(document.getElementById('recur-toggle').classList.contains('on') && S.curType==='expense'){
     const day=parseInt(document.getElementById('recur-day').value)||1;
     const apId=tx.id+'_ap';
-    S.autopay.push({id:apId,name:tx.note,amount:amt,cur,catId:cat.id,day,acctId:acct?acct.id:'',acct:acct?acctLabel(acct):'',acctIcon:acct?acct.icon:'',active:true});
+    tx.autoPayId=apId;S.autopay.push({id:apId,name:tx.note,amount:amt,cur,catId:cat.id,day,acctId:acct?acct.id:'',acct:acct?acctLabel(acct):'',acctIcon:acct?acct.icon:'',active:true});
     // mark this month as already paid so it doesn't double-charge today
     const now=new Date();localStorage.setItem('ap_'+apId+'_'+now.getFullYear()+'_'+now.getMonth(),'1');
   }
-  saveS();closeM('m-txn');renderHome();refreshWallet();
+  saveS();closeM('m-txn');refreshAllViews();
 }
 function saveAR(){
   const name=document.getElementById('ar-name').value.trim();
@@ -2028,19 +2052,18 @@ function saveAR(){
   const dir=S.arDir||'r';
   const desc=document.getElementById('ar-desc').value;
   const date=document.getElementById('ar-date').value;
+  const acctId=document.getElementById('ar-acct').value||'';const ac=getAcct(acctId);
   const editId=S._editArId;
   if(editId){
     const p=S.people.find(x=>String(x.id)===String(editId));
-    if(p){p.name=name;p.amount=amt;p.amtHKD=amtHKD;p.cur=cur;p.desc=desc;p.date=date;p.dir=dir;}
+    if(p){p.name=name;p.amount=amt;p.amtHKD=amtHKD;p.cur=cur;p.desc=desc;p.date=date;p.dir=dir;p.acctId=acctId;p.acctLabel=ac?acctLabel(ac):'';p.acctIcon=ac?ac.icon:'';}
     S._editArId=null;
   } else {
-    // auto-combine with an existing unsettled entry of the same person + direction + currency
-    const ex=S.people.find(x=>!x.settled&&x.dir===dir&&(x.cur||'HKD')===cur&&(x.name||'').trim().toLowerCase()===name.toLowerCase());
-    if(ex){ex.amount=parseFloat((ex.amount+amt).toFixed(2));ex.amtHKD=parseFloat((ex.amtHKD+amtHKD).toFixed(2));if(desc)ex.desc=ex.desc?ex.desc+' + '+desc:desc;if(date)ex.date=date;}
-    else S.people.unshift({id:Date.now(),name,amount:amt,amtHKD,cur,desc,date,settled:false,dir});
+    const rec={id:Date.now(),name,amount:amt,amtHKD,cur,desc,date,settled:false,dir,acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:''};
+    S.people.unshift(rec);addRPMove(rec,'open');
   }
   ['ar-name','ar-amt','ar-desc'].forEach(id=>document.getElementById(id).value='');
-  saveS();closeM('m-ar');filterAR('all',null);renderHome();
+  saveS();closeM('m-ar');setWalletPane('ar');refreshAllViews();
 }
 // Settle now connects to a wallet account and posts the matching cash transaction
 function settle(id){
@@ -2060,16 +2083,9 @@ function renderSettleAcctChips(){
 function selSettleAcct(id,el){S._settleAcct=id;document.querySelectorAll('#settle-acct-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
 function confirmSettle(){
   const p=S.people.find(x=>String(x.id)===String(S._settleId));if(!p){closeM('m-settle');return;}
-  const ac=getAcct(S._settleAcct);
-  const isPay=p.dir==='p';
-  if(ac){
-    const cat=isPay?getCat('other'):getCat('other_inc');
-    const tx={id:Date.now()+Math.random(),type:isPay?'expense':'income',amount:p.amount,amtHKD:p.amtHKD,cur:p.cur||'HKD',catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:ac.id,acctLabel:acctLabel(ac),acctIcon:ac.icon,note:(isPay?t('payable'):t('arowed'))+' · '+p.name+(p.desc?' · '+p.desc:''),date:today(),oneOff:true,fromRP:p.id};
-    S.txns.unshift(tx);
-    p.settleTxnId=tx.id;p.settleAcctId=ac.id;
-  }
+  const ac=getAcct(S._settleAcct);if(ac){p.acctId=ac.id;p.acctLabel=acctLabel(ac);p.acctIcon=ac.icon;addRPMove(p,'settle');p.settleTxnId=S.txns[0]&&S.txns[0].fromRP===p.id?S.txns[0].id:null;p.settleAcctId=ac.id;}
   p.settled=true;
-  saveS();closeM('m-settle');filterAR('all',null);renderHome();refreshWallet();
+  saveS();closeM('m-settle');setWalletPane('ar');refreshAllViews();
 }
 function recallAR(id){
   const p=S.people.find(x=>String(x.id)===String(id));if(!p)return;
@@ -2108,10 +2124,15 @@ function saveGroupBill(){
   const total=parseFloat(document.getElementById('gb-total').value);if(!total||total<=0)return;
   const inc=S._billInc||[];if(!inc.length){alert(t('nameph'));return;}
   const title=document.getElementById('gb-title').value||t('group');const dt=document.getElementById('gb-date').value||today();
+  const acctId=document.getElementById('gb-acct').value||'';const ac=getAcct(acctId);
   const eq=total/(inc.length+1);const gid=Date.now();
-  S.txns.unshift({id:gid,type:'expense',amount:total,amtHKD:total,cur:'HKD',catId:'social',catLabel:catLabel(getCat('social')),catIcon:'🫂',note:title,date:dt,oneOff:false,isGroupBill:true,groupId:gid});
-  inc.forEach((id,k)=>{const f=(S.friends||[]).find(x=>x.id===id)||{name:'?'};const c=S._billAmt[id];const amt=parseFloat((((c!=null&&!isNaN(c))?c:eq)).toFixed(2));S.people.unshift({id:Date.now()+k+1,name:f.name,friendId:id,amount:amt,amtHKD:amt,cur:'HKD',desc:title,date:dt,settled:false,groupId:gid,isGroupSplit:true,urgent:true,dir:'r'});});
-  saveS();closeM('m-group');renderHome();setWalletPane('ar');
+  let friendsTotal=0;const entries=[];
+  inc.forEach((id,k)=>{const f=(S.friends||[]).find(x=>x.id===id)||{name:'?'};const c=S._billAmt[id];const amt=parseFloat((((c!=null&&!isNaN(c))?c:eq)).toFixed(2));friendsTotal+=amt;entries.push({id,name:f.name,amt,k});});
+  const mine=parseFloat(Math.max(total-friendsTotal,0).toFixed(2));
+  S.txns.unshift({id:gid,type:'expense',amount:mine,amtHKD:mine,cur:'HKD',catId:'social',catLabel:catLabel(getCat('social')),catIcon:'🫂',acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:title+' · '+t('yourshare'),date:dt,oneOff:false,isGroupBill:true,groupId:gid});
+  if(friendsTotal>0)S.txns.unshift({id:gid+'_ar',type:'ar_move',direction:'out',amount:friendsTotal,amtHKD:friendsTotal,cur:'HKD',acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:title+' · R/P',date:dt,groupId:gid,isGroupBill:true});
+  entries.forEach(e=>S.people.unshift({id:Date.now()+e.k+1,name:e.name,friendId:e.id,amount:e.amt,amtHKD:e.amt,cur:'HKD',desc:title,date:dt,settled:false,groupId:gid,isGroupSplit:true,urgent:true,dir:'r',acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:''}));
+  saveS();closeM('m-group');refreshAllViews();setWalletPane('ar');
 }
 // Friends manager (A/R pane)
 function renderFriendsMgr(){
@@ -2162,8 +2183,8 @@ function renderHome(){
   const allExpense=S.txns.filter(tx=>tx.type==='expense'&&!tx.excluded).reduce((a,tx)=>a+tx.amtHKD,0);
   const openingTotal=(S.accounts||[]).filter(ac=>!ac.excluded).reduce((a,ac)=>a+parseFloat(ac.opening||0),0);
   const netCash=openingTotal+allIncome-allExpense;
-  const arOwed=S.people.filter(p=>!p.settled&&p.dir!=='p').reduce((a,p)=>a+p.amtHKD,0);
-  const arPay=S.people.filter(p=>!p.settled&&p.dir==='p').reduce((a,p)=>a+p.amtHKD,0);
+  const arOwed=rpAssetTotal();
+  const arPay=rpDebtTotal();
   const pokerPnl=S.gamble.filter(g=>!g.open).reduce((a,g)=>a+(g.cashoutHKD-g.buyinHKD),0);
   const port=S.portfolio||[];
   const stockPnl=port.filter(p=>p.type==='stock').reduce((a,p)=>a+(p.valueHKD-p.costHKD),0);
@@ -2210,17 +2231,18 @@ function filterTxn(type,btn){
 }
 function filterAR(type,btn){
   if(btn){document.querySelectorAll('#pane-ar .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
-  const active=S.people.filter(p=>!p.settled);
-  const recv=active.filter(p=>p.dir!=='p').reduce((a,p)=>a+p.amtHKD,0);
-  const pay=active.filter(p=>p.dir==='p').reduce((a,p)=>a+p.amtHKD,0);
-  const recvCt=active.filter(p=>p.dir!=='p').length,payCt=active.filter(p=>p.dir==='p').length;
+  const active=S.people.filter(p=>!p.settled);const groups=rpGroups(active);
+  const recv=groups.reduce((a,g)=>a+Math.max(g.net,0),0);const pay=groups.reduce((a,g)=>a+Math.max(-g.net,0),0);
   const elR=document.getElementById('ar-total');if(elR)elR.textContent=fmt(recv);
   const elP=document.getElementById('ar-pay-total');if(elP)elP.textContent='−'+fmt(pay);
-  const elRc=document.getElementById('ar-ct');if(elRc)elRc.textContent=recvCt?recvCt+' '+t('outstanding'):'';
-  const elPc=document.getElementById('ar-urgent-ct');if(elPc)elPc.textContent=payCt?payCt+' '+t('outstanding'):'';
-  let list=type==='pending'?active:type==='settled'?S.people.filter(p=>p.settled):type==='group'?S.people.filter(p=>p.isGroupSplit):[...active,...S.people.filter(p=>p.settled)];
-  document.getElementById('ar-list').innerHTML=list.length?list.map((p,i)=>{const ci=i%8;const init=p.name.trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const urg=!p.settled&&p.urgent;const isPay=p.dir==='p';const amtCol=isPay?'var(--r)':(urg?'var(--r)':'var(--g)');const sideBtn=p.settled?`<button onclick="recallAR('${p.id}')" title="${t('recallbtn')}" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-arrow-back-up"></i></button>`:`<button onclick="editAR('${p.id}')" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-pencil"></i></button>`;return `<div class="crow${urg?' alert-row':''}"><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div class="rinfo"><div class="rtitle">${p.name}${isPay?`<span class="badge br">${t('payable')}</span>`:''}${p.isGroupSplit?`<span class="badge bp">${t('group')}</span>`:''}${urg?`<span class="badge br">${t('pending')}</span>`:''}</div><div class="rsub">${p.desc||'—'} · ${p.date}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">${p.settled?`<span class="badge bg">${t('settled')}</span>`:`<span style="font-size:15px;font-weight:700;color:${amtCol}">${isPay?'−':'+'}${fmt(p.amtHKD)}</span><button class="settle-btn${urg?' urgent':''}" onclick="settle(${p.id})">${isPay?t('settlepay'):'Settle ✓'}</button>`}</div>${sideBtn}<button onclick="deleteAR('${p.id}')" style="padding:6px 7px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-trash"></i></button></div>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
+  const elRc=document.getElementById('ar-ct');if(elRc)elRc.textContent=groups.filter(g=>g.net>0).length?groups.filter(g=>g.net>0).length+' '+t('outstanding'):'';
+  const elPc=document.getElementById('ar-urgent-ct');if(elPc)elPc.textContent=groups.filter(g=>g.net<0).length?groups.filter(g=>g.net<0).length+' '+t('outstanding'):'';
+  let list=type==='pending'?groups:type==='settled'?rpGroups(S.people.filter(p=>p.settled)):type==='group'?rpGroups(S.people.filter(p=>p.isGroupSplit&&!p.settled)):[...groups,...rpGroups(S.people.filter(p=>p.settled))];
+  document.getElementById('ar-list').innerHTML=list.length?list.map((g,i)=>{const ci=i%8;const init=(g.name||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const settled=g.items.every(p=>p.settled);const urg=!settled&&g.items.some(p=>p.urgent);const isPay=g.net<0;const amtCol=isPay?'var(--r)':(urg?'var(--r)':'var(--g)');const detail=g.items.map(p=>(p.dir==='p'?'−':'+')+fmt(p.amtHKD)+(p.desc?' · '+p.desc:'')).join('<br>');const ids=g.items.filter(p=>!p.settled).map(p=>p.id).join(',');return `<div class="crow${urg?' alert-row':''}"><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div class="rinfo"><div class="rtitle">${g.name}${isPay?`<span class="badge br">${t('payable')}</span>`:''}${g.items.some(p=>p.isGroupSplit)?`<span class="badge bp">${t('group')}</span>`:''}${urg?`<span class="badge br">${t('pending')}</span>`:''}</div><div class="rsub">${detail||'—'}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">${settled?`<span class="badge bg">${t('settled')}</span>`:`<span style="font-size:15px;font-weight:700;color:${amtCol}">${isPay?'−':'+'}${fmt(Math.abs(g.net))}</span><button class="settle-btn${urg?' urgent':''}" onclick="settleGroup('${ids}')">${isPay?t('settlepay'):'Settle ✓'}</button>`}</div>${settled?`<button onclick="recallGroup('${g.items.map(p=>p.id).join(',')}')" title="${t('recallbtn')}" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-arrow-back-up"></i></button>`:`<button onclick="editAR('${g.items[0].id}')" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-pencil"></i></button>`}<button onclick="deleteARGroup('${encodeURIComponent(g.key)}')" style="padding:6px 7px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-trash"></i></button></div>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
 }
+function settleGroup(ids){String(ids).split(',').filter(Boolean).forEach(id=>{const p=S.people.find(x=>String(x.id)===String(id));if(p&&!p.settled){S._settleAcct=p.acctId||p.settleAcctId||S._settleAcct||((S.accounts&&S.accounts[0])?S.accounts[0].id:'');addRPMove(p,'settle');p.settled=true;p.settleTxnId=S.txns[0]&&S.txns[0].fromRP===p.id?S.txns[0].id:null;p.settleAcctId=S._settleAcct;}});saveS();setWalletPane('ar');refreshAllViews();}
+function recallGroup(ids){String(ids).split(',').filter(Boolean).forEach(id=>recallAR(id));}
+function deleteARGroup(key){key=decodeURIComponent(key);if(!confirm(t('deltxnq')))return;S.people=S.people.filter(p=>(p.friendId||p.name||'').toString().trim().toLowerCase()!==key);saveS();setWalletPane('ar');refreshAllViews();}
 function deleteAR(id){
   if(!confirm(t('deltxnq')))return;
   S.people=S.people.filter(x=>String(x.id)!==String(id));
@@ -2344,7 +2366,7 @@ function savePortfolio(){
       S.portfolio.unshift(np);logChange('add',np,qty+' @ '+cur+(entryPrice||0));
     }
   }
-  saveS();closeM('m-port');renderGamble();renderHome();refreshWallet();
+  saveS();closeM('m-port');refreshAllViews();
 }
 function deletePort(id){const p=(S.portfolio||[]).find(x=>String(x.id)===String(id));if(p&&!confirm(t('deltxnq')))return;if(p)logChange('delete',p,'');S.portfolio=(S.portfolio||[]).filter(x=>String(x.id)!==String(id));saveS();renderGamble();renderHome();refreshWallet();}
 function deleteGroupLots(name,acctId,secId,type){if(!confirm(t('deltxnq')))return;const k=(name||'')+'|'+(acctId||'')+'|'+(secId||'');S.portfolio=(S.portfolio||[]).filter(p=>!(p.type===type&&((p.name||'')+'|'+(p.acctId||'')+'|'+(p.secId||''))===k));logChange('delete',{type,name,acctId,secId},'');saveS();renderGamble();renderHome();refreshWallet();}
@@ -3061,8 +3083,7 @@ async function refreshPrices(silent){
   S.fx={USD:FX.USD,RMB:FX.RMB,JPY:FX.JPY,updated:Date.now()}; // remember last-known rates for offline/reload
   saveS();
   document.querySelectorAll('.refresh-prices-btn').forEach(b=>b.classList.remove('spin'));
-  if(S.activeTab==='gamble')renderGamble();
-  renderHome();refreshWallet();
+  refreshAllViews();
   const now=new Date();const hh=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   if(okFx||okCg||okStk)setPriceStatus('ok',t('pricesupdated')+' '+hh);
   else setPriceStatus('err',t('pricesfail'));
@@ -3075,6 +3096,8 @@ function maybeAutoRefresh(){
 }
 
 // ─── AI ASSISTANT (multi-provider) ───────────────────────────
+let AI_ATTACHMENT=null;
+function setAiAttachment(file){AI_ATTACHMENT=null;const st=document.getElementById('ai-file-status');if(st)st.textContent='';if(!file)return;if(file.size>4*1024*1024){if(st)st.textContent=t('aifiletoobig');return;}const r=new FileReader();r.onload=()=>{const data=String(r.result||'');const base64=data.includes(',')?data.split(',')[1]:data;AI_ATTACHMENT={name:file.name,type:file.type||'application/octet-stream',base64,size:file.size,isImage:(file.type||'').startsWith('image/')};if(st)st.textContent=file.name+' · '+Math.round(file.size/1024)+'KB';};r.readAsDataURL(file);}
 function renderAiSettings(){
   const ai=S.ai||{};
   const pv=document.getElementById('ai-provider');if(pv)pv.value=ai.provider||'gemini';
@@ -3103,32 +3126,32 @@ function buildAiContext(){
   return L.join('\n');
 }
 // messages = [{role:'user'|'assistant',content}], system = string
-async function callAI(ai,messages,system){
+async function callAI(ai,messages,system,att){
   const p=ai.provider||'gemini';
+  if(att&&p==='deepseek')throw new Error(t('aideepseeknovision'));
+  const note=att&&!att.isImage?'\n\nAttached file note: '+att.name+' ('+att.type+'). Non-image files are summarized by filename only.':'';
   if(p==='gemini'){
     const model=ai.model||'gemini-1.5-flash';
-    const body={contents:messages.map(m=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content}]}))};
+    const body={contents:messages.map((m,idx)=>({role:m.role==='assistant'?'model':'user',parts:[{text:m.content+(idx===messages.length-1?note:'')}]}))};
+    if(att&&att.isImage&&body.contents.length)body.contents[body.contents.length-1].parts.push({inline_data:{mime_type:att.type,data:att.base64}});
     if(system)body.systemInstruction={parts:[{text:system}]};
     const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent?key='+encodeURIComponent(ai.key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const j=await r.json();if(j.error)throw new Error(j.error.message||'error');
-    return ((((j.candidates||[])[0]||{}).content||{}).parts||[]).map(x=>x.text).join('');
+    const j=await r.json();if(j.error)throw new Error(j.error.message||'error');return ((((j.candidates||[])[0]||{}).content||{}).parts||[]).map(x=>x.text).join('');
   }
   if(p==='anthropic'){
     const model=ai.model||'claude-3-5-haiku-latest';
-    const body={model,max_tokens:1024,messages:messages.map(m=>({role:m.role,content:m.content}))};
-    if(system)body.system=system;
+    const ms=messages.map(m=>({role:m.role,content:m.content}));
+    if(att&&ms.length){const last=ms[ms.length-1];last.content=att.isImage?[{type:'text',text:last.content},{type:'image',source:{type:'base64',media_type:att.type,data:att.base64}}]:last.content+note;}
+    const body={model,max_tokens:1024,messages:ms};if(system)body.system=system;
     const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':ai.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},body:JSON.stringify(body)});
-    const j=await r.json();if(j.error)throw new Error(j.error.message||'error');
-    return (j.content||[]).map(x=>x.text).join('');
+    const j=await r.json();if(j.error)throw new Error(j.error.message||'error');return (j.content||[]).map(x=>x.text).join('');
   }
-  // OpenAI-compatible providers (both allow direct browser calls): DeepSeek, xAI (Grok)
-  const COMPAT={deepseek:{url:'https://api.deepseek.com/chat/completions',model:'deepseek-chat'},xai:{url:'https://api.x.ai/v1/chat/completions',model:'grok-3-mini'}};
-  const cfg=COMPAT[p]||COMPAT.deepseek;
-  const model=ai.model||cfg.model;
+  const COMPAT={deepseek:{url:'https://api.deepseek.com/chat/completions',model:'deepseek-chat'},xai:{url:'https://api.x.ai/v1/chat/completions',model:'grok-2-vision-latest'}};
+  const cfg=COMPAT[p]||COMPAT.deepseek;const model=ai.model||cfg.model;
   const msgs=(system?[{role:'system',content:system}]:[]).concat(messages.map(m=>({role:m.role,content:m.content})));
+  if(att&&msgs.length){const last=msgs[msgs.length-1];last.content=att.isImage?[{type:'text',text:last.content},{type:'image_url',image_url:{url:'data:'+att.type+';base64,'+att.base64}}]:last.content+note;}
   const r=await fetch(cfg.url,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+ai.key},body:JSON.stringify({model,messages:msgs})});
-  const j=await r.json();if(j.error)throw new Error((j.error&&(j.error.message||j.error))||'error');
-  return (((j.choices||[])[0]||{}).message||{}).content||'';
+  const j=await r.json();if(j.error)throw new Error((j.error&&(j.error.message||j.error))||'error');return (((j.choices||[])[0]||{}).message||{}).content||'';
 }
 function aiEsc(s){return String(s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
 function renderAiMessages(){
@@ -3153,7 +3176,7 @@ async function askAI(){
   const sys='You are a personal-finance assistant embedded in the user\'s budgeting app. Answer concisely and practically, in the user\'s language, using the financial data below where relevant. You are not a licensed financial advisor; avoid definitive investment instructions.\n\nYou can also LOG a transaction for the user. When the user clearly wants to record an expense or income (e.g. "lunch 58 octopus", "出咗糧 20000"), briefly confirm in words, then append at the VERY END of your reply exactly ONE line:\n[[TXN]]{"type":"expense|income","amount":NUMBER,"cur":"HKD|RMB|USD|JPY","category":"<closest from list>","account":"<closest from list>","note":"...","date":"YYYY-MM-DD"}\nUse today ('+today()+') if no date given. Only add the [[TXN]] line when the user actually wants to record something.\nCATEGORIES: '+catList+'\nACCOUNTS: '+acctList+'\n\n=== USER FINANCIAL DATA ===\n'+buildAiContext();
   const convo=ai.history.filter(function(m){return m.content!=='…';}).map(function(m){return {role:m.role,content:m.content};});
   try{
-    const txt=await callAI(ai,convo,sys);
+    const txt=await callAI(ai,convo,sys,AI_ATTACHMENT);
     const mm=(txt||'').match(/\[\[TXN\]\]\s*(\{[\s\S]*?\})/);
     const visible=mm?((txt.replace(mm[0],'').trim())||'好,幫你準備咗呢筆。'):(txt||t('aierr'));
     ai.history[ai.history.length-1]={role:'assistant',content:visible};
