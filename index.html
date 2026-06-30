@@ -1993,15 +1993,15 @@ function installNavSwipe(){
     if(!down)return;
     const dx=e.clientX-startX;lastX=e.clientX;
     if(Math.abs(dx)>7){dragging=true;swallowClick=true;nav.classList.add('nav-dragging');e.preventDefault();}
-    if(dragging){updateNavIsland(clampNavIndex(startI-(dx/tabSpan())));}
+    if(dragging){updateNavIsland(clampNavIndex(startI+(dx/tabSpan())));}
   },{passive:false});
   const end=e=>{
     if(!down)return;down=false;
     const dx=(e&&e.clientX!=null?e.clientX:lastX)-startX;
     nav.classList.remove('nav-dragging');
     if(dragging&&Math.abs(dx)>Math.max(34,tabSpan()*0.18)){
-      let target=Math.round(clampNavIndex(startI-(dx/tabSpan())));
-      if(target===startI)target=clampNavIndex(startI+(dx<0?1:-1));
+      let target=Math.round(clampNavIndex(startI+(dx/tabSpan())));
+      if(target===startI)target=clampNavIndex(startI+(dx>0?1:-1));
       goTabIndex(target);
     }else updateNavIsland(document.querySelector('.bottom-nav .tab-btn.active'));
     setTimeout(()=>{swallowClick=false;},60);
