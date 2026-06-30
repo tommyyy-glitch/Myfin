@@ -78,38 +78,38 @@ body{
   transition:transform 0.1s,opacity 0.1s;
 }
 .nav-btn:active{transform:scale(0.95);opacity:0.85}
-/* Motion layer: subtle tactile feedback across the app. Inspired by modern finance apps,
-   but kept lightweight for iPhone/PWA performance. */
-@keyframes btnGlowPulse{0%,100%{box-shadow:0 0 0 rgba(29,158,117,0)}50%{box-shadow:0 0 18px rgba(29,158,117,0.28)}}
-@keyframes activeIconBob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.06)}}
-@keyframes fabFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
-@keyframes softPop{0%{transform:scale(0.98);opacity:.72}100%{transform:scale(1);opacity:1}}
-button,.cat-chip,.acct-chip,.quick-chip,.fchip,.seg-btn,.wsub-btn,.tab-btn,.nav-btn,.ai-top-btn,.refresh-prices-btn,.add-ar-dashed,.record-toggle,.settle-btn{
-  position:relative;overflow:hidden;transform:translateZ(0);
+/* Motion layer: tactile and visible. Mobile Safari needs real ripple nodes; CSS :active alone is too quiet. */
+@keyframes btnGlowPulse{0%,100%{box-shadow:0 0 0 rgba(29,158,117,0),0 0 0 rgba(29,158,117,0)}50%{box-shadow:0 0 22px rgba(29,158,117,.42),0 0 0 6px rgba(29,158,117,.08)}}
+@keyframes activeIconBob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.13)}}
+@keyframes fabFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.035)}}
+@keyframes softPop{0%{transform:scale(.88);opacity:.55}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}
+@keyframes tabPop{0%{transform:translateY(0) scale(.92)}60%{transform:translateY(-5px) scale(1.1)}100%{transform:translateY(-3px) scale(1.04)}}
+@keyframes rippleBurst{0%{transform:scale(0);opacity:.55}65%{opacity:.26}100%{transform:scale(1);opacity:0}}
+@keyframes fabRing{0%{transform:scale(.82);opacity:.42}75%,100%{transform:scale(1.7);opacity:0}}
+button,.cat-chip,.acct-chip,.quick-chip,.fchip,.seg-btn,.wsub-btn,.tab-btn,.nav-btn,.ai-top-btn,.refresh-prices-btn,.add-ar-dashed,.record-toggle,.settle-btn,.crow{
+  position:relative;overflow:hidden;transform:translateZ(0);isolation:isolate;
   -webkit-tap-highlight-color:transparent;
-  transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,background .22s ease,border-color .22s ease,color .22s ease,opacity .18s ease;
+  transition:transform .2s cubic-bezier(.18,.9,.2,1.2),box-shadow .24s ease,background .24s ease,border-color .24s ease,color .2s ease,opacity .18s ease;
 }
-button:not(.toggle)::before,.cat-chip::before,.acct-chip::before,.quick-chip::before,.fchip::before,.seg-btn::before,.wsub-btn::before,.tab-btn::before{
-  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;
-  background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.42),rgba(255,255,255,0) 58%);
-  transform:scale(.65);transition:opacity .26s ease,transform .34s ease;
-}
-button:not(.toggle):active::before,.cat-chip:active::before,.acct-chip:active::before,.quick-chip:active::before,.fchip:active::before,.seg-btn:active::before,.wsub-btn:active::before,.tab-btn:active::before{opacity:.75;transform:scale(1.35)}
-button:not(.toggle):active,.cat-chip:active,.acct-chip:active,.quick-chip:active,.fchip:active,.seg-btn:active,.wsub-btn:active,.refresh-prices-btn:active,.add-ar-dashed:active,.record-toggle:active,.settle-btn:active{transform:scale(.965)}
+.touch-ripple{position:absolute;border-radius:999px;pointer-events:none;z-index:0;background:radial-gradient(circle,rgba(255,255,255,.7) 0%,rgba(255,255,255,.32) 38%,rgba(255,255,255,0) 70%);transform:scale(0);animation:rippleBurst .62s ease-out forwards;mix-blend-mode:screen}
+button>*:not(.touch-ripple),.tab-btn>*:not(.touch-ripple),.fchip>*:not(.touch-ripple),.seg-btn>*:not(.touch-ripple),.wsub-btn>*:not(.touch-ripple){position:relative;z-index:1}
+.motion-pressing{transform:scale(.925)!important;filter:brightness(1.08)}
+button:not(.toggle):active,.cat-chip:active,.acct-chip:active,.quick-chip:active,.fchip:active,.seg-btn:active,.wsub-btn:active,.refresh-prices-btn:active,.add-ar-dashed:active,.record-toggle:active,.settle-btn:active{transform:scale(.93)}
 @media (hover:hover){
-  button:not(.toggle):hover,.cat-chip:hover,.acct-chip:hover,.quick-chip:hover,.fchip:hover,.seg-btn:hover,.wsub-btn:hover,.refresh-prices-btn:hover,.add-ar-dashed:hover,.record-toggle:hover,.settle-btn:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.10)}
-  .tab-btn:hover{transform:translateY(-1px)}
-  .crow:hover{transform:translateY(-1px);background:rgba(255,255,255,.035)}
+  button:not(.toggle):hover,.cat-chip:hover,.acct-chip:hover,.quick-chip:hover,.fchip:hover,.seg-btn:hover,.wsub-btn:hover,.refresh-prices-btn:hover,.add-ar-dashed:hover,.record-toggle:hover,.settle-btn:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.14)}
+  .tab-btn:hover{transform:translateY(-2px)}
+  .crow:hover{transform:translateY(-2px);background:rgba(255,255,255,.05);box-shadow:0 10px 24px rgba(0,0,0,.08)}
 }
 .nav-btn,.fab,.ai-top-btn{will-change:transform,box-shadow}
-.nav-btn:hover,.ai-top-btn:hover{box-shadow:0 8px 20px rgba(29,158,117,.18)}
-.fab{animation:fabFloat 4.8s ease-in-out infinite}
-.fab:active{animation:none;transform:scale(.9)}
-.tab-btn.active{animation:btnGlowPulse 3.2s ease-in-out infinite}
-.tab-btn.active i{animation:activeIconBob 2.8s ease-in-out infinite}
-.fchip.active,.seg-btn.active,.wsub-btn.active,.cat-chip.sel,.acct-chip.sel{animation:softPop .24s cubic-bezier(.2,.8,.2,1)}
-.crow{transition:transform .18s cubic-bezier(.2,.8,.2,1),background .22s ease,box-shadow .22s ease}
-.crow:active{transform:scale(.988)}
+.nav-btn:hover,.ai-top-btn:hover{box-shadow:0 10px 24px rgba(29,158,117,.24)}
+.fab{overflow:visible;animation:fabFloat 3.8s ease-in-out infinite}
+.fab::after{content:'';position:absolute;inset:-7px;border-radius:999px;border:2px solid rgba(29,158,117,.42);animation:fabRing 2.7s ease-out infinite;pointer-events:none;z-index:-1}
+.fab:active{animation:none;transform:scale(.86)!important}
+.tab-btn.active{animation:btnGlowPulse 2.7s ease-in-out infinite;transform:translateY(-3px) scale(1.04);box-shadow:0 8px 22px rgba(29,158,117,.18)}
+.tab-btn.active i{animation:activeIconBob 2.2s ease-in-out infinite}
+.tab-pop{animation:tabPop .34s cubic-bezier(.18,.9,.2,1.25)!important}
+.fchip.active,.seg-btn.active,.wsub-btn.active,.cat-chip.sel,.acct-chip.sel{animation:softPop .32s cubic-bezier(.18,.9,.2,1.25);box-shadow:0 8px 18px rgba(29,158,117,.16)}
+.crow:active{transform:scale(.976)}
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
@@ -1910,7 +1910,7 @@ function renderAutoincome(){
 function goTab(n,btn){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('s-'+n).classList.add('active');btn.classList.add('active');
+  document.getElementById('s-'+n).classList.add('active');btn.classList.add('active');btn.classList.add('tab-pop');setTimeout(()=>btn.classList.remove('tab-pop'),360);
   S.activeTab=n;updateFab();
   if(n==='home'){checkAutopay();checkAutoincome();renderHome();}
   if(n==='wallet'){checkAutopay();checkAutoincome();setWalletPane(S.walletPane||'txn');}
@@ -3702,7 +3702,21 @@ function drawCalcChart(series){
   ctx.beginPath();ctx.arc(x(series.length-1),y(series[series.length-1]),4,0,Math.PI*2);ctx.fillStyle='#1D9E75';ctx.fill();
 }
 
-loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();renderHome();updateFab();renderProfileChip();
+function installMotionFeedback(){
+  const sel='button:not(.toggle),.cat-chip,.acct-chip,.quick-chip,.fchip,.seg-btn,.wsub-btn,.tab-btn,.nav-btn,.ai-top-btn,.refresh-prices-btn,.add-ar-dashed,.record-toggle,.settle-btn,.crow';
+  const releaseAll=()=>document.querySelectorAll('.motion-pressing').forEach(el=>el.classList.remove('motion-pressing'));
+  document.addEventListener('pointerdown',e=>{
+    const el=e.target.closest(sel);if(!el||el.disabled)return;
+    releaseAll();el.classList.add('motion-pressing');
+    const r=document.createElement('span');r.className='touch-ripple';
+    const rect=el.getBoundingClientRect();const size=Math.max(rect.width,rect.height)*1.9;
+    r.style.width=r.style.height=size+'px';
+    r.style.left=(e.clientX-rect.left-size/2)+'px';r.style.top=(e.clientY-rect.top-size/2)+'px';
+    el.appendChild(r);setTimeout(()=>r.remove(),680);
+  },{passive:true});
+  ['pointerup','pointercancel','pointerleave','scroll'].forEach(ev=>document.addEventListener(ev,releaseAll,{passive:true}));
+}
+installMotionFeedback();loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();renderHome();updateFab();renderProfileChip();
 // Show the last-known update time if we have one, then auto-refresh only if a day has passed.
 if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);setPriceStatus('ok',t('pricesupdated')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
 maybeAutoRefresh();
