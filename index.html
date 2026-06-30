@@ -1484,7 +1484,7 @@ function openProfilesModal(){renderProfilesModal();document.getElementById('m-pr
 function renderProfilesModal(){const el=document.getElementById('profiles-list');if(!el)return;const m=ensureProfiles();el.innerHTML=m.list.map(p=>{const active=p.id===m.active;return `<div class="frow" style="gap:10px"><button onclick="switchProfile('${p.id}')" style="flex:1;display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--ink);cursor:pointer;text-align:left;font-size:15px;font-weight:600;min-width:0"><span style="font-size:22px;flex-shrink:0">${p.emoji||'👤'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>${active?'<span class="badge bg" style="flex-shrink:0">使用中</span>':''}</button>${p.id!=='default'?`<button onclick="deleteProfile('${p.id}')" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join('');}
 function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d);Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));}}
-function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',motionMode:S.motionMode||'dance',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
+function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',motionMode:S.motionMode||'dance',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
 function t(k){return LANGS[S.lang][k]||LANGS.en[k]||k;}
 function catLabel(c){return S.lang==='en'?(c.labelEn||c.label):c.label;}
@@ -3005,8 +3005,10 @@ function renderGamble(){
   document.getElementById('stock-ct').textContent=stocksOpen.length;
   const stockEnded=stocks.filter(p=>p.exitPrice).length;
   const sre=document.getElementById('stock-real');if(sre){sre.textContent=(stockReal>=0?'+':'')+fmt(stockReal)+(stockEnded?' ('+stockEnded+')':'');sre.style.color=stockReal>=0?'var(--g3)':'var(--r3)';}
-  let sc=0;const sv=stocksOpen.map(p=>{sc+=p.valueHKD-p.costHKD;return sc;});
-  drawSparkline('stock-chart',[0,...sv],stockUnreal>=0?'#534AB7':'#D85A30');
+  const sHist=(S.priceHist||[]).map(e=>e.s).filter(v=>v!=null);
+  let sc=0;const svFb=[0,...stocksOpen.map(p=>{sc+=p.valueHKD-p.costHKD;return sc;})];
+  const sVals=sHist.length>=2?sHist:svFb;
+  drawSparkline('stock-chart',sVals,(sVals[sVals.length-1]>=sVals[0])?'#534AB7':'#D85A30');
   // ── CRYPTO (built-in only) ──
   const cryptos=S.portfolio.filter(p=>p.type==='crypto'&&!p.secId);
   const cryptosOpen=cryptos.filter(p=>!p.exitPrice);
@@ -3021,8 +3023,10 @@ function renderGamble(){
   document.getElementById('crypto-ct').textContent=cryptosOpen.length;
   const cryptoEnded=cryptos.filter(p=>p.exitPrice).length;
   const cre=document.getElementById('crypto-real');if(cre){cre.textContent=(cryptoReal>=0?'+':'')+fmt(cryptoReal)+(cryptoEnded?' ('+cryptoEnded+')':'');cre.style.color=cryptoReal>=0?'var(--g3)':'var(--r3)';}
-  let cc=0;const cv=cryptosOpen.map(p=>{cc+=p.valueHKD-p.costHKD;return cc;});
-  drawSparkline('crypto-chart',[0,...cv],cryptoUnreal>=0?'#BA7517':'#D85A30');
+  const cHist=(S.priceHist||[]).map(e=>e.c).filter(v=>v!=null);
+  let cc=0;const cvFb=[0,...cryptosOpen.map(p=>{cc+=p.valueHKD-p.costHKD;return cc;})];
+  const cVals=cHist.length>=2?cHist:cvFb;
+  drawSparkline('crypto-chart',cVals,(cVals[cVals.length-1]>=cVals[0])?'#BA7517':'#D85A30');
   // ── PRIVATE EQUITY (built-in only) ──
   const pes=S.portfolio.filter(p=>p.type==='pe'&&!p.secId);
   const peVal=pes.reduce((a,p)=>a+(p.valueHKD||0),0);
@@ -3492,6 +3496,18 @@ function fxUpdatedLabel(){const last=(S.fx&&S.fx.updated)||0;if(!last)return t('
 function renderFxRates(){const el=document.getElementById('fx-rate-list');if(!el)return;const rows=['USD','RMB','JPY'].map(c=>`<div class="fx-row"><div><div class="fx-code">1 ${c}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">${t('hkdperunit')}</div></div><div class="fx-val">HK$${(FX[c]||0).toFixed(c==='JPY'?4:3)}</div></div>`).join('');el.innerHTML=rows;const u=document.getElementById('fx-updated');if(u)u.textContent=fxUpdatedLabel();}
 function openFxRates(){renderFxRates();document.getElementById('m-fx').classList.add('open');}
 let _refreshing=false;
+// Snapshot stock & crypto open market value on each price refresh, building a real trend over time
+function recordPriceSnapshot(){
+  const sVal=(S.portfolio||[]).filter(p=>p.type==='stock'&&!p.exitPrice).reduce((a,p)=>a+(p.valueHKD||0),0);
+  const cVal=(S.portfolio||[]).filter(p=>p.type==='crypto'&&!p.exitPrice).reduce((a,p)=>a+(p.valueHKD||0),0);
+  if(sVal<=0&&cVal<=0)return;
+  S.priceHist=S.priceHist||[];
+  const now=Date.now();const snap={t:now,s:parseFloat(sVal.toFixed(2)),c:parseFloat(cVal.toFixed(2))};
+  const last=S.priceHist[S.priceHist.length-1];
+  if(last&&(now-last.t)<60000)S.priceHist[S.priceHist.length-1]=snap; // collapse rapid repeats
+  else S.priceHist.push(snap);
+  if(S.priceHist.length>180)S.priceHist=S.priceHist.slice(-180);
+}
 async function refreshPrices(silent){
   if(_refreshing)return; _refreshing=true;
   document.querySelectorAll('.refresh-prices-btn').forEach(b=>b.classList.add('spin'));
@@ -3549,6 +3565,7 @@ async function refreshPrices(silent){
     okStk=allOk;
   } else { okStk=true; }
   S.fx={USD:FX.USD,RMB:FX.RMB,JPY:FX.JPY,updated:Date.now()}; // remember last-known rates for offline/reload
+  recordPriceSnapshot();
   saveS();
   document.querySelectorAll('.refresh-prices-btn').forEach(b=>b.classList.remove('spin'));
   refreshAllViews();if(document.getElementById('m-fx')&&document.getElementById('m-fx').classList.contains('open'))renderFxRates();
