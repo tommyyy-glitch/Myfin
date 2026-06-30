@@ -78,6 +78,19 @@ body{
   transition:transform 0.1s,opacity 0.1s;
 }
 .nav-btn:active{transform:scale(0.95);opacity:0.85}
+.nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
+.ai-top-btn{
+  border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);
+  font-size:12px;font-weight:800;padding:7px 11px;display:flex;align-items:center;gap:5px;
+  box-shadow:none;cursor:pointer;white-space:nowrap;
+}
+.ai-top-btn:active{transform:scale(0.96);opacity:0.85}
+.pnl-simple-metrics{display:flex;flex-wrap:wrap;gap:16px 22px;margin:12px 0 4px}
+.pnl-simple-metric{min-width:58px}
+.pnl-simple-metric .pnl-simple-val{font-size:15px;font-weight:800;margin-top:1px}
+.record-panel{display:none;margin-bottom:16px}
+.record-toggle{border:1px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:800;padding:5px 12px;cursor:pointer}
+.record-toggle.on{border-color:rgba(29,158,117,0.45);color:var(--g3);background:var(--g2)}
 /* P&L add-buttons: full text by default, emoji-only when space is tight (phones) */
 #pnl-addbtns .ab-em{display:none}
 @media (max-width:460px){#pnl-addbtns .ab-tx{display:none}#pnl-addbtns .ab-em{display:inline}#pnl-addbtns .nav-btn{font-size:15px;padding:7px 11px}}
@@ -534,7 +547,7 @@ img,canvas,svg{max-width:100%;}
 
 <!-- WALLET (記帳 / 資金戶口 / A/R) -->
 <div id="s-wallet" class="screen">
-  <div class="nav-bar"><span class="nav-title" data-i="wallet"></span><button class="nav-btn" id="wallet-action-btn" onclick="walletAction()"></button></div>
+  <div class="nav-bar"><span class="nav-title" data-i="wallet"></span><div class="nav-actions"><button class="ai-top-btn" onclick="openAI()"><i class="ti ti-sparkles"></i><span data-i="aiask"></span></button><button class="nav-btn" id="wallet-action-btn" onclick="walletAction()"></button></div></div>
   <div class="wsub-bar">
     <button class="wsub-btn active" id="wsub-txn" onclick="setWalletPane('txn')" data-i="txns"></button>
     <button class="wsub-btn" id="wsub-acct" onclick="setWalletPane('acct')" data-i="fundaccts"></button>
@@ -594,12 +607,12 @@ img,canvas,svg{max-width:100%;}
 <div id="s-gamble" class="screen">
   <div class="nav-bar">
     <span class="nav-title" data-i="gamblepnl"></span>
-    <div style="display:none;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end" id="pnl-addbtns">
+    <div class="nav-actions" style="gap:5px"><button class="ai-top-btn" onclick="openAI()"><i class="ti ti-sparkles"></i><span data-i="aiask"></span></button><div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end" id="pnl-addbtns">
       <button class="nav-btn" data-sec="stock" style="background:var(--p2);color:var(--p3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('stock')">+<span class="ab-tx"> <span data-i="stocks"></span></span><span class="ab-em">📈</span></button>
       <button class="nav-btn" data-sec="crypto" style="background:var(--a2);color:var(--a3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('crypto')">+<span class="ab-tx"> <span data-i="crypto"></span></span><span class="ab-em">₿</span></button>
       <button class="nav-btn" data-sec="poker" style="background:var(--g2);color:var(--g3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openGambleModal()">+<span class="ab-tx"> <span data-i="poker"></span></span><span class="ab-em">🂡</span></button>
       <button class="nav-btn" data-sec="pe" style="background:var(--b2);color:var(--b3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPEModal()">+<span class="ab-tx"> PE</span><span class="ab-em">🏢</span></button>
-    </div>
+    </div></div>
   </div>
   <div class="scroll-body" style="padding:16px 20px 28px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -614,14 +627,13 @@ img,canvas,svg{max-width:100%;}
         <div><div class="mlabel" data-i="totalworth"></div><div style="font-size:16px;font-weight:800" id="g-worth">HK$0</div></div>
         <div><div class="mlabel" data-i="positioncash"></div><div style="font-size:15px;font-weight:700" id="g-cash">HK$0</div></div>
         <div><div class="mlabel" data-i="deployed"></div><div style="font-size:15px;font-weight:700" id="g-deployed">HK$0</div></div>
-        <div><div class="mlabel" data-i="pnlbreakdown"></div><div style="font-size:15px;font-weight:700" id="g-breakdown">HK$0</div></div>
         <div id="g-margin-wrap" style="display:none"><div class="mlabel" data-i="marginused"></div><div style="font-size:15px;font-weight:700;color:var(--a3)" id="g-margin">HK$0</div></div>
       </div>
-      <div class="metric-row" id="pnl-metric-row" style="margin:14px 0 6px;flex-wrap:wrap;gap:10px">
-        <div class="metric-card" data-sec="poker"><div class="mlabel" data-i="poker"></div><div class="mval" id="g-poker-pnl">HK$0</div></div>
-        <div class="metric-card" data-sec="stock"><div class="mlabel" data-i="stocks"></div><div class="mval" id="g-stock-pnl">HK$0</div></div>
-        <div class="metric-card" data-sec="crypto"><div class="mlabel" data-i="crypto"></div><div class="mval" id="g-crypto-pnl">HK$0</div></div>
-        <div class="metric-card" data-sec="pe"><div class="mlabel" data-i="privateequity"></div><div class="mval" id="g-pe-pnl">HK$0</div></div>
+      <div class="pnl-simple-metrics" id="pnl-metric-row">
+        <div class="pnl-simple-metric" data-sec="poker"><div class="mlabel" data-i="poker"></div><div class="pnl-simple-val" id="g-poker-pnl">HK$0</div></div>
+        <div class="pnl-simple-metric" data-sec="stock"><div class="mlabel" data-i="stocks"></div><div class="pnl-simple-val" id="g-stock-pnl">HK$0</div></div>
+        <div class="pnl-simple-metric" data-sec="crypto"><div class="mlabel" data-i="crypto"></div><div class="pnl-simple-val" id="g-crypto-pnl">HK$0</div></div>
+        <div class="pnl-simple-metric" data-sec="pe"><div class="mlabel" data-i="privateequity"></div><div class="pnl-simple-val" id="g-pe-pnl">HK$0</div></div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:14px">
         <canvas id="pnl-pie" width="160" height="160" style="width:160px;height:160px;flex-shrink:0"></canvas>
@@ -655,8 +667,9 @@ img,canvas,svg{max-width:100%;}
         <span><span data-i="cashout"></span>: <strong id="poker-out" style="color:var(--ink)">HK$0</strong></span>
         <span><span data-i="sessions"></span>: <strong id="poker-ct" style="color:var(--ink)">0</strong></span>
       </div>
+      <button class="record-toggle" id="poker-record-btn" onclick="toggleRecordPanel('g-sessions','poker-record-btn')" style="margin-top:10px"><span data-i="record"></span></button>
     </div>
-    <div class="glass-card" id="g-sessions" style="margin-bottom:16px"></div>
+    <div class="glass-card record-panel" id="g-sessions"></div>
     </div>
     <div class="pnl-sec" id="sec-stock">
     <div class="slbl" style="display:flex;align-items:center;justify-content:space-between"><span>&#x1F4C8; <span data-i="stocks"></span></span><button onclick="openBrowse()" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer;text-transform:none;letter-spacing:0"><i class="ti ti-list-search" style="font-size:13px;vertical-align:-2px"></i> <span data-i="browse"></span></button></div>
@@ -710,7 +723,7 @@ img,canvas,svg{max-width:100%;}
 
 <!-- SETTINGS -->
 <div id="s-settings" class="screen">
-  <div class="nav-bar"><span class="nav-title" data-i="settings"></span></div>
+  <div class="nav-bar"><span class="nav-title" data-i="settings"></span><button class="ai-top-btn" onclick="openAI()"><i class="ti ti-sparkles"></i><span data-i="aiask"></span></button></div>
   <div class="scroll-body" style="padding:16px 20px 28px">
     <div class="slbl" data-i="language"></div>
     <div class="glass-card" style="padding:15px;margin-bottom:12px">
@@ -2670,7 +2683,7 @@ function secName(id){
   const names={poker:'🂡 Poker',stock:'📈 '+t('stocks'),crypto:'₿ '+t('crypto'),pe:'🏢 '+t('privateequity')};
   if(names[id])return names[id];
   const c=(S.customSections||[]).find(x=>x.id===id);
-  if(c){const ic=c.icon||(c.base==='crypto'?'₿':c.base==='stock'?'📈':'🏢');return ic+' '+c.name;}
+  if(c){const ic=c.icon||(c.base==='crypto'?'₿':c.base==='stock'?'📈':c.base==='poker'?'♠️':'🏢');return ic+' '+c.name;}
   return id;
 }
 function applyPnlLayout(){
@@ -2802,6 +2815,12 @@ function pokerRowHTML(g){
   const detail=[g.blinds?`${t('blinds')} ${g.blinds}`:'',g.maxp?`${t('maxplayers')} ${g.maxp}`:'',g.bb?`BB ${g.bb}`:'',g.resultbb!=null?`${g.resultbb>0?'+':''}${g.resultbb}BB`:''].filter(Boolean).join(' · ');
   return `<div class="crow"><div class="ibox" style="background:var(--g2);font-size:17px">&#x1F0A1;</div><div class="rinfo"><div class="rtitle">${g.venue} <span class="badge ${g.open?'ba':'bg'}">${g.open?t('openstr'):t('closedstr')}</span></div><div class="rsub">${g.date} · ${t('buyin')} ${fmtCur(g.buyinHKD,g.cur)}${detail?' · '+detail:''}${g.notes?' · '+g.notes:''}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openGambleModal('${g.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deleteGamble('${g.id}')" style="font-size:11px;padding:3px 10px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0">${g.open?`<div style="font-size:12px;color:var(--a3)">${t('awaitcashout')}</div>`:`<div class="ramount ${sp>=0?'pos':'neg'}">${sp>=0?'+':''}${fmtCur(sp,g.cur)}</div>`}</div></div>`;
 }
+function toggleRecordPanel(panelId,btnId){
+  const panel=document.getElementById(panelId);if(!panel)return;
+  const willOpen=getComputedStyle(panel).display==='none';
+  panel.style.display=willOpen?'block':'none';
+  const btn=document.getElementById(btnId);if(btn)btn.classList.toggle('on',willOpen);
+}
 function renderGamble(){
   if(!S.portfolio)S.portfolio=[];
   syncSectionAccountLinks();
@@ -2872,7 +2891,7 @@ function renderGamble(){
     return `<div class="crow"><div class="ibox" style="background:var(--b2);font-size:11px;font-weight:700;color:var(--b3)">${p.name.slice(0,4).toUpperCase()}</div><div class="rinfo"><div class="rtitle" style="font-size:14px">${p.name}${p.pct!=null?` <span class="badge bb">${p.pct}%</span>`:''}${p.notes?` <span style="font-size:11px;color:var(--ink3)">· ${p.notes}</span>`:''}</div><div class="rsub">${t('invested')} ${p.cur}${p.invested||0}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openPEModal('${p.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePort('${p.id}')" style="font-size:11px;padding:3px 10px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700">${fmtCur(p.valueHKD,p.cur)}</div><div class="${pnl>=0?'pos':'neg'}" style="font-size:12px">${pnl>=0?'+':''}${pct}%</div><div style="font-size:11px;color:var(--ink3)">${pnl>=0?'+':''}${fmtCur(pnl,p.cur)}</div></div></div>`;
   }).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
   document.getElementById('g-pe-pnl').textContent=fmt(pePnl);
-  document.getElementById('g-pe-pnl').className='mval'+(pePnl>=0?' pos':' neg');
+  document.getElementById('g-pe-pnl').className='pnl-simple-val '+(pePnl>=0?' pos':' neg');
   // ── TOTAL + PIE (grand total spans ALL holdings incl. custom sections) ──
   const allPosPnl=S.portfolio.reduce((a,p)=>a+((p.valueHKD||0)-(p.costHKD||0)),0);
   const allPosCost=S.portfolio.reduce((a,p)=>a+(p.costHKD||0),0);
@@ -2895,17 +2914,17 @@ function renderGamble(){
   document.getElementById('g-worth').textContent=fmt(totalWorth);
   document.getElementById('g-cash').textContent=fmt(totalCash);
   document.getElementById('g-deployed').textContent=fmt(deployed);
-  const bd=document.getElementById('g-breakdown');bd.textContent=(totalPnl>=0?'+':'')+fmt(totalPnl);bd.style.color=totalPnl>=0?'var(--g3)':'var(--r3)';
+  const bd=document.getElementById('g-breakdown');if(bd){bd.textContent=(totalPnl>=0?'+':'')+fmt(totalPnl);bd.style.color=totalPnl>=0?'var(--g3)':'var(--r3)';}
   const mw=document.getElementById('g-margin-wrap');
   if(marginUsed>0){mw.style.display='';document.getElementById('g-margin').textContent=fmt(marginUsed);}
   else mw.style.display='none';
   document.getElementById('g-poker-pnl').textContent=fmt(allPokerPnl);
-  document.getElementById('g-poker-pnl').className='mval'+(allPokerPnl>=0?' pos':' neg');
+  document.getElementById('g-poker-pnl').className='pnl-simple-val '+(allPokerPnl>=0?' pos':' neg');
   const stockPnl=stockUnreal+stockReal,cryptoPnl=cryptoUnreal+cryptoReal;
   document.getElementById('g-stock-pnl').textContent=fmt(stockPnl);
-  document.getElementById('g-stock-pnl').className='mval'+(stockPnl>=0?' pos':' neg');
+  document.getElementById('g-stock-pnl').className='pnl-simple-val '+(stockPnl>=0?' pos':' neg');
   document.getElementById('g-crypto-pnl').textContent=fmt(cryptoPnl);
-  document.getElementById('g-crypto-pnl').className='mval'+(cryptoPnl>=0?' pos':' neg');
+  document.getElementById('g-crypto-pnl').className='pnl-simple-val '+(cryptoPnl>=0?' pos':' neg');
   // ── PIE CHART (asset allocation: each open position + ALL your cash) ──
   // Cash = every dollar of positive cash you hold across ALL accounts, so the pie reads
   // as "where is my money": stock A / stock B / crypto / poker / cash — each as a % of the whole.
@@ -3005,24 +3024,78 @@ function renderGamble(){
   (S.customSections||[]).forEach(cs=>{
     const items=S.portfolio.filter(p=>p.secId===cs.id);
     const itemsOpen=items.filter(p=>!p.exitPrice);
+    const itemsClosed=items.filter(p=>p.exitPrice);
     const pokerItems=(S.gamble||[]).filter(g=>g.secId===cs.id);
     const pokerOpen=pokerItems.filter(g=>g.open);
     const pokerClosed=pokerItems.filter(g=>!g.open);
     const isPoker=cs.base==='poker';
-    const val=isPoker?pokerOpen.reduce((a,g)=>a+(g.buyinHKD||0),0):itemsOpen.reduce((a,p)=>a+(p.valueHKD||0),0);
-    const cost=isPoker?pokerItems.reduce((a,g)=>a+(g.buyinHKD||0),0):itemsOpen.reduce((a,p)=>a+(p.costHKD||0),0);
-    const pnl=isPoker?pokerClosed.reduce((a,g)=>a+((g.cashoutHKD||0)-(g.buyinHKD||0)),0):items.reduce((a,p)=>a+((p.valueHKD||0)-(p.costHKD||0)),0); // incl realized from sold lots
-    const icon=cs.base==='crypto'?'₿':cs.base==='stock'?'📈':cs.base==='poker'?'♠️':'🏢';
-    let rows;
-    if(isPoker)rows=pokerItems.length?pokerItems.map(g=>pokerRowHTML(g)).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
-    else if(!items.length)rows=`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
-    else if(cs.base==='pe')rows=itemsOpen.map(p=>peRowHTML(p)).join('')||`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
-    else rows=renderHoldingList(items,cs.base==='crypto'?'var(--a3)':'var(--p3)',cs.base==='crypto'?'var(--a2)':'var(--p2)');
+    const escName=(cs.name||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const icon=cs.icon||(cs.base==='crypto'?'₿':cs.base==='stock'?'📈':cs.base==='poker'?'♠️':'🏢');
     const div=document.createElement('div');div.className='pnl-sec';div.id='sec-'+cs.id;div.setAttribute('data-custom','1');
-    div.innerHTML=`<div class="slbl" style="display:flex;align-items:center;justify-content:space-between"><span>${icon} ${cs.name}</span><button onclick="addToSection('${cs.id}','${cs.base}')" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 11px;cursor:pointer;text-transform:none;letter-spacing:0">+ ${t('add')}</button></div>
-      <div class="glass-card" style="padding:12px 14px;margin-bottom:4px"><div style="display:flex;gap:16px;font-size:12px;color:var(--ink3);flex-wrap:wrap"><span>${t('valuelbl')}: <strong style="color:var(--ink)">${fmt(val)}</strong></span><span>${t('costlbl')}: <strong style="color:var(--ink)">${fmt(cost)}</strong></span><span>P&L: <strong style="color:${pnl>=0?'var(--g3)':'var(--r3)'}">${pnl>=0?'+':''}${fmt(pnl)}</strong></span></div></div>
+    const chartId='cs-chart-'+cs.id;
+    const recordId='cs-records-'+cs.id;
+    const recordBtnId='cs-record-btn-'+cs.id;
+    let summaryHtml='',rows='',chartVals=[0,0],chartColor='#1D9E75';
+    if(isPoker){
+      const buyin=pokerItems.reduce((a,g)=>a+(g.buyinHKD||0),0);
+      const cashout=pokerClosed.reduce((a,g)=>a+(g.cashoutHKD||0),0);
+      const pnl=pokerClosed.reduce((a,g)=>a+((g.cashoutHKD||0)-(g.buyinHKD||0)),0);
+      rows=pokerItems.length?pokerItems.map(g=>pokerRowHTML(g)).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${t('nosessions')}</div>`;
+      let pc=0;chartVals=[0,...pokerClosed.map(g=>pc+=((g.cashoutHKD||0)-(g.buyinHKD||0)))];
+      chartColor=pnl>=0?'#1D9E75':'#D85A30';
+      summaryHtml=`<div class="glass-card" style="padding:14px;margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div><div class="mlabel">${t('sessionspnl')}</div><div class="mval ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fmt(pnl)}</div></div>
+          <canvas id="${chartId}" width="110" height="46" style="flex-shrink:0"></canvas>
+        </div>
+        <div style="display:flex;gap:14px;font-size:12px;color:var(--ink3);flex-wrap:wrap">
+          <span>${t('buyin')}: <strong style="color:var(--ink)">${fmt(buyin)}</strong></span>
+          <span>${t('cashout')}: <strong style="color:var(--ink)">${fmt(cashout)}</strong></span>
+          <span>${t('sessions')}: <strong style="color:var(--ink)">${pokerItems.length}</strong></span>
+        </div>
+        <button class="record-toggle" id="${recordBtnId}" onclick="toggleRecordPanel('${recordId}','${recordBtnId}')" style="margin-top:10px">${t('record')}</button>
+      </div>
+      <div class="glass-card record-panel" id="${recordId}">${rows}</div>`;
+    }else if(cs.base==='stock'||cs.base==='crypto'){
+      const val=itemsOpen.reduce((a,p)=>a+(p.valueHKD||0),0);
+      const cost=itemsOpen.reduce((a,p)=>a+(p.costHKD||0),0);
+      const unreal=val-cost;
+      const real=itemsClosed.reduce((a,p)=>a+((p.valueHKD||0)-(p.costHKD||0)),0);
+      rows=items.length?renderHoldingList(items,cs.base==='crypto'?'var(--a3)':'var(--p3)',cs.base==='crypto'?'var(--a2)':'var(--p2)'):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
+      let cc=0;chartVals=[0,...itemsOpen.map(p=>cc+=((p.valueHKD||0)-(p.costHKD||0)))];
+      chartColor=unreal>=0?(cs.base==='crypto'?'#BA7517':'#534AB7'):'#D85A30';
+      summaryHtml=`<div class="glass-card" style="padding:14px;margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div><div class="mlabel">${t('unrealisedpnl')}</div><div class="mval ${unreal>=0?'pos':'neg'}">${unreal>=0?'+':''}${fmt(unreal)}</div><div class="msub" style="margin-top:4px">${t('realisedpnl')}: <strong style="color:${real>=0?'var(--g3)':'var(--r3)'}">${real>=0?'+':''}${fmt(real)}${itemsClosed.length?' ('+itemsClosed.length+')':''}</strong></div></div>
+          <canvas id="${chartId}" width="110" height="46" style="flex-shrink:0"></canvas>
+        </div>
+        <div style="display:flex;gap:14px;font-size:12px;color:var(--ink3);flex-wrap:wrap">
+          <span>${t('costlbl')}: <strong style="color:var(--ink)">${fmt(cost)}</strong></span>
+          <span>${t('valuelbl')}: <strong style="color:var(--ink)">${fmt(val)}</strong></span>
+          <span>${t('positionslbl')}: <strong style="color:var(--ink)">${itemsOpen.length}</strong></span>
+        </div>
+      </div>
       <div class="glass-card" style="margin-bottom:16px">${rows}</div>`;
+    }else{
+      const val=itemsOpen.reduce((a,p)=>a+(p.valueHKD||0),0);
+      const cost=itemsOpen.reduce((a,p)=>a+(p.costHKD||0),0);
+      const pnl=val-cost;
+      rows=itemsOpen.length?itemsOpen.map(p=>peRowHTML(p)).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
+      summaryHtml=`<div class="glass-card" style="padding:14px;margin-bottom:4px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div><div class="mlabel">${t('pnlbreakdown')}</div><div class="mval ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fmt(pnl)}</div></div>
+        </div>
+        <div style="display:flex;gap:14px;font-size:12px;color:var(--ink3);flex-wrap:wrap">
+          <span>${t('invested')}: <strong style="color:var(--ink)">${fmt(cost)}</strong></span>
+          <span>${t('valuation')}: <strong style="color:var(--ink)">${fmt(val)}</strong></span>
+          <span>${t('holdings')}: <strong style="color:var(--ink)">${itemsOpen.length}</strong></span>
+        </div>
+      </div>
+      <div class="glass-card" style="margin-bottom:16px">${rows}</div>`;
+    }
+    div.innerHTML=`<div class="slbl" style="display:flex;align-items:center;justify-content:space-between"><span>${icon} ${escName}</span><button onclick="addToSection('${cs.id}','${cs.base}')" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 11px;cursor:pointer;text-transform:none;letter-spacing:0">+ ${t('add')}</button></div>${summaryHtml}`;
     secCont.appendChild(div);
+    if(isPoker||cs.base==='stock'||cs.base==='crypto')setTimeout(()=>drawSparkline(chartId,chartVals.length>1?chartVals:[0,0],chartColor),0);
   });
   // custom-section quick-add buttons in the P&L header (after Stock/Crypto/Poker/PE)
   const addbtns=document.getElementById('pnl-addbtns');
