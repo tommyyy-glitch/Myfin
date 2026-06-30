@@ -607,12 +607,9 @@ img,canvas,svg{max-width:100%;}
 <div id="s-gamble" class="screen">
   <div class="nav-bar">
     <span class="nav-title" data-i="gamblepnl"></span>
-    <div class="nav-actions" style="gap:5px"><button class="ai-top-btn" onclick="openAI()"><i class="ti ti-sparkles"></i><span data-i="aiask"></span></button><div style="display:flex;gap:5px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end" id="pnl-addbtns">
-      <button class="nav-btn" data-sec="stock" style="background:var(--p2);color:var(--p3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('stock')">+<span class="ab-tx"> <span data-i="stocks"></span></span><span class="ab-em">📈</span></button>
-      <button class="nav-btn" data-sec="crypto" style="background:var(--a2);color:var(--a3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPortModal('crypto')">+<span class="ab-tx"> <span data-i="crypto"></span></span><span class="ab-em">₿</span></button>
-      <button class="nav-btn" data-sec="poker" style="background:var(--g2);color:var(--g3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openGambleModal()">+<span class="ab-tx"> <span data-i="poker"></span></span><span class="ab-em">🂡</span></button>
-      <button class="nav-btn" data-sec="pe" style="background:var(--b2);color:var(--b3);box-shadow:none;font-size:12px;padding:7px 9px" onclick="openPEModal()">+<span class="ab-tx"> PE</span><span class="ab-em">🏢</span></button>
-    </div></div>
+    <div class="nav-actions" style="gap:6px">
+      <button class="ai-top-btn" onclick="openAI()"><i class="ti ti-sparkles"></i><span data-i="aiask"></span></button>
+    </div>
   </div>
   <div class="scroll-body" style="padding:16px 20px 28px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -642,10 +639,10 @@ img,canvas,svg{max-width:100%;}
     </div>
     <div class="glass-card" style="padding:16px;margin-bottom:12px">
       <div class="filter-chips" id="trend-toggle" style="margin-bottom:10px">
-        <button class="fchip active" onclick="setTrend('total',this)" data-i="totaltrend"></button>
-        <button class="fchip" data-sec="stock" onclick="setTrend('stock',this)" data-i="stocks"></button>
-        <button class="fchip" data-sec="crypto" onclick="setTrend('crypto',this)" data-i="crypto"></button>
-        <button class="fchip" data-sec="poker" onclick="setTrend('poker',this)" data-i="poker"></button>
+        <button class="fchip active" onclick="setTrend('total',this)" title="Total">Σ</button>
+        <button class="fchip" data-sec="stock" onclick="setTrend('stock',this)" title="Stocks">📈</button>
+        <button class="fchip" data-sec="crypto" onclick="setTrend('crypto',this)" title="Crypto">₿</button>
+        <button class="fchip" data-sec="poker" onclick="setTrend('poker',this)" title="Poker">🂡</button>
       </div>
       <div class="filter-chips" id="trend-gran" style="margin-bottom:12px">
         <button class="fchip" onclick="setTrendGran('day',this)" data-i="granday"></button>
@@ -2686,6 +2683,13 @@ function secName(id){
   if(c){const ic=c.icon||(c.base==='crypto'?'₿':c.base==='stock'?'📈':c.base==='poker'?'♠️':'🏢');return ic+' '+c.name;}
   return id;
 }
+function secIcon(id){
+  const icons={total:'Σ',poker:'🂡',stock:'📈',crypto:'₿',pe:'🏢'};
+  if(icons[id])return icons[id];
+  const c=(S.customSections||[]).find(x=>x.id===id);
+  if(c)return c.icon||(c.base==='crypto'?'₿':c.base==='stock'?'📈':c.base==='poker'?'♠️':'🏢');
+  return '•';
+}
 function applyPnlLayout(){
   const cont=document.getElementById('pnl-sections');
   const row=document.getElementById('pnl-metric-row');
@@ -2704,8 +2708,8 @@ function renderTrendChips(){
   let cur=S.trendView||'total';
   const visible=pnlOrderSafe().filter(id=>!(S.pnlHidden&&S.pnlHidden[id]));
   if(cur!=='total'&&!visible.includes(cur)){cur='total';S.trendView='total';}
-  let html=`<button class="fchip${cur==='total'?' active':''}" onclick="setTrend('total',this)">${t('totaltrend')}</button>`;
-  visible.forEach(id=>{html+=`<button class="fchip${cur===id?' active':''}" data-sec="${id}" onclick="setTrend('${id}',this)">${secName(id)}</button>`;});
+  let html=`<button class="fchip${cur==='total'?' active':''}" onclick="setTrend('total',this)" title="${t('totaltrend')}">${secIcon('total')}</button>`;
+  visible.forEach(id=>{html+=`<button class="fchip${cur===id?' active':''}" data-sec="${id}" onclick="setTrend('${id}',this)" title="${secName(id).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}">${secIcon(id)}</button>`;});
   el.innerHTML=html;
 }
 function toggleSecShow(id){S.pnlHidden=S.pnlHidden||{};S.pnlHidden[id]=!S.pnlHidden[id];saveS();renderPnlSecMgr();applyPnlLayout();}
