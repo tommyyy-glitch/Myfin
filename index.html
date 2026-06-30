@@ -78,6 +78,41 @@ body{
   transition:transform 0.1s,opacity 0.1s;
 }
 .nav-btn:active{transform:scale(0.95);opacity:0.85}
+/* Motion layer: subtle tactile feedback across the app. Inspired by modern finance apps,
+   but kept lightweight for iPhone/PWA performance. */
+@keyframes btnGlowPulse{0%,100%{box-shadow:0 0 0 rgba(29,158,117,0)}50%{box-shadow:0 0 18px rgba(29,158,117,0.28)}}
+@keyframes activeIconBob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-1px) scale(1.06)}}
+@keyframes fabFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+@keyframes softPop{0%{transform:scale(0.98);opacity:.72}100%{transform:scale(1);opacity:1}}
+button,.cat-chip,.acct-chip,.quick-chip,.fchip,.seg-btn,.wsub-btn,.tab-btn,.nav-btn,.ai-top-btn,.refresh-prices-btn,.add-ar-dashed,.record-toggle,.settle-btn{
+  position:relative;overflow:hidden;transform:translateZ(0);
+  -webkit-tap-highlight-color:transparent;
+  transition:transform .18s cubic-bezier(.2,.8,.2,1),box-shadow .22s ease,background .22s ease,border-color .22s ease,color .22s ease,opacity .18s ease;
+}
+button:not(.toggle)::before,.cat-chip::before,.acct-chip::before,.quick-chip::before,.fchip::before,.seg-btn::before,.wsub-btn::before,.tab-btn::before{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;
+  background:radial-gradient(circle at 50% 50%,rgba(255,255,255,.42),rgba(255,255,255,0) 58%);
+  transform:scale(.65);transition:opacity .26s ease,transform .34s ease;
+}
+button:not(.toggle):active::before,.cat-chip:active::before,.acct-chip:active::before,.quick-chip:active::before,.fchip:active::before,.seg-btn:active::before,.wsub-btn:active::before,.tab-btn:active::before{opacity:.75;transform:scale(1.35)}
+button:not(.toggle):active,.cat-chip:active,.acct-chip:active,.quick-chip:active,.fchip:active,.seg-btn:active,.wsub-btn:active,.refresh-prices-btn:active,.add-ar-dashed:active,.record-toggle:active,.settle-btn:active{transform:scale(.965)}
+@media (hover:hover){
+  button:not(.toggle):hover,.cat-chip:hover,.acct-chip:hover,.quick-chip:hover,.fchip:hover,.seg-btn:hover,.wsub-btn:hover,.refresh-prices-btn:hover,.add-ar-dashed:hover,.record-toggle:hover,.settle-btn:hover{transform:translateY(-1px);box-shadow:0 8px 18px rgba(0,0,0,.10)}
+  .tab-btn:hover{transform:translateY(-1px)}
+  .crow:hover{transform:translateY(-1px);background:rgba(255,255,255,.035)}
+}
+.nav-btn,.fab,.ai-top-btn{will-change:transform,box-shadow}
+.nav-btn:hover,.ai-top-btn:hover{box-shadow:0 8px 20px rgba(29,158,117,.18)}
+.fab{animation:fabFloat 4.8s ease-in-out infinite}
+.fab:active{animation:none;transform:scale(.9)}
+.tab-btn.active{animation:btnGlowPulse 3.2s ease-in-out infinite}
+.tab-btn.active i{animation:activeIconBob 2.8s ease-in-out infinite}
+.fchip.active,.seg-btn.active,.wsub-btn.active,.cat-chip.sel,.acct-chip.sel{animation:softPop .24s cubic-bezier(.2,.8,.2,1)}
+.crow{transition:transform .18s cubic-bezier(.2,.8,.2,1),background .22s ease,box-shadow .22s ease}
+.crow:active{transform:scale(.988)}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
 .nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
 .ai-top-btn{
   border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);
