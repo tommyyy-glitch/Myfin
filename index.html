@@ -154,7 +154,7 @@ button:not(.toggle):active,.cat-chip:active,.acct-chip:active,.quick-chip:active
   display:flex;
   padding:7px var(--nav-pad);
   gap:var(--nav-gap);align-items:center;
-  overflow:visible;
+  overflow:visible;touch-action:pan-y;user-select:none;-webkit-user-select:none;
 }
 .nav-island{
   position:absolute;z-index:0;pointer-events:none;
@@ -168,6 +168,9 @@ button:not(.toggle):active,.cat-chip:active,.acct-chip:active,.quick-chip:active
   transform:translateX(calc(var(--nav-i) * (100% + var(--nav-gap)))) scale(.96);
   transition:transform .52s cubic-bezier(.18,.9,.18,1.18),box-shadow .32s ease,background .32s ease;
 }
+.bottom-nav.nav-dragging .nav-island{transition:none;box-shadow:0 12px 34px rgba(29,158,117,.38), inset 0 1px 0 rgba(255,255,255,.28);background:linear-gradient(135deg,rgba(29,158,117,.36),rgba(83,74,183,.24))}
+.bottom-nav.nav-dragging .tab-btn{pointer-events:none}
+
 .nav-island::before{
   content:'';position:absolute;inset:-13px;border-radius:26px;
   background:radial-gradient(circle at 50% 80%,rgba(29,158,117,.26),rgba(83,74,183,.12) 42%,rgba(255,255,255,0) 70%);
@@ -1932,11 +1935,20 @@ function renderAutoincome(){
   el.innerHTML=html||`<div style="text-align:center;padding:16px;color:var(--ink3);font-size:13px">—</div>`;
 }
 
-function updateNavIsland(btn){
-  const nav=document.getElementById('bottom-nav');if(!nav||!btn)return;
-  const tabs=[...nav.querySelectorAll('.tab-btn')];const i=Math.max(0,tabs.indexOf(btn));
-  nav.style.setProperty('--nav-i',i);
+const TAB_ORDER=['home','wallet','gamble','settings'];
+function clampNavIndex(v){return Math.max(0,Math.min(TAB_ORDER.length-1,v));}
+function updateNavIsland(btnOrIndex){
+  const nav=document.getElementById('bottom-nav');if(!nav)return;
+  let i=0;
+  if(typeof btnOrIndex==='number')i=btnOrIndex;
+  else if(btnOrIndex){const tabs=[...nav.querySelectorAll('.tab-btn')];i=Math.max(0,tabs.indexOf(btnOrIndex));}
+  nav.style.setProperty('--nav-i',clampNavIndex(i));
 }
+function goTabIndex(i){
+  const nav=document.getElementById('bottom-nav');const tabs=nav?[...nav.querySelectorAll('.tab-btn')]:[];
+  i=clampNavIndex(i);if(tabs[i])goTab(TAB_ORDER[i],tabs[i]);
+}
+function activeTabIndex(){return Math.max(0,TAB_ORDER.indexOf(S.activeTab||'home'));}
 function goTab(n,btn){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -1946,6 +1958,36 @@ function goTab(n,btn){
   if(n==='wallet'){checkAutopay();checkAutoincome();setWalletPane(S.walletPane||'txn');}
   if(n==='gamble')renderGamble();
   if(n==='settings')renderSettings();
+}
+function installNavSwipe(){
+  const nav=document.getElementById('bottom-nav');if(!nav)return;
+  let down=false,startX=0,lastX=0,startI=0,dragging=false,swallowClick=false;
+  const tabSpan=()=>nav.clientWidth/TAB_ORDER.length;
+  nav.addEventListener('pointerdown',e=>{
+    if(e.button!==undefined&&e.button!==0)return;
+    down=true;dragging=false;startX=lastX=e.clientX;startI=activeTabIndex();
+    try{nav.setPointerCapture(e.pointerId);}catch(_e){}
+  });
+  nav.addEventListener('pointermove',e=>{
+    if(!down)return;
+    const dx=e.clientX-startX;lastX=e.clientX;
+    if(Math.abs(dx)>7){dragging=true;swallowClick=true;nav.classList.add('nav-dragging');e.preventDefault();}
+    if(dragging){updateNavIsland(clampNavIndex(startI-(dx/tabSpan())));}
+  },{passive:false});
+  const end=e=>{
+    if(!down)return;down=false;
+    const dx=(e&&e.clientX!=null?e.clientX:lastX)-startX;
+    nav.classList.remove('nav-dragging');
+    if(dragging&&Math.abs(dx)>Math.max(34,tabSpan()*0.18)){
+      let target=Math.round(clampNavIndex(startI-(dx/tabSpan())));
+      if(target===startI)target=clampNavIndex(startI+(dx<0?1:-1));
+      goTabIndex(target);
+    }else updateNavIsland(document.querySelector('.bottom-nav .tab-btn.active'));
+    setTimeout(()=>{swallowClick=false;},60);
+  };
+  nav.addEventListener('pointerup',end);
+  nav.addEventListener('pointercancel',end);
+  nav.addEventListener('click',e=>{if(swallowClick){e.preventDefault();e.stopPropagation();}},true);
 }
 function setWalletPane(pane){
   S.walletPane=pane;
@@ -3746,7 +3788,7 @@ function installMotionFeedback(){
   },{passive:true});
   ['pointerup','pointercancel','pointerleave','scroll'].forEach(ev=>document.addEventListener(ev,releaseAll,{passive:true}));
 }
-installMotionFeedback();loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();renderHome();updateFab();renderProfileChip();updateNavIsland(document.querySelector('.bottom-nav .tab-btn.active'));
+installMotionFeedback();installNavSwipe();loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();renderHome();updateFab();renderProfileChip();updateNavIsland(document.querySelector('.bottom-nav .tab-btn.active'));
 // Show the last-known update time if we have one, then auto-refresh only if a day has passed.
 if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);setPriceStatus('ok',t('pricesupdated')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
 maybeAutoRefresh();
