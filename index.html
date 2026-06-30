@@ -973,9 +973,6 @@ img,canvas,svg{max-width:100%;}
   <div id="txn-normal">
   <div class="amt-disp" id="amt-disp">0</div>
   <div class="amt-expr" id="amt-expr"></div>
-  <div class="calc-ops">
-    <button class="calc-op" onclick="npOp('+')">+</button><button class="calc-op" onclick="npOp('-')">−</button><button class="calc-op" onclick="npOp('*')">×</button><button class="calc-op" onclick="npOp('/')">÷</button><button class="calc-op" onclick="npOp('clear')">C</button><button class="calc-op eq" onclick="npOp('eq')">=</button>
-  </div>
   <div class="cat-scroll" id="cat-chips"></div>
   <div id="inline-newcat" style="display:none;padding:0 18px 10px">
     <div style="display:flex;gap:8px;align-items:center">
@@ -1002,6 +999,9 @@ img,canvas,svg{max-width:100%;}
   <div id="acct-to-wrap" style="display:none">
     <div class="acct-lbl" data-i="acctto"></div>
     <div class="cat-scroll" id="acct-to-chips" style="padding-top:0"></div>
+  </div>
+  <div class="calc-ops">
+    <button class="calc-op" onclick="npOp('+')">+</button><button class="calc-op" onclick="npOp('-')">−</button><button class="calc-op" onclick="npOp('*')">×</button><button class="calc-op" onclick="npOp('/')">÷</button><button class="calc-op" onclick="npOp('clear')">C</button><button class="calc-op eq" onclick="npOp('eq')">=</button>
   </div>
   <div class="numpad">
     <button class="np" onclick="np('1')">1</button><button class="np" onclick="np('2')">2</button><button class="np" onclick="np('3')">3</button>
