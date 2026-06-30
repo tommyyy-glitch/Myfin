@@ -1380,7 +1380,7 @@ function openProfilesModal(){renderProfilesModal();document.getElementById('m-pr
 function renderProfilesModal(){const el=document.getElementById('profiles-list');if(!el)return;const m=ensureProfiles();el.innerHTML=m.list.map(p=>{const active=p.id===m.active;return `<div class="frow" style="gap:10px"><button onclick="switchProfile('${p.id}')" style="flex:1;display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--ink);cursor:pointer;text-align:left;font-size:15px;font-weight:600;min-width:0"><span style="font-size:22px;flex-shrink:0">${p.emoji||'👤'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>${active?'<span class="badge bg" style="flex-shrink:0">使用中</span>':''}</button>${p.id!=='default'?`<button onclick="deleteProfile('${p.id}')" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join('');}
 function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d);Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));}}
-function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
+function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
 function t(k){return LANGS[S.lang][k]||LANGS.en[k]||k;}
 function catLabel(c){return S.lang==='en'?(c.labelEn||c.label):c.label;}
@@ -2014,6 +2014,9 @@ function npOp(op){
 }
 function np(v){let s=S.amtStr==='0'?'':String(S.amtStr||'');if(v==='del')s=s.slice(0,-1)||'0';else if(v==='.'&&s.includes('.')){}else if(s.length<10)s=(s+v)||'0';S.amtStr=s||'0';updateAmtDisplay();}
 
+// Most-recently-used ordering: a tapped/used category or account bubbles to the front next time
+function bumpMRU(key,id){if(!id)return;S[key]=[id].concat((S[key]||[]).filter(x=>x!==id)).slice(0,16);}
+function mruSort(arr,key,idOf){const mru=S[key]||[];return arr.slice().sort((a,b)=>{const ia=mru.indexOf(idOf(a)),ib=mru.indexOf(idOf(b));return (ia<0?9999:ia)-(ib<0?9999:ib);});}
 function renderCatChips(){
   const expIds=['food','transport','daily','entertainment','travel','health','fitness','clothing','housing','beauty','education','telecom','social','bigitem','shopping','gambling','loss','other'];
   const incIds=['income','freelance','other_inc','invest','other'];
@@ -2022,7 +2025,8 @@ function renderCatChips(){
   // include any user-created categories (not part of the default set) so they show up here too
   const customIds=S.cats.filter(c=>!defIds.includes(c.id)).map(c=>c.id);
   const ids=[...baseIds,...customIds];
-  const cats=ids.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean);
+  let cats=ids.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean);
+  cats=mruSort(cats,'catMRU',c=>c.id);
   if(!cats.find(c=>c.id===S.selCat))S.selCat=cats[0]?.id||'other';
   const chips=cats.map(c=>`<div class="cat-chip${c.id===S.selCat?' sel':''}" onclick="selCat('${c.id}',this)"><span style="font-size:20px">${c.icon}</span><span>${catLabel(c)}</span></div>`).join('');
   const addChip=`<div class="cat-chip" onclick="toggleInlineCat()" style="border-style:dashed"><span style="font-size:20px">＋</span><span>${t('addcat')}</span></div>`;
@@ -2041,17 +2045,19 @@ function addInlineCat(){
   document.getElementById('inline-newcat').style.display='none';
   saveS();renderCatChips();
 }
-function selCat(id,el){S.selCat=id;document.querySelectorAll('#cat-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+function selCat(id,el){S.selCat=id;bumpMRU('catMRU',id);saveS();document.querySelectorAll('#cat-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
 function renderAcctChips(){
-  const accts=S.accounts||[];
+  let accts=(S.accounts||[]).slice();
+  accts=mruSort(accts,'acctMRU',a=>a.id);
   if(!accts.find(a=>a.id===S.selAcct))S.selAcct=accts[0]?.id;
   const chips=accts.map(a=>`<div class="cat-chip${a.id===S.selAcct?' sel':''}" onclick="selAcctChip('${a.id}',this)"><span style="font-size:20px">${a.icon}</span><span>${acctLabel(a)}</span></div>`).join('');
   const addChip=`<div class="cat-chip" onclick="toggleInlineAcct()" style="border-style:dashed"><span style="font-size:20px">＋</span><span>${t('addacct')}</span></div>`;
   document.getElementById('acct-chips').innerHTML=chips+addChip;
 }
-function selAcctChip(id,el){S.selAcct=id;document.querySelectorAll('#acct-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+function selAcctChip(id,el){S.selAcct=id;bumpMRU('acctMRU',id);saveS();document.querySelectorAll('#acct-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
 function renderAcctToChips(){
-  const accts=S.accounts||[];
+  let accts=(S.accounts||[]).slice();
+  accts=mruSort(accts,'acctMRU',a=>a.id);
   if(!accts.find(a=>a.id===S.selAcctTo))S.selAcctTo=accts.find(a=>a.id!==S.selAcct)?.id||accts[0]?.id;
   document.getElementById('acct-to-chips').innerHTML=accts.map(a=>`<div class="cat-chip${a.id===S.selAcctTo?' sel':''}" onclick="selAcctToChip('${a.id}',this)"><span style="font-size:20px">${a.icon}</span><span>${acctLabel(a)}</span></div>`).join('');
 }
@@ -2108,6 +2114,7 @@ function saveTxn(){
     const fromAcct=getAcct(S.selAcct);
     const toAcct=getAcct(S.selAcctTo);
     if(!fromAcct||!toAcct||fromAcct.id===toAcct.id){alert(t('sametransfererr'));return;}
+    bumpMRU('acctMRU',fromAcct.id);bumpMRU('acctMRU',toAcct.id);
     const note=document.getElementById('t-note').value||`${acctLabel(fromAcct)} → ${acctLabel(toAcct)}`;
     const tx={id:editId||Date.now(),type:'transfer',amount:amt,amtHKD,cur,
       acctId:fromAcct.id,acctLabel:acctLabel(fromAcct),acctIcon:fromAcct.icon,
@@ -2120,6 +2127,7 @@ function saveTxn(){
   }
   const cat=getCat(S.selCat);
   const acct=getAcct(S.selAcct);
+  bumpMRU('catMRU',cat.id);if(acct)bumpMRU('acctMRU',acct.id);
   const tx={id:editId||Date.now(),type:S.curType,amount:amt,amtHKD,cur,catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:acct?acct.id:'',acctLabel:acct?acctLabel(acct):'',acctIcon:acct?acct.icon:'',note:document.getElementById('t-note').value||catLabel(cat),date:document.getElementById('t-date').value,oneOff:document.getElementById('oneoff-toggle').classList.contains('on')};
   if(editId){
     const i=S.txns.findIndex(x=>String(x.id)===String(editId));if(i>=0){tx.autoPayId=S.txns[i].autoPayId;S.txns[i]={...S.txns[i],...tx};syncAutoPayFromTxn(S.txns[i]);}
