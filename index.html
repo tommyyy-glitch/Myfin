@@ -617,8 +617,14 @@ img,canvas,svg{max-width:100%;}
         <div><div class="mlabel" data-i="pnlbreakdown"></div><div style="font-size:15px;font-weight:700" id="g-breakdown">HK$0</div></div>
         <div id="g-margin-wrap" style="display:none"><div class="mlabel" data-i="marginused"></div><div style="font-size:15px;font-weight:700;color:var(--a3)" id="g-margin">HK$0</div></div>
       </div>
+      <div class="metric-row" id="pnl-metric-row" style="margin:14px 0 6px;flex-wrap:wrap;gap:10px">
+        <div class="metric-card" data-sec="poker"><div class="mlabel" data-i="poker"></div><div class="mval" id="g-poker-pnl">HK$0</div></div>
+        <div class="metric-card" data-sec="stock"><div class="mlabel" data-i="stocks"></div><div class="mval" id="g-stock-pnl">HK$0</div></div>
+        <div class="metric-card" data-sec="crypto"><div class="mlabel" data-i="crypto"></div><div class="mval" id="g-crypto-pnl">HK$0</div></div>
+        <div class="metric-card" data-sec="pe"><div class="mlabel" data-i="privateequity"></div><div class="mval" id="g-pe-pnl">HK$0</div></div>
+      </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:14px">
-        <canvas id="pnl-pie" width="120" height="120" style="flex-shrink:0"></canvas>
+        <canvas id="pnl-pie" width="160" height="160" style="width:160px;height:160px;flex-shrink:0"></canvas>
         <div style="width:100%"><div class="mlabel" data-i="portfvalue" style="margin-bottom:8px"></div><div id="pnl-pie-legend" style="display:flex;flex-direction:column;gap:9px"></div></div>
       </div>
     </div>
@@ -635,12 +641,6 @@ img,canvas,svg{max-width:100%;}
         <button class="fchip active" onclick="setTrendGran('month',this)" data-i="granmonth"></button>
       </div>
       <canvas id="trend-chart" width="600" height="220" style="width:100%;height:170px"></canvas>
-    </div>
-    <div class="metric-row" id="pnl-metric-row" style="margin-bottom:16px;flex-wrap:wrap">
-      <div class="metric-card" data-sec="poker"><div class="mlabel" data-i="poker"></div><div class="mval" id="g-poker-pnl">HK$0</div></div>
-      <div class="metric-card" data-sec="stock"><div class="mlabel" data-i="stocks"></div><div class="mval" id="g-stock-pnl">HK$0</div></div>
-      <div class="metric-card" data-sec="crypto"><div class="mlabel" data-i="crypto"></div><div class="mval" id="g-crypto-pnl">HK$0</div></div>
-      <div class="metric-card" data-sec="pe"><div class="mlabel" data-i="privateequity"></div><div class="mval" id="g-pe-pnl">HK$0</div></div>
     </div>
     <div id="pnl-sections">
     <div class="pnl-sec" id="sec-poker">
@@ -662,14 +662,13 @@ img,canvas,svg{max-width:100%;}
     <div class="slbl" style="display:flex;align-items:center;justify-content:space-between"><span>&#x1F4C8; <span data-i="stocks"></span></span><button onclick="openBrowse()" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer;text-transform:none;letter-spacing:0"><i class="ti ti-list-search" style="font-size:13px;vertical-align:-2px"></i> <span data-i="browse"></span></button></div>
     <div class="glass-card" style="padding:14px;margin-bottom:4px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div><div class="mlabel" data-i="unrealisedpnl"></div><div class="mval" id="stock-pnl-val">HK$0</div></div>
+        <div><div class="mlabel" data-i="unrealisedpnl"></div><div class="mval" id="stock-pnl-val">HK$0</div><div class="msub" style="margin-top:4px"><span data-i="realisedpnl"></span>: <strong id="stock-real" style="color:var(--ink)">HK$0</strong></div></div>
         <canvas id="stock-chart" width="110" height="46" style="flex-shrink:0"></canvas>
       </div>
       <div style="display:flex;gap:14px;font-size:12px;color:var(--ink3);flex-wrap:wrap">
         <span><span data-i="costlbl"></span>: <strong id="stock-cost" style="color:var(--ink)">HK$0</strong></span>
         <span><span data-i="valuelbl"></span>: <strong id="stock-val" style="color:var(--ink)">HK$0</strong></span>
         <span><span data-i="positionslbl"></span>: <strong id="stock-ct" style="color:var(--ink)">0</strong></span>
-        <span><span data-i="realisedpnl"></span>: <strong id="stock-real" style="color:var(--ink)">HK$0</strong></span>
       </div>
     </div>
     <div class="glass-card" id="stock-list" style="margin-bottom:16px"></div>
@@ -678,14 +677,13 @@ img,canvas,svg{max-width:100%;}
     <div class="slbl">&#x20BF; <span data-i="crypto"></span></div>
     <div class="glass-card" style="padding:14px;margin-bottom:4px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <div><div class="mlabel" data-i="unrealisedpnl"></div><div class="mval" id="crypto-pnl-val">HK$0</div></div>
+        <div><div class="mlabel" data-i="unrealisedpnl"></div><div class="mval" id="crypto-pnl-val">HK$0</div><div class="msub" style="margin-top:4px"><span data-i="realisedpnl"></span>: <strong id="crypto-real" style="color:var(--ink)">HK$0</strong></div></div>
         <canvas id="crypto-chart" width="110" height="46" style="flex-shrink:0"></canvas>
       </div>
       <div style="display:flex;gap:14px;font-size:12px;color:var(--ink3);flex-wrap:wrap">
         <span><span data-i="costlbl"></span>: <strong id="crypto-cost" style="color:var(--ink)">HK$0</strong></span>
         <span><span data-i="valuelbl"></span>: <strong id="crypto-val" style="color:var(--ink)">HK$0</strong></span>
         <span><span data-i="positionslbl"></span>: <strong id="crypto-ct" style="color:var(--ink)">0</strong></span>
-        <span><span data-i="realisedpnl"></span>: <strong id="crypto-real" style="color:var(--ink)">HK$0</strong></span>
       </div>
     </div>
     <div class="glass-card" id="crypto-list" style="margin-bottom:16px"></div>
@@ -1675,11 +1673,14 @@ function piePrepData(arr,opts){
 // Solid (filled) pie with on-slice % labels. Each datum needs .val and .color.
 function drawSolidPie(ctx,cx,cy,R,data,total){
   let ang=-Math.PI/2;
+  const sep=document.body.classList.contains('dark')?'#161618':'#fff';
   data.forEach(d=>{const frac=total?d.val/total:0;const sl=frac*Math.PI*2;
     ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,ang,ang+sl);ctx.closePath();ctx.fillStyle=d.color;ctx.fill();
+    ctx.lineWidth=Math.max(1.5,R*0.035);ctx.strokeStyle=sep;ctx.stroke();
     const pct=frac*100;
-    if(pct>=7){const mid=ang+sl/2,lr=R*0.6;ctx.fillStyle='#fff';ctx.font='700 '+(R>=48?12:10)+'px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(Math.round(pct)+'%',cx+Math.cos(mid)*lr,cy+Math.sin(mid)*lr);}
+    if(pct>=6){const mid=ang+sl/2,lr=R*0.6;const x=cx+Math.cos(mid)*lr,y=cy+Math.sin(mid)*lr;ctx.font='800 '+(R>=64?13:12)+'px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,0.38)';ctx.strokeText(Math.round(pct)+'%',x,y);ctx.fillStyle='#fff';ctx.fillText(Math.round(pct)+'%',x,y);}
     ang+=sl;});
+  ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.lineWidth=1;ctx.strokeStyle=document.body.classList.contains('dark')?'rgba(255,255,255,0.18)':'rgba(0,0,0,0.08)';ctx.stroke();
 }
 function drawCatPie(canvasId,legendId,rawData,kind){
   const PIE_COLORS=['#1D9E75','#534AB7','#BA7517','#185FA5','#D85A30','#0F6E56','#3C3489','#854F0B'];
@@ -1692,7 +1693,7 @@ function drawCatPie(canvasId,legendId,rawData,kind){
   if(!total){legend.innerHTML=`<span style="font-size:13px;color:var(--ink3)">${kind==='spend'?t('nothisperiod'):t('nothisincome')}</span>`;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=document.body.classList.contains('dark')?'#222':'#eee';ctx.fill();return;}
   data.forEach((d,i)=>d.color=PIE_COLORS[i%8]);
   drawSolidPie(ctx,cx,cy,R,data,total);
-  legend.innerHTML=data.map(d=>{const pct=((d.val/total)*100).toFixed(0);return `<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="width:10px;height:10px;border-radius:50%;background:${d.color};flex-shrink:0"></div><span style="font-size:12px;color:var(--ink2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.label} <span style="color:var(--ink3)">${pct}%</span></span><span style="font-size:12px;font-weight:700;color:var(--ink);flex-shrink:0">${fmt(d.val)}</span></div>`;}).join('');
+  legend.innerHTML=data.map(d=>{const pct=((d.val/total)*100).toFixed(0);return `<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="width:12px;height:12px;border-radius:50%;background:${d.color};flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,0.08)"></div><span style="font-size:12px;color:var(--ink2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.label} <span style="color:var(--ink3)">${pct}%</span></span><span style="font-size:12px;font-weight:700;color:var(--ink);flex-shrink:0">${fmt(d.val)}</span></div>`;}).join('');
 }
 
 // ─── WEALTH LINE CHART ─────────────────────────────────────
@@ -2915,18 +2916,18 @@ function renderGamble(){
   const allCash=(S.accounts||[]).filter(ac=>!ac.excluded).reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
   if(allCash>0&&!S.pnlPieNoCash)pieRaw.push({label:t('positioncash'),val:allCash,_cash:true});
   const {data:pieData,total:pieTotal}=piePrepData(pieRaw,{minPct:1.5,cap:9});
-  let pci=0;pieData.forEach(d=>{d.color=d._cash?'#8A8F98':(d._other?'#9AA0A8':POS_COLORS[pci++%POS_COLORS.length]);});
+  let pci=0;pieData.forEach(d=>{const isOther=d._other||String(d.label||'').toLowerCase()==='other'||String(d.label||'')==='其他';d.color=d._cash?'#667085':(isOther?'#FFB020':POS_COLORS[pci++%POS_COLORS.length]);});
   const cashBtn=document.getElementById('pie-cash-btn');
   if(cashBtn){const inc=!S.pnlPieNoCash;cashBtn.innerHTML=(inc?'✓ ':'')+'💵 '+t('positioncash');cashBtn.style.opacity=inc?'1':'0.5';cashBtn.style.textDecoration=inc?'none':'line-through';}
   const pieCanvas=document.getElementById('pnl-pie');
   const pieLegend=document.getElementById('pnl-pie-legend');
   if(pieCanvas){
     const ctx=pieCanvas.getContext('2d');
-    const W=120,H=120,cx=60,cy=60,R=56;
+    const W=160,H=160,cx=80,cy=80,R=74;
     pieCanvas.width=W*2;pieCanvas.height=H*2;ctx.scale(2,2);ctx.clearRect(0,0,W,H);
     if(!pieTotal){ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=document.body.classList.contains('dark')?'#222':'#eee';ctx.fill();}
     else drawSolidPie(ctx,cx,cy,R,pieData,pieTotal);
-    pieLegend.innerHTML=pieTotal?pieData.map(d=>{const pctShare=((d.val/pieTotal)*100).toFixed(0);return `<div style="display:flex;align-items:center;gap:7px;min-width:0"><div style="width:10px;height:10px;border-radius:50%;background:${d.color};flex-shrink:0"></div><span style="font-size:12px;color:var(--ink2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.label} <span style="color:var(--ink3)">${pctShare}%</span></span><span style="font-size:12px;font-weight:700;color:var(--ink);flex-shrink:0">${fmt(d.val)}</span></div>`;}).join(''):`<span style="font-size:12px;color:var(--ink3)">${t('portfvalue')}: HK$0</span>`;
+    pieLegend.innerHTML=pieTotal?pieData.map(d=>{const pctShare=((d.val/pieTotal)*100).toFixed(0);return `<div style="display:flex;align-items:center;gap:7px;min-width:0"><div style="width:12px;height:12px;border-radius:50%;background:${d.color};flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,0.08)"></div><span style="font-size:12px;color:var(--ink2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.label} <span style="color:var(--ink3)">${pctShare}%</span></span><span style="font-size:12px;font-weight:700;color:var(--ink);flex-shrink:0">${fmt(d.val)}</span></div>`;}).join(''):`<span style="font-size:12px;color:var(--ink3)">${t('portfvalue')}: HK$0</span>`;
   }
   // ── POSITION ROW BUILDER ──
   function portRow(p,color,bgColor,realizedHKD){
