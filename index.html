@@ -217,6 +217,13 @@ body{
 .crow{display:flex;align-items:center;padding:13px 16px;gap:12px;border-bottom:0.5px solid var(--bdr)}
 .crow:last-child{border-bottom:none}
 .crow.alert-row{background:rgba(216,90,48,0.08)}
+.day-group{border-bottom:0.5px solid var(--bdr)}
+.day-group:last-child{border-bottom:none}
+.day-head{display:flex;align-items:center;gap:8px;justify-content:space-between;background:var(--bg2);padding:9px 14px;color:var(--ink3);font-size:12px;font-weight:700;letter-spacing:.01em}
+.day-head-left{display:flex;align-items:center;gap:8px;min-width:0}
+.day-dot{width:8px;height:8px;border-radius:50%;background:var(--g);flex-shrink:0}
+.day-date{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.day-sum{font-weight:700;text-align:right;white-space:nowrap}
 .ibox{
   width:40px;height:40px;border-radius:12px;display:flex;align-items:center;justify-content:center;
   font-size:19px;flex-shrink:0;
@@ -450,6 +457,13 @@ img,canvas,svg{max-width:100%;}
       <button class="period-btn" onclick="setPeriod('month',this)" data-i="month"></button>
       <button class="period-btn" onclick="setPeriod('year',this)" data-i="year"></button>
       <button class="period-btn" onclick="setPeriod('all',this)" data-i="alltime"></button>
+      <button class="period-btn" onclick="setPeriod('custom',this)" data-i="customrange"></button>
+    </div>
+    <div id="range-main" style="display:none;gap:8px;align-items:center;margin:10px 20px 0;flex-wrap:wrap">
+      <input type="date" id="range-main-from" class="fval" style="flex:1;min-width:120px;border:1.5px solid var(--bdr2);border-radius:10px;padding:8px 10px;background:var(--bg2);color:var(--ink);font-size:13px">
+      <span style="font-size:12px;color:var(--ink3)" data-i="rangeto"></span>
+      <input type="date" id="range-main-to" class="fval" style="flex:1;min-width:120px;border:1.5px solid var(--bdr2);border-radius:10px;padding:8px 10px;background:var(--bg2);color:var(--ink);font-size:13px">
+      <button onclick="renderHome()" style="padding:8px 14px;background:var(--hero-grad);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer" data-i="apply"></button>
     </div>
 
     <!-- SPEND SUMMARY -->
@@ -473,21 +487,8 @@ img,canvas,svg{max-width:100%;}
         </div>
       </div>
 
-      <!-- SPEND BY CATEGORY (independent filter) -->
+      <!-- SPEND BY CATEGORY (uses the shared period filter above) -->
       <div class="slbl" data-i="spendbycat"></div>
-      <div class="filter-chips" id="catfilter-spend" style="margin-bottom:8px">
-        <button class="fchip active" onclick="setCatPeriod('spend','week',this)" data-i="week"></button>
-        <button class="fchip" onclick="setCatPeriod('spend','month',this)" data-i="month"></button>
-        <button class="fchip" onclick="setCatPeriod('spend','year',this)" data-i="year"></button>
-        <button class="fchip" onclick="setCatPeriod('spend','all',this)" data-i="alltime"></button>
-        <button class="fchip" onclick="setCatPeriod('spend','custom',this)" data-i="customrange"></button>
-      </div>
-      <div id="range-spend" style="display:none;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-        <input type="date" id="range-spend-from" class="fval" style="flex:1;min-width:120px;border:1.5px solid var(--bdr2);border-radius:10px;padding:8px 10px;background:var(--bg2);color:var(--ink);font-size:13px">
-        <span style="font-size:12px;color:var(--ink3)" data-i="rangeto"></span>
-        <input type="date" id="range-spend-to" class="fval" style="flex:1;min-width:120px;border:1.5px solid var(--bdr2);border-radius:10px;padding:8px 10px;background:var(--bg2);color:var(--ink);font-size:13px">
-        <button onclick="renderHome()" style="padding:8px 14px;background:var(--hero-grad);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer" data-i="apply"></button>
-      </div>
       <div class="glass-card">
         <div class="pie-wrap" id="pie-wrap">
           <canvas class="pie-canvas" id="pie-canvas" width="130" height="130"></canvas>
@@ -495,21 +496,8 @@ img,canvas,svg{max-width:100%;}
         </div>
       </div>
 
-      <!-- INCOME BY CATEGORY (independent filter) -->
+      <!-- INCOME BY CATEGORY (uses the shared period filter above) -->
       <div class="slbl" data-i="incomebycat"></div>
-      <div class="filter-chips" id="catfilter-income" style="margin-bottom:8px">
-        <button class="fchip active" onclick="setCatPeriod('income','week',this)" data-i="week"></button>
-        <button class="fchip" onclick="setCatPeriod('income','month',this)" data-i="month"></button>
-        <button class="fchip" onclick="setCatPeriod('income','year',this)" data-i="year"></button>
-        <button class="fchip" onclick="setCatPeriod('income','all',this)" data-i="alltime"></button>
-        <button class="fchip" onclick="setCatPeriod('income','custom',this)" data-i="customrange"></button>
-      </div>
-      <div id="range-income" style="display:none;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
-        <input type="date" id="range-income-from" class="fval" style="flex:1;min-width:120px;border:1.5px solid var(--bdr2);border-radius:10px;padding:8px 10px;background:var(--bg2);color:var(--ink);font-size:13px">
-        <span style="font-size:12px;color:var(--ink3)" data-i="rangeto"></span>
-        <input type="date" id="range-income-to" class="fval" style="flex:1;min-width:120px;border:1.5px solid var(--bdr2);border-radius:10px;padding:8px 10px;background:var(--bg2);color:var(--ink);font-size:13px">
-        <button onclick="renderHome()" style="padding:8px 14px;background:var(--hero-grad);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer" data-i="apply"></button>
-      </div>
       <div class="glass-card">
         <div class="pie-wrap" id="income-pie-wrap">
           <canvas class="pie-canvas" id="income-pie-canvas" width="130" height="130"></canvas>
@@ -587,7 +575,10 @@ img,canvas,svg{max-width:100%;}
         <button class="seg-btn" onclick="filterAR('group',this)" data-i="group"></button>
         <button class="seg-btn" onclick="filterAR('settled',this)" data-i="settled"></button>
       </div>
-      <button class="add-ar-dashed" id="add-ar-btn" onclick="openARModal()"></button>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button class="add-ar-dashed" id="add-ar-btn" onclick="openARModal()" style="margin-bottom:0;flex:1"></button>
+        <button class="add-ar-dashed" onclick="openIncomeModal()" style="margin-bottom:0;flex:1;border-color:rgba(29,158,117,0.45);color:var(--g3)"><i class="ti ti-cash" style="vertical-align:-2px;margin-right:6px"></i><span data-i="income"></span></button>
+      </div>
       <div class="glass-card" id="ar-list"></div>
       <div class="glass-card" id="friends-mgr" style="margin-top:12px"></div>
     </div>
@@ -1589,51 +1580,32 @@ function applyI18n(){
 function setLang(l){S.lang=l;saveS();applyI18n();renderHome();if(S.activeTab==='gamble')renderGamble();if(S.activeTab==='wallet')refreshWallet();if(S.activeTab==='settings')renderSettings();}
 
 // ─── PERIOD FILTER ─────────────────────────────────────────
-function getPeriodTxns(){
-  const now=new Date();
-  return S.txns.filter(tx=>{
-    const d=new Date(tx.date);
-    if(S.period==='week'){const w=new Date(now);w.setDate(w.getDate()-7);return d>=w;}
-    if(S.period==='month'){return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();}
-    if(S.period==='year'){return d.getFullYear()===now.getFullYear();}
+function periodMatchDate(dateStr,period){
+  const now=new Date();const d=new Date(dateStr);period=period||S.period||'week';
+  if(period==='week'){const w=new Date(now);w.setDate(w.getDate()-7);return d>=w;}
+  if(period==='month')return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
+  if(period==='year')return d.getFullYear()===now.getFullYear();
+  if(period==='custom'){
+    const fromEl=document.getElementById('range-main-from');const toEl=document.getElementById('range-main-to');
+    const f=fromEl&&fromEl.value?new Date(fromEl.value):null;const tt=toEl&&toEl.value?new Date(toEl.value):null;
+    if(f&&d<f)return false;
+    if(tt){const te=new Date(tt);te.setHours(23,59,59,999);if(d>te)return false;}
     return true;
-  });
+  }
+  return true;
 }
-function setPeriod(p,btn){
-  S.period=p;
-  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  renderHome();
+function syncPeriodUI(){
+  const p=S.period||'week';
+  document.querySelectorAll('#period-bar .period-btn').forEach(b=>b.classList.toggle('active',b.getAttribute('onclick')&&b.getAttribute('onclick').includes("'"+p+"'")));
+  const r=document.getElementById('range-main');if(r)r.style.display=p==='custom'?'flex':'none';
 }
-// Filter transactions by a named period ('week'|'month'|'year'|'all'|'custom') for a given kind ('spend'|'income')
-function txnsInPeriod(period,kind){
-  const now=new Date();
-  const fromEl=document.getElementById('range-'+kind+'-from');
-  const toEl=document.getElementById('range-'+kind+'-to');
-  return S.txns.filter(tx=>{
-    const d=new Date(tx.date);
-    if(period==='week'){const w=new Date(now);w.setDate(w.getDate()-7);return d>=w;}
-    if(period==='month')return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();
-    if(period==='year')return d.getFullYear()===now.getFullYear();
-    if(period==='custom'){
-      const f=fromEl&&fromEl.value?new Date(fromEl.value):null;
-      const tt=toEl&&toEl.value?new Date(toEl.value):null;
-      if(f&&d<f)return false;
-      if(tt){const te=new Date(tt);te.setHours(23,59,59,999);if(d>te)return false;}
-      return true;
-    }
-    return true; // all
-  });
-}
-function setCatPeriod(kind,period,btn){
-  if(kind==='spend')S.catPeriodSpend=period;else S.catPeriodIncome=period;
-  const bar=document.getElementById('catfilter-'+kind);
-  if(bar){bar.querySelectorAll('.fchip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
-  document.getElementById('range-'+kind).style.display=period==='custom'?'flex':'none';
-  renderHome();
-}
+function getPeriodTxns(){return S.txns.filter(tx=>periodMatchDate(tx.date,S.period));}
+function setPeriod(p,btn){S.period=p;saveS();syncPeriodUI();renderHome();}
+// Shared period filter: Total spend, Income, Spend by category and Income by category all use S.period.
+function txnsInPeriod(period,kind){return S.txns.filter(tx=>periodMatchDate(tx.date,period));}
+function setCatPeriod(kind,period,btn){setPeriod(period,btn);}
 function renderCatPie(kind){
-  const period=kind==='spend'?S.catPeriodSpend:S.catPeriodIncome;
+  const period=S.period||'week';
   const txns=txnsInPeriod(period,kind).filter(tx=>txReportable(tx)&&tx.type===(kind==='spend'?'expense':'income')&&(kind==='income'||!tx.oneOff));
   const totals={};
   txns.forEach(tx=>{const lab=tx.catLabel||(S.lang==='en'?'Other':'其他');totals[lab]=(totals[lab]||0)+tx.amtHKD;});
@@ -1867,6 +1839,11 @@ function updateFab(){
 function fabAction(){
   if(S.activeTab==='wallet'&&S.walletPane==='ar'){openARModal();return;}
   openTxnModal();
+}
+function openIncomeModal(){
+  openTxnModal();
+  setTT('income');
+  const ttl=document.querySelector('#m-txn .mtitle');if(ttl)ttl.textContent='＋ '+t('income');
 }
 
 function openTxnModal(){S._editTxnId=null;S.amtStr='0';document.getElementById('amt-disp').textContent='0';document.getElementById('t-note').value='';document.getElementById('t-cur').value=S.dispCur||'HKD';document.getElementById('t-date').value=today();document.getElementById('t-person').value='';document.getElementById('oneoff-toggle').classList.remove('on');document.getElementById('recur-toggle').classList.remove('on');document.getElementById('recur-day-wrap').style.display='none';document.getElementById('inline-newcat').style.display='none';document.getElementById('inline-newacct').style.display='none';setTT('expense');renderCatChips();renderAcctChips();applyI18n();document.getElementById('m-txn').classList.add('open');}
@@ -2253,6 +2230,7 @@ function toggleHeroDetail(kind){
   detail.classList.toggle('open',open);card.classList.toggle('open',open);card.setAttribute('aria-expanded',open?'true':'false');
 }
 function renderHome(){
+  syncPeriodUI();
   const nwLbl=document.querySelector('.hero-label[data-i="networth"]');
   if(nwLbl)nwLbl.textContent=t('networth')+' ('+(S.dispCur||'HKD')+')';
   const periTxns=getPeriodTxns().filter(txReportable);
@@ -2275,7 +2253,7 @@ function renderHome(){
   document.getElementById('p-income').textContent=fmt(income);
   document.getElementById('p-txct').textContent=periTxns.filter(tx=>tx.type==='expense').length+' '+t('txnsunit');
   document.getElementById('p-cf-lbl').textContent='CF: '+fmt(cf);
-  // category pies (each has its own independent period filter)
+  // category pies use the shared period filter
   renderCatPie('spend');
   renderCatPie('income');
   // wealth
@@ -2287,13 +2265,29 @@ function renderHome(){
   // Transfers are internal account moves now; no A/R resolver needed
   document.getElementById('resolver-zone').innerHTML='';
   // recent
-  document.getElementById('h-recent').innerHTML=S.txns.length?S.txns.slice(0,5).map(txnRow).join(''):`<div style="text-align:center;padding:28px;color:var(--ink3);font-size:14px">${t('notxn')}</div>`;
+  document.getElementById('h-recent').innerHTML=dayGroupedTxnHTML(S.txns.slice(0,12),`<div style="text-align:center;padding:28px;color:var(--ink3);font-size:14px">${t('notxn')}</div>`);
 }
-
+function weekdayLabel(dateStr){
+  const d=new Date(dateStr);const z=S.lang==='en'?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['週日','週一','週二','週三','週四','週五','週六'];
+  if(isNaN(d))return dateStr||'';
+  return (d.getMonth()+1)+'/'+d.getDate()+' ('+z[d.getDay()]+')';
+}
+function dayGroupedTxnHTML(list,emptyHtml){
+  if(!list||!list.length)return emptyHtml;
+  const groups=[];const map={};
+  list.forEach(tx=>{const k=tx.date||today();if(!map[k]){map[k]={date:k,items:[]};groups.push(map[k]);}map[k].items.push(tx);});
+  return groups.map(g=>{
+    const inc=g.items.filter(tx=>txReportable(tx)&&tx.type==='income').reduce((a,tx)=>a+tx.amtHKD,0);
+    const exp=g.items.filter(tx=>txReportable(tx)&&tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
+    const net=inc-exp;
+    const bits=[];if(inc)bits.push(`<span style="color:var(--g3)">+${fmt(inc)}</span>`);if(exp)bits.push(`<span style="color:var(--r3)">−${fmt(exp)}</span>`);if(!bits.length)bits.push(`<span>${g.items.length} ${t('txnsunit')}</span>`);
+    return `<div class="day-group"><div class="day-head"><div class="day-head-left"><span class="day-dot" style="background:${net>=0?'var(--g)':'var(--r)'}"></span><span class="day-date">${weekdayLabel(g.date)}</span></div><div class="day-sum">${bits.join(' · ')}</div></div>${g.items.map(txnRow).join('')}</div>`;
+  }).join('');
+}
 function filterTxn(type,btn){
   if(btn){document.querySelectorAll('#pane-txn .fchip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
   const list=type==='all'?S.txns:type==='oneoff'?S.txns.filter(tx=>tx.oneOff):S.txns.filter(tx=>tx.type===type);
-  document.getElementById('txn-list').innerHTML=list.length?list.map(txnRow).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('notxn')}</div>`;
+  document.getElementById('txn-list').innerHTML=dayGroupedTxnHTML(list,`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('notxn')}</div>`);
 }
 function filterAR(type,btn){
   if(btn){document.querySelectorAll('#pane-ar .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
