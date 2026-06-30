@@ -1,0 +1,14 @@
+{
+  "name": "Finance OS",
+  "short_name": "Myfin",
+  "icons": [
+    { "src": "icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "theme_color": "#1D9E75",
+  "background_color": "#0b7250",
+  "display": "standalone",
+  "start_url": "./",
+  "scope": "./"
+}
