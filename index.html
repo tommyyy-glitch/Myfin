@@ -622,13 +622,18 @@ img,canvas,svg{max-width:100%;}
       </div>
     </div>
     <div class="glass-card" style="padding:16px;margin-bottom:12px">
-      <div class="filter-chips" id="trend-toggle" style="margin-bottom:12px">
+      <div class="filter-chips" id="trend-toggle" style="margin-bottom:10px">
         <button class="fchip active" onclick="setTrend('total',this)" data-i="totaltrend"></button>
         <button class="fchip" data-sec="stock" onclick="setTrend('stock',this)" data-i="stocks"></button>
         <button class="fchip" data-sec="crypto" onclick="setTrend('crypto',this)" data-i="crypto"></button>
         <button class="fchip" data-sec="poker" onclick="setTrend('poker',this)" data-i="poker"></button>
       </div>
-      <canvas id="trend-chart" width="600" height="220" style="width:100%;height:160px"></canvas>
+      <div class="filter-chips" id="trend-gran" style="margin-bottom:12px">
+        <button class="fchip" onclick="setTrendGran('day',this)" data-i="granday"></button>
+        <button class="fchip" onclick="setTrendGran('week',this)" data-i="granweek"></button>
+        <button class="fchip active" onclick="setTrendGran('month',this)" data-i="granmonth"></button>
+      </div>
+      <canvas id="trend-chart" width="600" height="220" style="width:100%;height:170px"></canvas>
     </div>
     <div class="metric-row" id="pnl-metric-row" style="margin-bottom:16px;flex-wrap:wrap">
       <div class="metric-card" data-sec="poker"><div class="mlabel" data-i="poker"></div><div class="mval" id="g-poker-pnl">HK$0</div></div>
@@ -1375,7 +1380,7 @@ function openProfilesModal(){renderProfilesModal();document.getElementById('m-pr
 function renderProfilesModal(){const el=document.getElementById('profiles-list');if(!el)return;const m=ensureProfiles();el.innerHTML=m.list.map(p=>{const active=p.id===m.active;return `<div class="frow" style="gap:10px"><button onclick="switchProfile('${p.id}')" style="flex:1;display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--ink);cursor:pointer;text-align:left;font-size:15px;font-weight:600;min-width:0"><span style="font-size:22px;flex-shrink:0">${p.emoji||'👤'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>${active?'<span class="badge bg" style="flex-shrink:0">使用中</span>':''}</button>${p.id!=='default'?`<button onclick="deleteProfile('${p.id}')" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join('');}
 function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d);Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));}}
-function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
+function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
 function t(k){return LANGS[S.lang][k]||LANGS.en[k]||k;}
 function catLabel(c){return S.lang==='en'?(c.labelEn||c.label):c.label;}
@@ -2724,16 +2729,25 @@ function drawTrend(){
   else if(cust){addPort(p=>String(p.secId)===String(view));}
   events.sort((a,b)=>a.date<b.date?-1:1);
   const color=view==='stock'?'#534AB7':view==='crypto'?'#BA7517':view==='poker'?'#1D9E75':view==='pe'?'#185FA5':cust?'#1D9E75':'#0F6E56';
-  let cum=0;const pts=[0];
-  events.forEach(e=>{cum+=e.v;pts.push(cum);});
-  pts.push(cum+openPnl); // final point includes current unrealized
+  // time-bucketed cumulative realised P&L (+ current unrealised on the last bucket) — same granularity as the wealth trend
+  const gran=S.trendGran||'month';
+  document.querySelectorAll('#trend-gran .fchip').forEach((b,i)=>b.classList.toggle('active',['day','week','month'][i]===gran));
+  const now=new Date();const buckets=[];let earliestStr;
+  if(gran==='day'){earliestStr=_dstr(new Date(now.getFullYear(),now.getMonth(),now.getDate()-29));for(let i=29;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i);const ds=_dstr(d);buckets.push({label:(d.getMonth()+1)+'/'+d.getDate(),match:dt=>dt===ds});}}
+  else if(gran==='week'){earliestStr=_dstr(new Date(now.getFullYear(),now.getMonth(),now.getDate()-83));for(let i=11;i>=0;i--){const end=new Date(now.getFullYear(),now.getMonth(),now.getDate()-i*7);const start=new Date(end);start.setDate(start.getDate()-6);const es=_dstr(end),ss=_dstr(start);buckets.push({label:(end.getMonth()+1)+'/'+end.getDate(),match:dt=>dt>=ss&&dt<=es});}}
+  else{earliestStr=_dstr(new Date(now.getFullYear(),now.getMonth()-11,1));for(let i=11;i>=0;i--){const d=new Date(now.getFullYear(),now.getMonth()-i,1);const yy=d.getFullYear(),mm=d.getMonth();buckets.push({label:(mm+1)+(S.lang==='en'?'':'月'),match:dt=>{const t2=new Date(dt);return t2.getFullYear()===yy&&t2.getMonth()===mm;}});}}
+  let baseline=0;events.forEach(e=>{if(e.date<earliestStr)baseline+=e.v;});
+  let cum=baseline;const pts=[];
+  buckets.forEach(b=>{events.forEach(e=>{if(e.date>=earliestStr&&b.match(e.date))cum+=e.v;});pts.push(cum);});
+  if(pts.length)pts[pts.length-1]+=openPnl;
+  const labels=buckets.map(b=>b.label);
   const ctx=canvas.getContext('2d');
-  const W=600,H=220,pad=24;
+  const W=600,H=220,pad=24,padb=34;
   canvas.width=W;canvas.height=H;ctx.clearRect(0,0,W,H);
-  if(pts.length<2){ctx.fillStyle='#9a9a9a';ctx.font='16px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText(t('nosessions'),W/2,H/2);return;}
+  if(!events.length&&!openPnl){ctx.fillStyle='#9a9a9a';ctx.font='16px -apple-system,sans-serif';ctx.textAlign='center';ctx.fillText(t('nosessions'),W/2,H/2);return;}
   const min=Math.min(...pts,0),max=Math.max(...pts,0),range=(max-min)||1;
   const x=i=>pad+(i/(pts.length-1))*(W-2*pad);
-  const y=v=>H-pad-((v-min)/range)*(H-2*pad);
+  const y=v=>H-padb-((v-min)/range)*(H-pad-padb);
   // zero line
   ctx.strokeStyle='rgba(150,150,150,0.3)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad,y(0));ctx.lineTo(W-pad,y(0));ctx.stroke();
   // area
@@ -2743,7 +2757,12 @@ function drawTrend(){
   ctx.beginPath();ctx.moveTo(x(0),y(pts[0]));pts.forEach((v,i)=>ctx.lineTo(x(i),y(v)));ctx.strokeStyle=color;ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();
   // end dot
   ctx.beginPath();ctx.arc(x(pts.length-1),y(pts[pts.length-1]),4,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+  // x-axis labels (thinned to ~7)
+  ctx.fillStyle='#9a9a9a';ctx.font='11px -apple-system,sans-serif';ctx.textAlign='center';
+  const step=Math.max(1,Math.ceil(pts.length/7));
+  labels.forEach((lb,i)=>{if(i%step===0||i===labels.length-1)ctx.fillText(lb,x(i),H-12);});
 }
+function setTrendGran(g,btn){S.trendGran=g;saveS();document.querySelectorAll('#trend-gran .fchip').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');drawTrend();}
 function pokerRowHTML(g){
   const sp=g.open?0:((g.cashoutHKD||0)-(g.buyinHKD||0));
   const detail=[g.blinds?`${t('blinds')} ${g.blinds}`:'',g.maxp?`${t('maxplayers')} ${g.maxp}`:'',g.bb?`BB ${g.bb}`:'',g.resultbb!=null?`${g.resultbb>0?'+':''}${g.resultbb}BB`:''].filter(Boolean).join(' · ');
