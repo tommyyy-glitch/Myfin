@@ -1559,6 +1559,7 @@ function abbrevNum(v){var neg=v<0;v=Math.abs(v);var s;
   return (neg?'-':'')+s.replace(/\.0(?=[KMB]$)/,'');}
 function numStr(v){return S.numFmt==='abbr'?abbrevNum(v):Math.round(v).toLocaleString();}
 function fmt(n){const c=S.dispCur||'HKD';const v=(c==='HKD')?n:n/(FX[c]||1);return (CUR_SYM[c]||'')+numStr(v);}
+function fmtSigned(n){return n<0?'−'+fmt(Math.abs(n)):fmt(n);}
 function setNumFmt(m){S.numFmt=m;saveS();document.querySelectorAll('.numfmt-btn').forEach(b=>b.classList.toggle('active',b.dataset.numfmt===(S.numFmt||'full')));renderHome();if(S.activeTab==='gamble')renderGamble();if(typeof refreshWallet==='function')refreshWallet();}
 function getCat(id){return S.cats.find(c=>c.id===id)||S.cats[S.cats.length-1];}
 function getAcct(id){return (S.accounts||[]).find(a=>a.id===id)||(S.accounts||[])[0];}
@@ -1827,12 +1828,20 @@ function setPeriod(p,btn){S.period=p;saveS();syncPeriodUI();renderHome();}
 // Shared period filter: Total spend, Income, Spend by category and Income by category all use S.period.
 function txnsInPeriod(period,kind){return S.txns.filter(tx=>periodMatchDate(tx.date,period));}
 function setCatPeriod(kind,period,btn){setPeriod(period,btn);}
+function pnlIncomeItems(period){
+  let realised=0,unrealised=0;
+  (S.portfolio||[]).forEach(p=>{const pnl=(p.valueHKD||0)-(p.costHKD||0);if(p.exitPrice){if(periodMatchDate(p.exitDate||p.date||today(),period))realised+=pnl;}else{if(periodMatchDate(today(),period))unrealised+=pnl;}});
+  (S.gamble||[]).forEach(g=>{if(!g.open&&periodMatchDate(g.date||today(),period))realised+=(g.cashoutHKD||0)-(g.buyinHKD||0);});
+  return [{label:t('realisedpnl'),v:realised},{label:t('unrealisedpnl'),v:unrealised}].filter(x=>Math.abs(x.v)>0.0001);
+}
+function pnlIncomeTotal(period){return pnlIncomeItems(period).reduce((a,x)=>a+x.v,0);}
 function renderCatPie(kind){
   const period=S.period||'week';
   const txns=txnsInPeriod(period,kind).filter(tx=>txReportable(tx)&&tx.type===(kind==='spend'?'expense':'income')&&(kind==='income'||!tx.oneOff));
   const totals={};
   txns.forEach(tx=>{const lab=tx.catLabel||(S.lang==='en'?'Other':'其他');totals[lab]=(totals[lab]||0)+tx.amtHKD;});
-  const data=Object.entries(totals).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([label,v])=>({label,v}));
+  if(kind==='income')pnlIncomeItems(period).forEach(x=>{totals[x.label]=(totals[x.label]||0)+x.v;});
+  const data=Object.entries(totals).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,8).map(([label,v])=>({label,v}));
   const canvasId=kind==='spend'?'pie-canvas':'income-pie-canvas';
   const legendId=kind==='spend'?'pie-legend':'income-pie-legend';
   drawCatPie(canvasId,legendId,data,kind);
@@ -1840,12 +1849,13 @@ function renderCatPie(kind){
 // Group slices < minPct% (or beyond cap) into "Other"; returns {data,total}. Carries through fields like color/_cash.
 function piePrepData(arr,opts){
   opts=opts||{};const minPct=opts.minPct!=null?opts.minPct:1.5;const cap=opts.cap||9;
+  const hasDisplay=arr.some(e=>e.displayVal!=null);
   arr=arr.filter(e=>e.val>0).slice().sort((a,b)=>b.val-a.val);
   const total=arr.reduce((a,e)=>a+e.val,0);
   if(!total)return{data:[],total:0};
-  const kept=[];let other=0;
-  arr.forEach((e,i)=>{if(i<cap&&(e.val/total*100)>=minPct)kept.push({...e});else other+=e.val;});
-  if(other>0.0001)kept.push({label:S.lang==='en'?'Other':'其他',val:other,_other:true});
+  const kept=[];let other=0,otherDisplay=0;
+  arr.forEach((e,i)=>{if(i<cap&&(e.val/total*100)>=minPct)kept.push({...e});else{other+=e.val;if(hasDisplay)otherDisplay+=(e.displayVal!=null?e.displayVal:e.val);}});
+  if(other>0.0001){const o={label:S.lang==='en'?'Other':'其他',val:other,_other:true};if(hasDisplay)o.displayVal=otherDisplay;kept.push(o);}
   return{data:kept,total:total};
 }
 // Solid (filled) pie with on-slice % labels. Each datum needs .val and .color.
@@ -1867,11 +1877,12 @@ function drawCatPie(canvasId,legendId,rawData,kind){
   const ctx=canvas.getContext('2d');
   const W=130,H=130,cx=65,cy=65,R=60;
   canvas.width=W*2;canvas.height=H*2;ctx.scale(2,2);ctx.clearRect(0,0,W,H);
-  const {data,total}=piePrepData((rawData||[]).map(d=>({label:d.label,val:d.v})),{minPct:1.5,cap:8});
+  const signed=kind==='income';
+  const {data,total}=piePrepData((rawData||[]).map(d=>({label:d.label,val:signed?Math.abs(d.v):d.v,displayVal:signed?d.v:undefined})),{minPct:1.5,cap:8});
   if(!total){legend.innerHTML=`<span style="font-size:13px;color:var(--ink3)">${kind==='spend'?t('nothisperiod'):t('nothisincome')}</span>`;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=document.body.classList.contains('dark')?'#222':'#eee';ctx.fill();return;}
-  data.forEach((d,i)=>d.color=PIE_COLORS[i%8]);
+  data.forEach((d,i)=>d.color=(signed&&d.displayVal<0)?'#D85A30':PIE_COLORS[i%8]);
   drawSolidPie(ctx,cx,cy,R,data,total);
-  legend.innerHTML=data.map(d=>{const pct=((d.val/total)*100).toFixed(0);return `<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="width:12px;height:12px;border-radius:50%;background:${d.color};flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,0.08)"></div><span style="font-size:12px;color:var(--ink2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.label} <span style="color:var(--ink3)">${pct}%</span></span><span style="font-size:12px;font-weight:700;color:var(--ink);flex-shrink:0">${fmt(d.val)}</span></div>`;}).join('');
+  legend.innerHTML=data.map(d=>{const pct=((d.val/total)*100).toFixed(0);const shown=d.displayVal!=null?d.displayVal:d.val;return `<div style="display:flex;align-items:center;gap:7px;margin-bottom:6px"><div style="width:12px;height:12px;border-radius:50%;background:${d.color};flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,0.08)"></div><span style="font-size:12px;color:var(--ink2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d.label} <span style="color:var(--ink3)">${pct}%</span></span><span style="font-size:12px;font-weight:700;color:${shown<0?'var(--r3)':'var(--ink)'};flex-shrink:0">${fmtSigned(shown)}</span></div>`;}).join('');
 }
 
 // ─── WEALTH LINE CHART ─────────────────────────────────────
@@ -2662,7 +2673,7 @@ function renderHome(){
   const nwLbl=document.querySelector('.hero-label[data-i="networth"]');
   if(nwLbl)nwLbl.textContent=t('networth')+' ('+(S.dispCur||'HKD')+')';
   const periTxns=getPeriodTxns().filter(txReportable);
-  const income=periTxns.filter(tx=>tx.type==='income').reduce((a,tx)=>a+tx.amtHKD,0);
+  const income=periTxns.filter(tx=>tx.type==='income').reduce((a,tx)=>a+tx.amtHKD,0)+pnlIncomeTotal(S.period||'week');
   const expAll=periTxns.filter(tx=>tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
   const cf=income-expAll;
   const bs=balanceSheetBreakdown();
@@ -2679,9 +2690,9 @@ function renderHome(){
   document.getElementById('h-longdebt').textContent=(bs.longDebt>0?'−'+fmt(bs.longDebt):fmt(0))+hpc(bs.longDebt,bs.debt);
   // period summary
   document.getElementById('p-spend').textContent=fmt(expAll);
-  document.getElementById('p-income').textContent=fmt(income);
+  document.getElementById('p-income').textContent=fmtSigned(income);
   document.getElementById('p-txct').textContent=periTxns.filter(tx=>tx.type==='expense').length+' '+t('txnsunit');
-  document.getElementById('p-cf-lbl').textContent='CF: '+fmt(cf);
+  document.getElementById('p-cf-lbl').textContent='CF: '+fmtSigned(cf);
   // category pies use the shared period filter
   renderCatPie('spend');
   renderCatPie('income');
@@ -2886,6 +2897,7 @@ function endPosition(id){
   if(!confirm(t('endposq')))return;
   const px=p.currentPrice||p.entryPrice||0;     // close at the latest known price
   p.exitPrice=px;
+  p.exitDate=today();
   p.valueHKD=parseFloat(toHKD(px*(p.qty||0),p.cur).toFixed(2));
   saveS();renderGamble();renderHome();refreshWallet();
 }
@@ -2911,6 +2923,7 @@ function confirmSell(){
   if(sellQty>=(p.qty||0)-1e-9){
     // selling the whole thing → just close it at the sell price
     p.exitPrice=sellPx;
+    p.exitDate=today();
     p.valueHKD=parseFloat(toHKD(sellPx*(p.qty||0),p.cur).toFixed(2));
   } else {
     // split off a realized (closed) lot for the sold units; reduce the open position by the same qty
