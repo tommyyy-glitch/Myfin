@@ -262,7 +262,8 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
 /* DASHBOARD CARDS */
 .dash-section{padding:18px 20px 0}
 .slbl{font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px;margin-top:4px}
-.slbl.set-h{cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:104px;padding:14px 10px;margin:0 0 12px;background:rgba(255,240,247,0.78);border:1px solid var(--glass-bdr);border-radius:22px;user-select:none;text-align:center;color:var(--ink);font-size:13px;letter-spacing:0;text-transform:none;box-shadow:var(--card-shadow);position:relative}
+.slbl.set-h{cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:104px;padding:14px 10px;margin:0 0 12px;background:rgba(232,232,232,0.86);border:1px solid rgba(0,0,0,0.07);border-radius:22px;user-select:none;text-align:center;color:var(--ink);font-size:13px;letter-spacing:0;text-transform:none;box-shadow:var(--card-shadow);position:relative}
+body.dark .slbl.set-h{background:rgba(42,42,46,0.88);border-color:rgba(255,255,255,0.12)}
 .slbl.set-h .set-ico{font-size:34px;line-height:1;filter:saturate(1.08)}
 .slbl.set-h .set-title{font-size:13px;font-weight:800;line-height:1.15;color:var(--ink)}
 .slbl.set-h::after{content:'⌄';position:absolute;right:10px;top:8px;font-size:15px;opacity:0.45;transition:transform .2s}
@@ -276,6 +277,8 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
   border:1px solid var(--glass-bdr);border-radius:18px;overflow:hidden;
   box-shadow:var(--card-shadow);margin-bottom:16px;
 }
+#s-settings .glass-card{background:rgba(235,235,235,0.82);border-color:rgba(0,0,0,0.07)}
+body.dark #s-settings .glass-card{background:rgba(36,36,40,0.9);border-color:rgba(255,255,255,0.12)}
 .metric-row{display:flex;gap:10px;margin-bottom:16px}
 .metric-card{
   flex:1;background:var(--glass);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
@@ -1788,7 +1791,7 @@ function saveOpening(){
   if(ac)ac.opening=v;
   saveS();closeM('m-opening');renderAcctBalances();renderHome();
 }
-function today(){return new Date().toISOString().split('T')[0];}
+function today(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function dimM(y,m){return new Date(y,m+1,0).getDate();}
 
 function applyI18n(){
@@ -2673,9 +2676,10 @@ function renderHome(){
   const nwLbl=document.querySelector('.hero-label[data-i="networth"]');
   if(nwLbl)nwLbl.textContent=t('networth')+' ('+(S.dispCur||'HKD')+')';
   const periTxns=getPeriodTxns().filter(txReportable);
-  const income=periTxns.filter(tx=>tx.type==='income').reduce((a,tx)=>a+tx.amtHKD,0)+pnlIncomeTotal(S.period||'week');
+  const incomeCash=periTxns.filter(tx=>tx.type==='income').reduce((a,tx)=>a+tx.amtHKD,0);
+  const income=incomeCash+pnlIncomeTotal(S.period||'week');
   const expAll=periTxns.filter(tx=>tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
-  const cf=income-expAll;
+  const cf=incomeCash-expAll;
   const bs=balanceSheetBreakdown();
   // hero accounting board: Net worth = Total assets − Total debt
   document.getElementById('h-nw').textContent=fmt(bs.netWorth);
@@ -2690,7 +2694,7 @@ function renderHome(){
   document.getElementById('h-longdebt').textContent=(bs.longDebt>0?'−'+fmt(bs.longDebt):fmt(0))+hpc(bs.longDebt,bs.debt);
   // period summary
   document.getElementById('p-spend').textContent=fmt(expAll);
-  document.getElementById('p-income').textContent=fmtSigned(income);
+  const pi=document.getElementById('p-income');pi.textContent=fmtSigned(income);pi.className='mval '+(income>=0?'pos':'neg');
   document.getElementById('p-txct').textContent=periTxns.filter(tx=>tx.type==='expense').length+' '+t('txnsunit');
   document.getElementById('p-cf-lbl').textContent='CF: '+fmtSigned(cf);
   // category pies use the shared period filter
@@ -3593,12 +3597,12 @@ function renderAcctMgr(){
 }
 function toggleAcctExclude(id){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.excluded=!a.excluded;saveS();renderSettings();renderHome();refreshWallet();}
 function pickAcctEmoji(btn){document.getElementById('new-acct-icon').value=btn.textContent.trim();}
-function addAcct(){const icon=document.getElementById('new-acct-icon').value.trim()||'💳';const name=document.getElementById('new-acct-name').value.trim();if(!name)return;let id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!id)id='acct_'+Date.now();if(!S.accounts)S.accounts=[];const kind=document.getElementById('new-acct-kind').value;const isInvest=kind==='invest';const cur=document.getElementById('new-acct-cur').value||'HKD';if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,cur});['new-acct-icon','new-acct-name'].forEach(x=>document.getElementById(x).value='');document.getElementById('new-acct-cur').value=S.dispCur||'HKD';saveS();renderSettings();}
+function addAcct(){const icon=document.getElementById('new-acct-icon').value.trim()||'💳';const name=document.getElementById('new-acct-name').value.trim();if(!name)return;let id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!id)id='acct_'+Date.now();if(!S.accounts)S.accounts=[];const kind=document.getElementById('new-acct-kind').value;const isInvest=kind==='invest';const cur=document.getElementById('new-acct-cur').value||'HKD';if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,cur});['new-acct-icon','new-acct-name'].forEach(x=>document.getElementById(x).value='');document.getElementById('new-acct-cur').value=S.dispCur||'HKD';saveS();renderSettings();renderHome();refreshWallet();}
 function setAcctCur(id,cur){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.cur=cur;saveS();renderSettings();renderHome();refreshWallet();}
 function fmtCur(n,cur){cur=cur||'HKD';const v=cur==='HKD'?n:n/(FX[cur]||1);return (CUR_SYM[cur]||(cur+' '))+numStr(v);}
 function setAcctFilter(v){S.acctFilter=v;saveS();renderAcctBalances();}
 function setAcctKind(id,kind){const a=(S.accounts||[]).find(x=>x.id===id);if(a){a.kind=kind;a.isInvest=(kind==='invest');}saveS();renderSettings();renderHome();}
-function deleteAcct(id){if((S.accounts||[]).length<=1)return;S.accounts=S.accounts.filter(a=>a.id!==id);if(S.selAcct===id)S.selAcct=S.accounts[0]?.id;saveS();renderSettings();}
+function deleteAcct(id){if((S.accounts||[]).length<=1)return;S.accounts=S.accounts.filter(a=>a.id!==id);if(S.selAcct===id)S.selAcct=S.accounts[0]?.id;saveS();renderSettings();renderHome();refreshWallet();}
 function renderMergeChips(){document.getElementById('merge-chips').innerHTML=S.cats.map(c=>`<div class="cat-chip${S.mergeSelected.includes(c.id)?' merge-sel':''}" onclick="toggleMergeSel('${c.id}')"><span style="font-size:20px">${c.icon}</span><span>${catLabel(c)}</span></div>`).join('');updateMergePreview();}
 function toggleMergeSel(id){const i=S.mergeSelected.indexOf(id);i>=0?S.mergeSelected.splice(i,1):S.mergeSelected.push(id);renderMergeChips();}
 function updateMergePreview(){const sel=S.mergeSelected.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean);const prev=document.getElementById('merge-preview');if(sel.length<2){prev.innerHTML=`<div style="font-size:12px;color:var(--ink3)">${t('mergehint')}</div>`;return;}const newName=document.getElementById('merge-name')?.value||'...';prev.innerHTML=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px">${sel.map(c=>`<span style="background:var(--g2);color:var(--g3);padding:3px 10px;border-radius:20px">${c.icon} ${catLabel(c)}</span>`).join('<span style="color:var(--ink3)">+</span>')}<span style="color:var(--ink3)">→</span><span style="background:var(--p2);color:var(--p3);padding:3px 10px;border-radius:20px">${newName}</span></div>`;}
