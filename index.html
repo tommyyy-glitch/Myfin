@@ -747,8 +747,10 @@ img,canvas,svg{max-width:100%;}
         <span><span data-i="valuelbl"></span>: <strong id="stock-val" style="color:var(--ink)">HK$0</strong></span>
         <span><span data-i="positionslbl"></span>: <strong id="stock-ct" style="color:var(--ink)">0</strong></span>
       </div>
+      <button class="record-toggle" id="stock-record-btn" onclick="toggleRecordPanel('stock-records','stock-record-btn')" style="margin-top:10px"><span data-i="record"></span></button>
     </div>
-    <div class="glass-card" id="stock-list" style="margin-bottom:16px"></div>
+    <div class="glass-card" id="stock-list" style="margin-bottom:4px"></div>
+    <div class="glass-card record-panel" id="stock-records" style="margin-bottom:16px"></div>
     </div>
     <div class="pnl-sec" id="sec-crypto">
     <div class="slbl">&#x20BF; <span data-i="crypto"></span></div>
@@ -762,8 +764,10 @@ img,canvas,svg{max-width:100%;}
         <span><span data-i="valuelbl"></span>: <strong id="crypto-val" style="color:var(--ink)">HK$0</strong></span>
         <span><span data-i="positionslbl"></span>: <strong id="crypto-ct" style="color:var(--ink)">0</strong></span>
       </div>
+      <button class="record-toggle" id="crypto-record-btn" onclick="toggleRecordPanel('crypto-records','crypto-record-btn')" style="margin-top:10px"><span data-i="record"></span></button>
     </div>
-    <div class="glass-card" id="crypto-list" style="margin-bottom:16px"></div>
+    <div class="glass-card" id="crypto-list" style="margin-bottom:4px"></div>
+    <div class="glass-card record-panel" id="crypto-records" style="margin-bottom:16px"></div>
     </div>
     <div class="pnl-sec" id="sec-pe">
     <div class="slbl">&#x1F3E2; <span data-i="privateequity"></span></div>
@@ -3264,12 +3268,15 @@ function renderGamble(){
   function renderHoldingList(items,color,bgColor){
     const groups={};
     items.forEach(p=>{const k=(p.name||'')+'|'+(p.acctId||'')+'|'+(p.secId||'');(groups[k]=groups[k]||[]).push(p);});
-    const out=Object.values(groups).map(g=>{
+    const openRows=[],closedRows=[];
+    Object.values(groups).forEach(g=>{
       const open=g.find(p=>!p.exitPrice);
       const realized=g.filter(p=>p.exitPrice).reduce((a,p)=>a+((p.valueHKD||0)-(p.costHKD||0)),0);
-      return open?portRow(open,color,bgColor,realized):closedGroupRow(g,color,bgColor,realized);
-    }).join('');
-    return out||`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
+      if(open)openRows.push(portRow(open,color,bgColor,realized));
+      else closedRows.push(closedGroupRow(g,color,bgColor,realized));
+    });
+    const empty=`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
+    return {open:openRows.join('')||empty,closed:closedRows.join('')||empty,closedCount:closedRows.length};
   }
   function peRowHTML(p){
     const pnl=(p.valueHKD||0)-(p.costHKD||0);const pct=p.costHKD?(pnl/p.costHKD*100).toFixed(1):'0.0';
@@ -3277,10 +3284,14 @@ function renderGamble(){
   }
   // ── SESSIONS LIST ──
   document.getElementById('g-sessions').innerHTML=builtPoker.length?builtPoker.map(g=>pokerRowHTML(g)).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${t('nosessions')}</div>`;
-  // ── STOCK LIST ── (grouped: open positions fold in realized P&L; sold lots hidden into history)
-  document.getElementById('stock-list').innerHTML=stocks.length?renderHoldingList(stocks,'var(--p3)','var(--p2)'):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${t('nostockyet')}</div>`;
+  // ── STOCK LIST ── (grouped: open positions shown directly; closed/ended ones hidden behind Record toggle)
+  const stockGrouped=renderHoldingList(stocks,'var(--p3)','var(--p2)');
+  document.getElementById('stock-list').innerHTML=stocksOpen.length?stockGrouped.open:`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${t('nostockyet')}</div>`;
+  document.getElementById('stock-records').innerHTML=stockGrouped.closed;
   // ── CRYPTO LIST ──
-  document.getElementById('crypto-list').innerHTML=cryptos.length?renderHoldingList(cryptos,'var(--a3)','var(--a2)'):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${t('nocryptoyet')}</div>`;
+  const cryptoGrouped=renderHoldingList(cryptos,'var(--a3)','var(--a2)');
+  document.getElementById('crypto-list').innerHTML=cryptosOpen.length?cryptoGrouped.open:`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${t('nocryptoyet')}</div>`;
+  document.getElementById('crypto-records').innerHTML=cryptoGrouped.closed;
   // ── CUSTOM SECTIONS (user-defined, based on an existing type) ──
   const secCont=document.getElementById('pnl-sections');
   secCont.querySelectorAll('[data-custom]').forEach(n=>n.remove());
@@ -3324,7 +3335,7 @@ function renderGamble(){
       const cost=itemsOpen.reduce((a,p)=>a+(p.costHKD||0),0);
       const unreal=val-cost;
       const real=itemsClosed.reduce((a,p)=>a+((p.valueHKD||0)-(p.costHKD||0)),0);
-      rows=items.length?renderHoldingList(items,cs.base==='crypto'?'var(--a3)':'var(--p3)',cs.base==='crypto'?'var(--a2)':'var(--p2)'):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
+      const grouped=items.length?renderHoldingList(items,cs.base==='crypto'?'var(--a3)':'var(--p3)',cs.base==='crypto'?'var(--a2)':'var(--p2)'):{open:`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`,closed:'',closedCount:0};
       let cc=0;chartVals=[0,...itemsOpen.map(p=>cc+=((p.valueHKD||0)-(p.costHKD||0)))];
       chartColor=unreal>=0?(cs.base==='crypto'?'#BA7517':'#534AB7'):'#D85A30';
       summaryHtml=`<div class="glass-card" style="padding:14px;margin-bottom:4px">
@@ -3337,8 +3348,10 @@ function renderGamble(){
           <span>${t('valuelbl')}: <strong style="color:var(--ink)">${fmt(val)}</strong></span>
           <span>${t('positionslbl')}: <strong style="color:var(--ink)">${itemsOpen.length}</strong></span>
         </div>
+        <button class="record-toggle" id="${recordBtnId}" onclick="toggleRecordPanel('${recordId}','${recordBtnId}')" style="margin-top:10px">${t('record')}</button>
       </div>
-      <div class="glass-card" style="margin-bottom:16px">${rows}</div>`;
+      <div class="glass-card" style="margin-bottom:4px">${grouped.open}</div>
+      <div class="glass-card record-panel" id="${recordId}" style="margin-bottom:16px">${grouped.closed}</div>`;
     }else{
       const val=itemsOpen.reduce((a,p)=>a+(p.valueHKD||0),0);
       const cost=itemsOpen.reduce((a,p)=>a+(p.costHKD||0),0);
