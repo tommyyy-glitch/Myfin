@@ -1457,9 +1457,10 @@ const DEF_CATS=[
   {id:'gambling',label:'Gambling',labelEn:'Gambling',icon:'🃏',aliases:['gamble','賭','N8','HKJC','N8 polymarket','fishpoker','賭波']},
   {id:'loss',label:'金損',labelEn:'Loss',icon:'📉',aliases:['虧損','爆倉']},
   {id:'invest',label:'理財投資',labelEn:'Invest',icon:'📈',aliases:['股票','基金','crypto']},
-  {id:'income',label:'主工',labelEn:'Salary',icon:'💼',aliases:['人工','薪水','klook']},
+  {id:'income',label:'主工',labelEn:'Salary',icon:'💼',aliases:['人工','薪水','klook','assistant']},
   {id:'freelance',label:'Freelance',labelEn:'Freelance',icon:'💻',aliases:['副業','edvenue']},
-  {id:'other_inc',label:'Other income',labelEn:'Other income',icon:'💰',aliases:['other','獎金','二手折舊']},
+  {id:'cashback',label:'現金回贈',labelEn:'Cash rebate',icon:'🧧',aliases:['cash dollar','回贈','rebate']},
+  {id:'other_inc',label:'Other income',labelEn:'Other income',icon:'💰',aliases:['other','獎金','二手折舊','交收']},
   {id:'other',label:'Other',labelEn:'Other',icon:'📌',aliases:['其他','gunner']},
 ];
 
@@ -2206,7 +2207,7 @@ function bumpMRU(key,id){if(!id)return;S[key]=[id].concat((S[key]||[]).filter(x=
 function mruSort(arr,key,idOf){const mru=S[key]||[];return arr.slice().sort((a,b)=>{const ia=mru.indexOf(idOf(a)),ib=mru.indexOf(idOf(b));return (ia<0?9999:ia)-(ib<0?9999:ib);});}
 function renderCatChips(){
   const expIds=['food','transport','daily','entertainment','travel','health','fitness','clothing','housing','beauty','education','telecom','social','bigitem','shopping','gambling','loss','other'];
-  const incIds=['income','freelance','other_inc','invest','other'];
+  const incIds=['income','freelance','invest','cashback','other_inc','other'];
   const baseIds=S.curType==='income'?incIds:expIds;
   const defIds=DEF_CATS.map(c=>c.id);
   // include any user-created categories (not part of the default set) so they show up here too
@@ -3479,11 +3480,20 @@ function importMoneyPlus(input){
   };
   r.readAsArrayBuffer(f);
 }
+const MP_SKIP=['gunner'];  // raw categories to drop entirely
+function mpInvestType(acct){var a=(acct||'').toLowerCase();return /mexc|metamask|polymarket|crypto/.test(a)?'crypto':'stock';}
+function mpResolveCat(rawCat,type){
+  let c=MP_CAT[rawCat]?getCat(MP_CAT[rawCat]):null;
+  if(!c){const k=rawCat.toLowerCase();c=S.cats.find(x=>[x.label,x.labelEn].concat(x.aliases||[]).some(v=>v&&v.toString().toLowerCase()===k));}
+  if(c){let id=c.id;if(type==='income'&&id==='other')id='other_inc';const cc=getCat(id)||c;return {catId:cc.id,catLabel:cc.label,catIcon:cc.icon};}
+  return {catId:type==='income'?'other_inc':'other',catLabel:rawCat||(type==='income'?'收入':'其他'),catIcon:'📦'};
+}
 function processMpRows(rows){
   if(!rows||rows.length<2){alert('No rows found');return;}
   let start=0;const h0=(rows[0]||[]).join('');if(h0.indexOf('日期')>=0||h0.toLowerCase().indexOf('date')>=0)start=1;
-  const existing=new Set((S.txns||[]).filter(x=>x._mpKey).map(x=>x._mpKey));
-  let added=0,skipped=0,dup=0;const batch=[];
+  const existing=new Set([].concat(S.txns||[],S.portfolio||[],S.gamble||[]).filter(x=>x._mpKey).map(x=>x._mpKey));
+  let addTxn=0,addPos=0,addGmb=0,skipped=0,dup=0;
+  const txnB=[],posB=[],gmbB=[];
   for(let i=start;i<rows.length;i++){
     const row=rows[i]||[];
     const date=(row[0]||'').toString().trim();
@@ -3493,36 +3503,50 @@ function processMpRows(rows){
     const rawAcct=(row[5]||'').toString().trim();
     const note=(row[7]||'').toString().trim();
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||!amt||isNaN(amt)){skipped++;continue;}
+    if(MP_SKIP.indexOf(rawCat.toLowerCase())>=0){skipped++;continue;}
     let type;
     if(typ==='支出'||typ.toLowerCase()==='expense')type='expense';
     else if(typ==='收入'||typ.toLowerCase()==='income')type='income';
-    else {skipped++;continue;} // skip 轉帳 / transfer / other
+    else {skipped++;continue;} // skip 轉帳 / transfer
     const key='mp|'+date+'|'+type+'|'+amt+'|'+rawCat+'|'+rawAcct+'|'+note;
     if(existing.has(key)){dup++;continue;}
     existing.add(key);
-    let c=MP_CAT[rawCat]?getCat(MP_CAT[rawCat]):null;
-    if(!c){const k=rawCat.toLowerCase();c=S.cats.find(x=>[x.label,x.labelEn].concat(x.aliases||[]).some(v=>v&&v.toString().toLowerCase()===k));}
-    let catId,catLabel2,catIcon;
-    if(c){catId=c.id;catLabel2=c.label;catIcon=c.icon;}
-    else {catId=type==='income'?'other_inc':'other';catLabel2=rawCat||(type==='income'?'收入':'其他');catIcon='📦';}
-    const ac=(S.accounts||[]).find(a=>[a.label,a.labelEn].some(v=>v&&v.toString().trim().toLowerCase()===rawAcct.toLowerCase()));
     const cur=mpCur(rawAcct);const amtHKD=parseFloat(toHKD(amt,cur).toFixed(2));
-    batch.push({id:Date.now()+Math.random(),type:type,amount:amt,amtHKD:amtHKD,cur:cur,catId:catId,catLabel:catLabel2,catIcon:catIcon,acctId:'',acctLabel:rawAcct,acctIcon:ac?ac.icon:'',note:note||catLabel2,date:date,oneOff:false,imported:'mp',_mpKey:key});
-    added++;
+    const rc=mpResolveCat(rawCat,type);
+    // SPECIAL 1: investment income -> a closed (realised) position in P&L
+    if(type==='income'&&rc.catId==='invest'){
+      const it=mpInvestType(rawAcct);
+      posB.push({id:Date.now()+Math.random(),type:it,name:(note||rawAcct||'已實現'),qty:0,entryPrice:0,currentPrice:0,exitPrice:1,budgetPrice:null,cur:cur,costHKD:0,valueHKD:amtHKD,acctId:'',acctLabel:rawAcct,notes:'Money+ '+date,date:date,secId:'',imported:'mp',_mpKey:key});
+      addPos++;continue;
+    }
+    // SPECIAL 2: gambling (win or loss) -> a closed poker session
+    if(rc.catId==='gambling'){
+      const win=type==='income';
+      gmbB.push({id:Date.now()+Math.random(),venue:(note||rawAcct||'Poker'),buyin:win?0:amt,cashout:win?amt:0,buyinHKD:win?0:amtHKD,cashoutHKD:win?amtHKD:0,cur:cur,date:date,open:false,notes:'Money+',acctId:'',margin:false,imported:'mp',_mpKey:key});
+      addGmb++;continue;
+    }
+    // NORMAL: income/expense transaction
+    const ac=(S.accounts||[]).find(a=>[a.label,a.labelEn].some(v=>v&&v.toString().trim().toLowerCase()===rawAcct.toLowerCase()));
+    txnB.push({id:Date.now()+Math.random(),type:type,amount:amt,amtHKD:amtHKD,cur:cur,catId:rc.catId,catLabel:rc.catLabel,catIcon:rc.catIcon,acctId:'',acctLabel:rawAcct,acctIcon:ac?ac.icon:'',note:note||rc.catLabel,date:date,oneOff:false,imported:'mp',_mpKey:key});
+    addTxn++;
   }
-  const st=document.getElementById('mp-status');
-  if(!added){if(st)st.textContent='0 新增'+(dup?' · '+dup+' 重複已跳過':'');return;}
-  if(!confirm('匯入 '+added+' 筆收支（會計入收支統計／圓餅圖／趨勢）？'+(dup?'\n'+dup+' 筆重複會跳過':'')+(skipped?'\n'+skipped+' 筆（轉帳/格式）略過':''))){if(st)st.textContent='';return;}
-  batch.sort((a,b)=>a.date<b.date?1:-1);
-  S.txns=batch.concat(S.txns||[]);
+  const total=addTxn+addPos+addGmb;const st=document.getElementById('mp-status');
+  if(!total){if(st)st.textContent='0 新增'+(dup?' · '+dup+' 重複已跳過':'');return;}
+  if(!confirm('匯入 '+total+' 筆？\n· 收支 '+addTxn+'\n· 投資已實現 '+addPos+'\n· 撲克場次 '+addGmb+(dup?'\n（'+dup+' 重複跳過）':'')+(skipped?'\n（'+skipped+' 略過：轉帳/gunner/格式）':''))){if(st)st.textContent='';return;}
+  txnB.sort((a,b)=>a.date<b.date?1:-1);
+  S.txns=txnB.concat(S.txns||[]);
+  S.portfolio=(S.portfolio||[]).concat(posB);
+  S.gamble=(S.gamble||[]).concat(gmbB);
   saveS();refreshAllViews();
-  if(st)st.textContent='✅ 已匯入 '+added+' 筆'+(dup?'、跳過 '+dup+' 重複':'')+(skipped?'、略過 '+skipped:'');
+  if(st)st.textContent='✅ 匯入：收支 '+addTxn+'、已實現 '+addPos+'、撲克 '+addGmb+(dup?'、重複 '+dup:'')+(skipped?'、略過 '+skipped:'');
 }
 function undoMpImport(){
-  const n=(S.txns||[]).filter(x=>x.imported==='mp').length;
+  const n=(S.txns||[]).filter(x=>x.imported==='mp').length+(S.portfolio||[]).filter(x=>x.imported==='mp').length+(S.gamble||[]).filter(x=>x.imported==='mp').length;
   if(!n){alert('冇 Money+ 匯入記錄');return;}
-  if(!confirm('移除全部 '+n+' 筆 Money+ 匯入記錄？'))return;
+  if(!confirm('移除全部 '+n+' 筆 Money+ 匯入記錄（收支＋已實現＋撲克）？'))return;
   S.txns=(S.txns||[]).filter(x=>x.imported!=='mp');
+  S.portfolio=(S.portfolio||[]).filter(x=>x.imported!=='mp');
+  S.gamble=(S.gamble||[]).filter(x=>x.imported!=='mp');
   saveS();refreshAllViews();
   const st=document.getElementById('mp-status');if(st)st.textContent='已移除 '+n+' 筆匯入記錄';
 }
