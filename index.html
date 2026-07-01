@@ -1833,7 +1833,7 @@ function txnsInPeriod(period,kind){return S.txns.filter(tx=>periodMatchDate(tx.d
 function setCatPeriod(kind,period,btn){setPeriod(period,btn);}
 function pnlIncomeItems(period){
   let realised=0,unrealised=0;
-  (S.portfolio||[]).forEach(p=>{const pnl=(p.valueHKD||0)-(p.costHKD||0);if(p.exitPrice){if(periodMatchDate(p.exitDate||p.date||today(),period))realised+=pnl;}else{if(periodMatchDate(today(),period))unrealised+=pnl;}});
+  (S.portfolio||[]).forEach(p=>{const pnl=(p.valueHKD||0)-(p.costHKD||0);if(p.exitPrice){if(periodMatchDate(p.exitDate||p.date||today(),period))realised+=pnl;}else if(period==='all'){unrealised+=pnl;}});
   (S.gamble||[]).forEach(g=>{if(!g.open&&periodMatchDate(g.date||today(),period))realised+=(g.cashoutHKD||0)-(g.buyinHKD||0);});
   return [{label:t('realisedpnl'),v:realised},{label:t('unrealisedpnl'),v:unrealised}].filter(x=>Math.abs(x.v)>0.0001);
 }
@@ -2024,7 +2024,7 @@ function saveDebt(){
   const noInterest=document.getElementById('debt-nointerest').classList.contains('on');
   const editId=document.getElementById('debt-edit-id').value;
   S.debts=S.debts||[];
-  if(editId){const d=S.debts.find(x=>String(x.id)===String(editId));if(d){d.name=name;d.balance=bal;d.apr=apr;d.monthly=monthly;d.day=day;d.acctId=acctId;d.compound=compound;d.noInterest=noInterest;}}
+  if(editId){const d=S.debts.find(x=>String(x.id)===String(editId));if(d){d.name=name;d.balance=bal;d.principal0=bal;d.apr=apr;d.monthly=monthly;d.day=day;d.acctId=acctId;d.compound=compound;d.noInterest=noInterest;}}
   else {const rec={id:Date.now(),name:name,balance:bal,principal0:bal,apr:apr,monthly:monthly,day:day,acctId:acctId,cur:'HKD',compound:compound,noInterest:noInterest,paused:false,paidTotal:0,accInterest:0,lastYM:ymNum(new Date()),anchorYM:ymNum(new Date()),startDate:today()};const tx=addDebtOpenMove(rec);if(tx)rec.openTxnId=tx.id;S.debts.push(rec);}
   saveS();closeM('m-debt');renderDebts();renderHome();
 }
@@ -2588,6 +2588,8 @@ function saveGroupBill(){
   const denom=inc.length+(S._billMe?1:0);const eq=denom?total/denom:0;const gid=Date.now();
   let friendsTotal=0;const entries=[];
   inc.forEach((id,k)=>{const f=(S.friends||[]).find(x=>x.id===id)||{name:'?'};const c=S._billAmt[id];const amt=parseFloat((((c!=null&&!isNaN(c))?c:eq)).toFixed(2));friendsTotal+=amt;entries.push({id,name:f.name,amt,k});});
+  // help-only (not part of the bill): I'm not absorbing a "mine" share, so reconcile the rounding remainder into the last person's share instead, otherwise a cent silently leaks from the account total
+  if(!S._billMe&&entries.length){const diff=parseFloat((total-friendsTotal).toFixed(2));if(diff!==0){const last=entries[entries.length-1];last.amt=parseFloat((last.amt+diff).toFixed(2));friendsTotal=parseFloat((friendsTotal+diff).toFixed(2));}}
   const mine=S._billMe?parseFloat(Math.max(total-friendsTotal,0).toFixed(2)):0;
   // my own share is a real expense; only record it when I'm part of the bill
   if(mine>0)S.txns.unshift({id:gid,type:'expense',amount:mine,amtHKD:mine,cur:'HKD',catId:'social',catLabel:catLabel(getCat('social')),catIcon:'🫂',acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:title+' · '+t('yourshare'),date:dt,oneOff:false,isGroupBill:true,groupId:gid});
@@ -3145,10 +3147,15 @@ function toggleRecordPanel(panelId,btnId){
   const btn=document.getElementById(btnId);if(btn)btn.classList.toggle('on',willOpen);
 }
 // Quick-collapse a whole P&L section (header stays visible so it can be re-expanded in place)
+// _collapsedSecs is in-memory only (not saved), so state resets on app restart but survives
+// re-renders within the session — custom sections get torn down/rebuilt on every renderGamble(),
+// so we have to re-apply it there instead of relying on the DOM to hold the class.
+let _collapsedSecs=new Set();
 function toggleSecBody(id){
   const body=document.getElementById('body-'+id);if(!body)return;
   const collapsed=body.classList.toggle('collapsed');
   const btn=document.getElementById('hide-btn-'+id);if(btn)btn.classList.toggle('collapsed',collapsed);
+  if(collapsed)_collapsedSecs.add(id);else _collapsedSecs.delete(id);
 }
 function renderGamble(){
   if(!S.portfolio)S.portfolio=[];
@@ -3263,7 +3270,9 @@ function renderGamble(){
   // as "where is my money": stock A / stock B / crypto / poker / cash — each as a % of the whole.
   const POS_COLORS=['#534AB7','#BA7517','#185FA5','#1D9E75','#D85A30','#0F6E56','#3C3489','#854F0B','#2E86AB','#7C3AED'];
   let pieRaw=[];
-  S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0).forEach(p=>pieRaw.push({label:p.name,val:p.valueHKD}));
+  // margin positions: only the equity (value minus the borrowed cost) belongs to the user, so the
+  // slice reconciles with totalWorth (which already subtracts margin debt) instead of overstating exposure
+  S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v});});
   S.gamble.filter(g=>g.open&&g.buyinHKD>0).forEach(g=>pieRaw.push({label:g.venue,val:g.buyinHKD}));
   const allCash=(S.accounts||[]).filter(ac=>!ac.excluded).reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
   if(allCash>0&&!S.pnlPieNoCash)pieRaw.push({label:t('positioncash'),val:allCash,_cash:true});
@@ -3435,7 +3444,8 @@ function renderGamble(){
       </div>
       <div class="glass-card" style="margin-bottom:16px">${rows}</div>`;
     }
-    div.innerHTML=`<div class="slbl" style="display:flex;align-items:center;justify-content:space-between"><span>${icon} ${escName}</span><div style="display:flex;gap:6px;align-items:center"><button onclick="addToSection('${cs.id}','${cs.base}')" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 11px;cursor:pointer;text-transform:none;letter-spacing:0">+ ${t('add')}</button><button class="sec-hide-btn" id="hide-btn-${cs.id}" onclick="toggleSecBody('${cs.id}')"><i class="ti ti-chevron-down"></i></button></div></div><div class="pnl-sec-body" id="body-${cs.id}">${summaryHtml}</div>`;
+    const secCollapsed=_collapsedSecs.has(cs.id);
+    div.innerHTML=`<div class="slbl" style="display:flex;align-items:center;justify-content:space-between"><span>${icon} ${escName}</span><div style="display:flex;gap:6px;align-items:center"><button onclick="addToSection('${cs.id}','${cs.base}')" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 11px;cursor:pointer;text-transform:none;letter-spacing:0">+ ${t('add')}</button><button class="sec-hide-btn${secCollapsed?' collapsed':''}" id="hide-btn-${cs.id}" onclick="toggleSecBody('${cs.id}')"><i class="ti ti-chevron-down"></i></button></div></div><div class="pnl-sec-body${secCollapsed?' collapsed':''}" id="body-${cs.id}">${summaryHtml}</div>`;
     secCont.appendChild(div);
     if(isPoker||cs.base==='stock'||cs.base==='crypto')setTimeout(()=>drawSparkline(chartId,chartVals.length>1?chartVals:[0,0],chartColor),0);
   });
@@ -3644,7 +3654,7 @@ const MP_CAT={'飲食':'food','交通':'transport','日用':'daily','娛樂':'en
 // Currency per Money+ account: USD (Futu/MetaMask/MEXC/Polymarket), JPY (JPY/JP AR), RMB (China card/WeChat), else HKD
 function mpCur(acct){var a=(acct||'').trim().toLowerCase();
   if(/futu|metamask|mexc|polymarket/.test(a))return 'USD';
-  if(a==='jpy'||a.indexOf('jp ar')>=0||/^jp\s/.test(a))return 'JPY';
+  if(a==='jpy'||a==='jp'||a.indexOf('jp ar')>=0)return 'JPY';
   if(a.indexOf('china card')>=0||a.indexOf('wechat')>=0)return 'RMB';
   return 'HKD';}
 function importMoneyPlus(input){
