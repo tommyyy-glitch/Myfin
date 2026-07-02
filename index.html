@@ -3279,8 +3279,9 @@ function renderGamble(){
   document.getElementById('g-pnl').textContent=fmt(totalPnl);
   document.getElementById('g-pnl').className='mval'+(totalPnl>=0?' pos':' neg');
   document.getElementById('g-roi').textContent='ROI '+(totalPnl>=0?'+':'')+roi+'%';
-  // Cash = realized cash across ALL accounts (now reflects money deployed into / returned from positions)
-  const totalCash=(S.accounts||[]).filter(ac=>!ac.excluded).reduce((a,ac)=>a+acctCash(ac.id),0);
+  // Cash (P&L scope) = idle cash sitting in INVESTMENT accounts only (not your whole wallet) —
+  // i.e. money in an investment account with no position deployed against it right now.
+  const totalCash=(S.accounts||[]).filter(ac=>!ac.excluded&&ac.kind==='invest').reduce((a,ac)=>a+acctCash(ac.id),0);
   const openPosValue=(S.accounts||[]).reduce((a,ac)=>a+acctOpenValue(ac.id),0);
   const marginDebt=(S.accounts||[]).reduce((a,ac)=>a+acctMarginDebt(ac.id),0);
   // Deployed = own money currently tied up in open positions (margin principal is borrowed, not own money)
@@ -3303,16 +3304,16 @@ function renderGamble(){
   document.getElementById('g-stock-pnl').className='pnl-simple-val '+(stockPnl>=0?' pos':' neg');
   document.getElementById('g-crypto-pnl').textContent=fmt(cryptoPnl);
   document.getElementById('g-crypto-pnl').className='pnl-simple-val '+(cryptoPnl>=0?' pos':' neg');
-  // ── PIE CHART (asset allocation: each open position + ALL your cash) ──
-  // Cash = every dollar of positive cash you hold across ALL accounts, so the pie reads
-  // as "where is my money": stock A / stock B / crypto / poker / cash — each as a % of the whole.
+  // ── PIE CHART (asset allocation: each open position + idle investment-account cash) ──
+  // Cash = money sitting in an INVESTMENT account with no position deployed against it, so the
+  // pie reads as "where is my invested money": stock A / stock B / crypto / poker / dry powder.
   const POS_COLORS=['#534AB7','#BA7517','#185FA5','#1D9E75','#D85A30','#0F6E56','#3C3489','#854F0B','#2E86AB','#7C3AED'];
   let pieRaw=[];
   // margin positions: only the equity (value minus the borrowed cost) belongs to the user, so the
   // slice reconciles with totalWorth (which already subtracts margin debt) instead of overstating exposure
   S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v});});
   S.gamble.filter(g=>g.open&&g.buyinHKD>0).forEach(g=>pieRaw.push({label:g.venue,val:g.buyinHKD}));
-  const allCash=(S.accounts||[]).filter(ac=>!ac.excluded).reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
+  const allCash=(S.accounts||[]).filter(ac=>!ac.excluded&&ac.kind==='invest').reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
   if(allCash>0&&!S.pnlPieNoCash)pieRaw.push({label:t('positioncash'),val:allCash,_cash:true});
   const {data:pieData,total:pieTotal}=piePrepData(pieRaw,{minPct:1.5,cap:9});
   let pci=0;pieData.forEach(d=>{const isOther=d._other||String(d.label||'').toLowerCase()==='other'||String(d.label||'')==='其他';d.color=d._cash?'#667085':(isOther?'#FFB020':POS_COLORS[pci++%POS_COLORS.length]);});
