@@ -81,11 +81,9 @@ body{
 /* Motion layer: tactile and visible. Mobile Safari needs real ripple nodes; CSS :active alone is too quiet. */
 @keyframes btnGlowPulse{0%,100%{box-shadow:0 0 0 rgba(29,158,117,0),0 0 0 rgba(29,158,117,0)}50%{box-shadow:0 0 22px rgba(29,158,117,.42),0 0 0 6px rgba(29,158,117,.08)}}
 @keyframes activeIconBob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.13)}}
-@keyframes fabFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-6px) scale(1.035)}}
 @keyframes softPop{0%{transform:scale(.88);opacity:.55}60%{transform:scale(1.08);opacity:1}100%{transform:scale(1);opacity:1}}
 @keyframes tabPop{0%{transform:translateY(0) scale(.92)}60%{transform:translateY(-5px) scale(1.1)}100%{transform:translateY(-3px) scale(1.04)}}
 @keyframes rippleBurst{0%{transform:scale(0);opacity:.55}65%{opacity:.26}100%{transform:scale(1);opacity:0}}
-@keyframes fabRing{0%{transform:scale(.82);opacity:.42}75%,100%{transform:scale(1.7);opacity:0}}
 button,.cat-chip,.acct-chip,.quick-chip,.fchip,.seg-btn,.wsub-btn,.tab-btn,.nav-btn,.ai-top-btn,.refresh-prices-btn,.add-ar-dashed,.record-toggle,.settle-btn,.crow{
   position:relative;overflow:hidden;transform:translateZ(0);isolation:isolate;
   -webkit-tap-highlight-color:transparent;
@@ -102,8 +100,7 @@ button:not(.toggle):active,.cat-chip:active,.acct-chip:active,.quick-chip:active
 }
 .nav-btn,.fab,.ai-top-btn{will-change:transform,box-shadow}
 .nav-btn:hover,.ai-top-btn:hover{box-shadow:0 10px 24px rgba(29,158,117,.24)}
-.fab{overflow:visible;animation:fabFloat 3.8s ease-in-out infinite}
-.fab::after{content:'';position:absolute;inset:-7px;border-radius:999px;border:2px solid rgba(29,158,117,.42);animation:fabRing 2.7s ease-out infinite;pointer-events:none;z-index:-1}
+.fab{overflow:visible}
 .fab:active{animation:none;transform:scale(.86)!important}
 .tab-btn.active{animation:btnGlowPulse 2.7s ease-in-out infinite;transform:translateY(-3px) scale(1.04);box-shadow:0 8px 22px rgba(29,158,117,.18)}
 .tab-btn.active i{animation:activeIconBob 2.2s ease-in-out infinite}
@@ -180,16 +177,10 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
 .bottom-nav.nav-dragging .nav-island{transition:none;box-shadow:0 12px 34px rgba(29,158,117,.38), inset 0 1px 0 rgba(255,255,255,.28);background:linear-gradient(135deg,rgba(29,158,117,.36),rgba(83,74,183,.24))}
 .bottom-nav.nav-dragging .tab-btn{pointer-events:none}
 
-.nav-island::before{
-  content:'';position:absolute;inset:-13px;border-radius:26px;
-  background:radial-gradient(circle at 50% 80%,rgba(29,158,117,.26),rgba(83,74,183,.12) 42%,rgba(255,255,255,0) 70%);
-  filter:blur(6px);opacity:.7;animation:islandAura 2.8s ease-in-out infinite;pointer-events:none;
-}
 .nav-island::after{
   content:'';position:absolute;inset:3px 7px auto 7px;height:40%;border-radius:999px;
-  background:linear-gradient(90deg,rgba(255,255,255,.34),rgba(255,255,255,.04));opacity:.55;
+  background:linear-gradient(90deg,rgba(255,255,255,.34),rgba(255,255,255,.04));opacity:.28;
 }
-@keyframes islandAura{0%,100%{transform:scale(.96);opacity:.45}50%{transform:scale(1.08);opacity:.85}}
 /* Floating bar overlays content, so reserve space at the bottom of every scroll area */
 .scroll-body{padding-bottom:calc(env(safe-area-inset-bottom) + 96px)!important}
 .tab-btn{
@@ -264,7 +255,7 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
 .slbl{font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:12px;margin-top:4px}
 .slbl.set-h{cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-height:104px;padding:14px 10px;margin:0 0 12px;background:rgba(232,232,232,0.86);border:1px solid rgba(0,0,0,0.07);border-radius:22px;user-select:none;text-align:center;color:var(--ink);font-size:13px;letter-spacing:0;text-transform:none;box-shadow:var(--card-shadow);position:relative}
 body.dark .slbl.set-h{background:rgba(42,42,46,0.88);border-color:rgba(255,255,255,0.12)}
-.slbl.set-h .set-ico{font-size:34px;line-height:1;filter:saturate(1.08)}
+.slbl.set-h .set-ico{font-size:24px;line-height:1;color:var(--g3)}
 .slbl.set-h .set-title{font-size:13px;font-weight:800;line-height:1.15;color:var(--ink)}
 .slbl.set-h::after{content:'⌄';position:absolute;right:10px;top:8px;font-size:15px;opacity:0.45;transition:transform .2s}
 .slbl.set-h.col::after{transform:rotate(-90deg)}
@@ -514,7 +505,7 @@ img,canvas,svg{max-width:100%;}
   <div class="scroll-body" id="home-scroll">
     <!-- HERO -->
     <div class="hero-card" id="hero-section">
-      <button id="ai-hero-btn" onclick="openAI()" style="position:absolute;top:calc(var(--st) + 22px);right:18px;z-index:3;display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.28);color:#fff;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer"><i class="ti ti-sparkles" style="font-size:14px"></i><span data-i="aiask"></span></button>
+      <button id="ai-hero-btn" onclick="openAI()" style="position:absolute;top:calc(var(--st) + 22px);right:18px;z-index:3;display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.28);color:#fff;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer"><i class="ti ti-message-circle" style="font-size:14px"></i><span data-i="aiask"></span></button>
       <div style="position:relative;z-index:1">
         <button id="profile-chip" onclick="openProfilesModal()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.28);color:#fff;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:14px;max-width:62%"><span id="profile-chip-emoji">👤</span><span id="profile-chip-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">我的帳戶</span><i class="ti ti-chevron-down" style="font-size:13px;opacity:0.8"></i></button>
         <div class="hero-label" data-i="networth"></div>
@@ -621,7 +612,7 @@ img,canvas,svg{max-width:100%;}
 
 <!-- WALLET (記帳 / 資金戶口 / A/R) -->
 <div id="s-wallet" class="screen">
-  <div class="nav-bar"><span class="nav-title" data-i="wallet"></span><div class="nav-actions"><button class="ai-top-btn" onclick="openAI()"><i class="ti ti-sparkles"></i><span data-i="aiask"></span></button><button class="nav-btn" id="wallet-action-btn" onclick="walletAction()"></button></div></div>
+  <div class="nav-bar"><span class="nav-title" data-i="wallet"></span><div class="nav-actions"><button class="ai-top-btn" onclick="openAI()"><i class="ti ti-message-circle"></i><span data-i="aiask"></span></button><button class="nav-btn" id="wallet-action-btn" onclick="walletAction()"></button></div></div>
   <div class="wsub-bar">
     <button class="wsub-btn active" id="wsub-txn" onclick="setWalletPane('txn')" data-i="txns"></button>
     <button class="wsub-btn" id="wsub-acct" onclick="setWalletPane('acct')" data-i="fundaccts"></button>
@@ -682,7 +673,7 @@ img,canvas,svg{max-width:100%;}
   <div class="nav-bar">
     <span class="nav-title" data-i="gamblepnl"></span>
     <div class="nav-actions" style="gap:6px">
-      <button class="ai-top-btn" onclick="openAI()"><i class="ti ti-sparkles"></i><span data-i="aiask"></span></button>
+      <button class="ai-top-btn" onclick="openAI()"><i class="ti ti-message-circle"></i><span data-i="aiask"></span></button>
     </div>
   </div>
   <div class="scroll-body" style="padding:16px 20px 28px">
@@ -691,7 +682,7 @@ img,canvas,svg{max-width:100%;}
       <span class="price-status" style="font-size:12px;color:var(--ink3)"></span>
     </div>
     <div class="glass-card" style="padding:16px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div class="mlabel" data-i="portpnllabel"></div><div style="display:flex;gap:6px;flex-shrink:0"><button onclick="togglePnlPieCash()" id="pie-cash-btn" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer">💵</button><button onclick="openCalc()" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 11px;cursor:pointer"><i class="ti ti-calculator" style="font-size:13px;vertical-align:-2px"></i> <span data-i="calc"></span></button></div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div class="mlabel" data-i="portpnllabel"></div><div style="display:flex;gap:6px;flex-shrink:0"><button onclick="togglePnlPieCash()" id="pie-cash-btn" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer"><i class="ti ti-cash" style="font-size:13px;vertical-align:-2px"></i></button><button onclick="openCalc()" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 11px;cursor:pointer"><i class="ti ti-calculator" style="font-size:13px;vertical-align:-2px"></i> <span data-i="calc"></span></button></div></div>
       <div class="mval" id="g-pnl" style="font-size:28px;margin:4px 0">HK$0</div>
       <div class="msub" id="g-roi"></div>
       <div style="display:flex;flex-wrap:wrap;gap:16px 22px;margin-top:12px">
@@ -713,7 +704,7 @@ img,canvas,svg{max-width:100%;}
     </div>
     <div class="glass-card" style="padding:16px;margin-bottom:12px">
       <div class="filter-chips" id="trend-toggle" style="margin-bottom:10px">
-        <button class="fchip active" onclick="setTrend('total',this)" title="Total">Σ</button>
+        <button class="fchip active" onclick="setTrend('total',this)" title="Total">全</button>
         <button class="fchip" data-sec="stock" onclick="setTrend('stock',this)" title="Stocks">📈</button>
         <button class="fchip" data-sec="crypto" onclick="setTrend('crypto',this)" title="Crypto">₿</button>
         <button class="fchip" data-sec="poker" onclick="setTrend('poker',this)" title="Poker">🂡</button>
@@ -839,7 +830,7 @@ img,canvas,svg{max-width:100%;}
 
 <!-- SETTINGS -->
 <div id="s-settings" class="screen">
-  <div class="nav-bar"><span class="nav-title" data-i="settings"></span><button class="ai-top-btn" onclick="openAI()"><i class="ti ti-sparkles"></i><span data-i="aiask"></span></button></div>
+  <div class="nav-bar"><span class="nav-title" data-i="settings"></span><button class="ai-top-btn" onclick="openAI()"><i class="ti ti-message-circle"></i><span data-i="aiask"></span></button></div>
   <div class="scroll-body" style="padding:16px 20px 28px">
     <div class="slbl" data-i="language"></div>
     <div class="glass-card" style="padding:15px;margin-bottom:12px">
@@ -1217,7 +1208,7 @@ img,canvas,svg{max-width:100%;}
 <div class="modal-wrap" id="m-ai" onclick="closeM('m-ai')"><div class="modal" onclick="event.stopPropagation()">
   <button class="mclose" onclick="closeM('m-ai')" aria-label="Close">&times;</button>
   <div class="mhandle"></div>
-  <div class="mtitle" style="display:flex;align-items:center;justify-content:space-between;padding-right:50px"><span><i class="ti ti-sparkles" style="vertical-align:-2px"></i> <span data-i="aiassist"></span></span><button onclick="clearAiChat()" style="font-size:12px;font-weight:600;color:var(--ink3);background:none;border:1px solid var(--bdr2);border-radius:14px;padding:4px 11px;cursor:pointer">清除</button></div>
+  <div class="mtitle" style="display:flex;align-items:center;justify-content:space-between;padding-right:50px"><span><i class="ti ti-message-circle" style="vertical-align:-2px"></i> <span data-i="aiassist"></span></span><button onclick="clearAiChat()" style="font-size:12px;font-weight:600;color:var(--ink3);background:none;border:1px solid var(--bdr2);border-radius:14px;padding:4px 11px;cursor:pointer">清除</button></div>
   <div id="ai-messages" style="padding:10px 16px;max-height:52vh;min-height:140px;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;gap:10px"></div>
   <div style="padding:8px 16px 0;border-top:0.5px solid var(--bdr);display:flex;align-items:center;gap:8px">
     <label for="ai-file" style="display:inline-flex;align-items:center;gap:6px;border:1.5px solid var(--bdr2);border-radius:20px;padding:6px 11px;background:var(--surf2);color:var(--ink2);font-size:12px;font-weight:700;cursor:pointer"><i class="ti ti-paperclip" style="font-size:14px"></i><span data-i="attachment"></span></label>
@@ -1570,7 +1561,7 @@ function abbrevNum(v){var neg=v<0;v=Math.abs(v);var s;
   else return (neg?'-':'')+Math.round(v).toLocaleString();
   return (neg?'-':'')+s.replace(/\.0(?=[KMB]$)/,'');}
 function numStr(v){return S.numFmt==='abbr'?abbrevNum(v):Math.round(v).toLocaleString();}
-function fmt(n){const c=S.dispCur||'HKD';const v=(c==='HKD')?n:n/(FX[c]||1);return (CUR_SYM[c]||'')+numStr(v);}
+function fmt(n){const c=S.dispCur||'HKD';const v=(c==='HKD')?n:n/(FX[c]||1);const neg=v<0&&Math.round(Math.abs(v))!==0;return (neg?'−':'')+(CUR_SYM[c]||'')+numStr(Math.abs(v));}
 function fmtSigned(n){return n<0?'−'+fmt(Math.abs(n)):fmt(n);}
 function setNumFmt(m){S.numFmt=m;saveS();document.querySelectorAll('.numfmt-btn').forEach(b=>b.classList.toggle('active',b.dataset.numfmt===(S.numFmt||'full')));renderHome();if(S.activeTab==='gamble')renderGamble();if(typeof refreshWallet==='function')refreshWallet();}
 function getCat(id){return S.cats.find(c=>c.id===id)||S.cats[S.cats.length-1];}
@@ -1875,8 +1866,11 @@ function drawSolidPie(ctx,cx,cy,R,data,total){
   let ang=-Math.PI/2;
   const sep=document.body.classList.contains('dark')?'#161618':'#fff';
   data.forEach(d=>{const frac=total?d.val/total:0;const sl=frac*Math.PI*2;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,ang,ang+sl);ctx.closePath();ctx.fillStyle=d.color;ctx.fill();
-    ctx.lineWidth=Math.max(1.5,R*0.035);ctx.strokeStyle=sep;ctx.stroke();
+    ctx.beginPath();
+    if(data.length===1){ctx.arc(cx,cy,R,0,Math.PI*2);}
+    else{ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,ang,ang+sl);ctx.closePath();}
+    ctx.fillStyle=d.color;ctx.fill();
+    if(data.length>1){ctx.lineWidth=Math.max(1.5,R*0.035);ctx.strokeStyle=sep;ctx.stroke();}
     const pct=frac*100;
     if(pct>=6){const mid=ang+sl/2,lr=R*0.6;const x=cx+Math.cos(mid)*lr,y=cy+Math.sin(mid)*lr;ctx.font='800 '+(R>=64?13:12)+'px -apple-system,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineWidth=3;ctx.strokeStyle='rgba(0,0,0,0.38)';ctx.strokeText(Math.round(pct)+'%',x,y);ctx.fillStyle='#fff';ctx.fillText(Math.round(pct)+'%',x,y);}
     ang+=sl;});
@@ -2444,17 +2438,17 @@ function txnRow(tx){
   const editBtn=`<button onclick="editTxn('${tx.id}')" style="padding:6px 6px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0"><i class="ti ti-pencil"></i></button>`;
   if(tx.type==='ar_move'){
     const incoming=tx.direction==='in';
-    return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--p2)">${incoming?'↙':'↗'}</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}<span class="badge bp">R/P</span></div><div class="rsub">${tx.date} · ${tx.cur}${tx.acctLabel?` · ${tx.acctIcon||''} ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${incoming?'pos':'neg'}">${incoming?'+':'-'}${sym}${tx.amount.toLocaleString()}</span>${exBtn}${delBtn}</div></div>`;
+    return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--p2)">${incoming?'↙':'↗'}</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}<span class="badge bp">R/P</span></div><div class="rsub">${tx.date} · ${tx.cur}${tx.acctLabel?` · ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${incoming?'pos':'neg'}">${incoming?'+':'-'}${sym}${tx.amount.toLocaleString()}</span>${exBtn}${delBtn}</div></div>`;
   }
   if(tx.type==='debt_move'){
     const incoming=tx.direction!=='out';
-    return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--r2)">🏦</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}<span class="badge br">${t('longdebt')}</span></div><div class="rsub">${tx.date} · ${tx.cur}${tx.acctLabel?` · ${tx.acctIcon||''} ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${incoming?'pos':'neg'}">${incoming?'+':'-'}${sym}${tx.amount.toLocaleString()}</span>${exBtn}${delBtn}</div></div>`;
+    return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--r2)">🏦</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}<span class="badge br">${t('longdebt')}</span></div><div class="rsub">${tx.date} · ${tx.cur}${tx.acctLabel?` · ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${incoming?'pos':'neg'}">${incoming?'+':'-'}${sym}${tx.amount.toLocaleString()}</span>${exBtn}${delBtn}</div></div>`;
   }
   if(tx.type==='transfer'){
-    return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--b2)">⇄</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}</div><div class="rsub">${tx.date} · ${tx.acctIcon||''} ${tx.acctLabel||''} → ${tx.toAcctIcon||''} ${tx.toAcctLabel||''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount" style="color:var(--b3)">⇄ ${sym}${tx.amount.toLocaleString()}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
+    return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--b2)">⇄</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}</div><div class="rsub">${tx.date} · ${tx.acctLabel||''} → ${tx.toAcctLabel||''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount" style="color:var(--b3)">⇄ ${sym}${tx.amount.toLocaleString()}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
   }
   const cat=getCat(tx.catId);
-  return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${cat.icon}</div><div class="rinfo"><div class="rtitle">${tx.note}${tx.oneOff?`<span class="badge ba">${t('oneoff')}</span>`:''}${tx.autoPayId?'<span class="badge bb">auto</span>':''}${tx.isGroupBill?`<span class="badge bp">${t('group')}</span>`:''}${exBadge}</div><div class="rsub">${tx.date} · ${tx.cur}${tx.acctLabel?` · ${tx.acctIcon||''} ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${cls}">${sign}${sym}${tx.amount.toLocaleString()}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
+  return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${cat.icon}</div><div class="rinfo"><div class="rtitle">${tx.note}${tx.oneOff?`<span class="badge ba">${t('oneoff')}</span>`:''}${tx.autoPayId?'<span class="badge bb">auto</span>':''}${tx.isGroupBill?`<span class="badge bp">${t('group')}</span>`:''}${exBadge}</div><div class="rsub">${tx.date} · ${tx.cur}${tx.acctLabel?` · ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${cls}">${sign}${sym}${tx.amount.toLocaleString()}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
 }
 function toggleTxnExclude(id){const tx=S.txns.find(x=>String(x.id)===String(id));if(tx){tx.excluded=!tx.excluded;syncAutoPayFromTxn(tx);}saveS();refreshAllViews();}
 function deleteTxn(id){
@@ -3061,7 +3055,7 @@ function secName(id){
   return id;
 }
 function secIcon(id){
-  const icons={total:'Σ',poker:'🂡',stock:'📈',crypto:'₿',pe:'🏢',debt:'🏦'};
+  const icons={total:(S.lang==='en'?'All':'全'),poker:'🂡',stock:'📈',crypto:'₿',pe:'🏢',debt:'🏦'};
   if(icons[id])return icons[id];
   const c=(S.customSections||[]).find(x=>x.id===id);
   if(c)return c.icon||(c.base==='crypto'?'₿':c.base==='stock'?'📈':c.base==='poker'?'♠️':'🏢');
@@ -3338,7 +3332,7 @@ function renderGamble(){
   const {data:pieData,total:pieTotal}=piePrepData(pieRaw,{minPct:1.5,cap:9});
   let pci=0;pieData.forEach(d=>{const isOther=d._other||String(d.label||'').toLowerCase()==='other'||String(d.label||'')==='其他';d.color=d._cash?'#667085':(isOther?'#FFB020':POS_COLORS[pci++%POS_COLORS.length]);});
   const cashBtn=document.getElementById('pie-cash-btn');
-  if(cashBtn){const inc=!S.pnlPieNoCash;cashBtn.innerHTML=(inc?'✓ ':'')+'💵 '+t('positioncash');cashBtn.style.opacity=inc?'1':'0.5';cashBtn.style.textDecoration=inc?'none':'line-through';}
+  if(cashBtn){const inc=!S.pnlPieNoCash;cashBtn.innerHTML=(inc?'✓ ':'')+t('positioncash');cashBtn.style.opacity=inc?'1':'0.5';cashBtn.style.textDecoration=inc?'none':'line-through';}
   const pieCanvas=document.getElementById('pnl-pie');
   const pieLegend=document.getElementById('pnl-pie-legend');
   if(pieCanvas){
@@ -3614,7 +3608,7 @@ function calDayDetail(day){
   }).join('');
   det.innerHTML=html;
 }
-function setIcon(key){return {language:'🌐',theme:'🎨',dispcur:'💱',pnlsections:'📊',autopay:'🔁',autoincome:'💸',mergecats:'🗂️',addalias:'🏷️',addcat:'➕',allcats:'📚',accounts:'💳',allaccts:'👛',aiassist:'🤖',credit:'🔍',stockapi:'📈',dataexport:'📄',databackup:'🗄️',mpimport:'📥'}[key]||'⚙️';}
+function setIcon(key){const ic={language:'world',theme:'palette',dispcur:'currency-dollar',pnlsections:'chart-pie',autopay:'repeat',autoincome:'coin',mergecats:'category',addalias:'tag',addcat:'plus',allcats:'list',accounts:'credit-card',allaccts:'wallet',aiassist:'message-circle',credit:'gauge',stockapi:'chart-line',dataexport:'file-spreadsheet',databackup:'database',mpimport:'file-import'}[key]||'settings';return '<i class="ti ti-'+ic+'"></i>';}
 function renderSettings(){
   renderAutopay();renderAutoincome();
   const tk=document.getElementById('td-key');if(tk)tk.value=S.tdKey||'';
@@ -3668,7 +3662,7 @@ function toggleAcctExclude(id){const a=(S.accounts||[]).find(x=>x.id===id);if(a)
 function pickAcctEmoji(btn){document.getElementById('new-acct-icon').value=btn.textContent.trim();}
 function addAcct(){const icon=document.getElementById('new-acct-icon').value.trim()||'💳';const name=document.getElementById('new-acct-name').value.trim();if(!name)return;let id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!id)id='acct_'+Date.now();if(!S.accounts)S.accounts=[];const kind=document.getElementById('new-acct-kind').value;const isInvest=kind==='invest';const cur=document.getElementById('new-acct-cur').value||'HKD';if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,cur});['new-acct-icon','new-acct-name'].forEach(x=>document.getElementById(x).value='');document.getElementById('new-acct-cur').value=S.dispCur||'HKD';saveS();renderSettings();renderHome();refreshWallet();}
 function setAcctCur(id,cur){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.cur=cur;saveS();renderSettings();renderHome();refreshWallet();}
-function fmtCur(n,cur){cur=cur||'HKD';const v=cur==='HKD'?n:n/(FX[cur]||1);return (CUR_SYM[cur]||(cur+' '))+numStr(v);}
+function fmtCur(n,cur){cur=cur||'HKD';const v=cur==='HKD'?n:n/(FX[cur]||1);const neg=v<0&&Math.round(Math.abs(v))!==0;return (neg?'−':'')+(CUR_SYM[cur]||(cur+' '))+numStr(Math.abs(v));}
 function setAcctFilter(v){S.acctFilter=v;saveS();renderAcctBalances();}
 function setAcctKind(id,kind){const a=(S.accounts||[]).find(x=>x.id===id);if(a){a.kind=kind;a.isInvest=(kind==='invest');}saveS();renderSettings();renderHome();}
 function deleteAcct(id){if((S.accounts||[]).length<=1)return;S.accounts=S.accounts.filter(a=>a.id!==id);if(S.selAcct===id)S.selAcct=S.accounts[0]?.id;saveS();renderSettings();renderHome();refreshWallet();}
