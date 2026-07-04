@@ -1590,8 +1590,22 @@ function removeRPMovesFor(ids,phase){const set=new Set([].concat(ids).filter(x=>
 // This also catches older saved rows that were created as income/expense but tagged with fromRP/group R/P metadata.
 function txIsRPFlow(tx){if(!tx)return false;if(tx.type==='ar_move')return true;if(tx.fromRP||tx.rpPhase)return true;if(tx.isGroupBill&&String(tx.note||'').includes('R/P'))return true;return false;}
 function txIsDebtFlow(tx){return !!tx&&(tx.type==='debt_move'||tx.debtPhase);}
-function txReportable(tx){return !!tx&&!tx.excluded&&!txIsRPFlow(tx)&&!txIsDebtFlow(tx)&&tx.type!=='transfer';}
+function txIsRealisedPnl(tx){return !!tx&&tx.type==='pnl_realized';}
+function txReportable(tx){return !!tx&&!tx.excluded&&!txIsRealisedPnl(tx)&&!txIsRPFlow(tx)&&!txIsDebtFlow(tx)&&tx.type!=='transfer';}
 function txCashFlowSign(tx){if(tx.type==='income')return 1;if(tx.type==='expense')return -1;return 0;}
+function realisedPnlTxnRows(){
+  return (S.portfolio||[]).filter(p=>p&&p.exitPrice).map(p=>{
+    const pnl=parseFloat(((p.valueHKD||0)-(p.costHKD||0)).toFixed(2));
+    const ac=getAcct(p.acctId);
+    return {id:'pnl_'+p.id,type:'pnl_realized',pnlHKD:pnl,amount:Math.abs(pnl),amtHKD:Math.abs(pnl),cur:'HKD',
+      acctId:p.acctId||'',acctLabel:p.acctLabel||(ac?acctLabel(ac):''),acctIcon:p.acctIcon||(ac?ac.icon:''),date:p.exitDate||p.date||today(),
+      note:(p.name||t('realisedpnl')),sourcePosId:p.id,posType:p.type,oneOff:true};
+  });
+}
+function txSortStamp(tx){const d=tx.date||'';const n=Number(String(tx.id||'').replace(/[^\d.]/g,''))||0;return {d,n};}
+function walletTxnRows(){
+  return [...(S.txns||[]),...realisedPnlTxnRows()].sort((a,b)=>{const A=txSortStamp(a),B=txSortStamp(b);if(A.d!==B.d)return A.d<B.d?1:-1;return B.n-A.n;});
+}
 function syncAutoPayFromTxn(tx){if(!tx||!tx.autoPayId)return;const ap=(S.autopay||[]).find(a=>String(a.id)===String(tx.autoPayId));if(!ap)return;ap.name=tx.note||ap.name;ap.amount=tx.amount;ap.cur=tx.cur;ap.catId=tx.catId||ap.catId;ap.acctId=tx.acctId||'';ap.acct=tx.acctLabel||'';ap.acctIcon=tx.acctIcon||'';}
 function refreshAllViews(){renderHome();if(S.activeTab==='gamble')renderGamble();refreshWallet();if(S.activeTab==='settings'){renderAutopay();renderAutoincome();}}
 // Cash component of an account = opening + income in − expense out + transfers in − transfers out
@@ -2447,6 +2461,11 @@ function txnRow(tx){
   if(tx.type==='transfer'){
     return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--b2)">⇄</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}</div><div class="rsub">${tx.date} · ${tx.acctLabel||''} → ${tx.toAcctLabel||''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount" style="color:var(--b3)">⇄ ${sym}${tx.amount.toLocaleString()}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
   }
+  if(txIsRealisedPnl(tx)){
+    const pnl=parseFloat(tx.pnlHKD||0);
+    const win=pnl>=0;
+    return `<div class="crow" style="${dim}"><div class="ibox" style="background:${win?'var(--g2)':'var(--r2)'}"><i class="ti ti-chart-line"></i></div><div class="rinfo"><div class="rtitle">${tx.note}<span class="badge bb">P&L</span><span class="badge ${win?'bg':'br'}">${t('realisedpnl')}</span></div><div class="rsub">${tx.date} · HKD${tx.acctLabel?` · ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${win?'pos':'neg'}">${win?'+':'−'}${fmt(Math.abs(pnl))}</span></div></div>`;
+  }
   const cat=getCat(tx.catId);
   return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${cat.icon}</div><div class="rinfo"><div class="rtitle">${tx.note}${tx.oneOff?`<span class="badge ba">${t('oneoff')}</span>`:''}${tx.autoPayId?'<span class="badge bb">auto</span>':''}${tx.isGroupBill?`<span class="badge bp">${t('group')}</span>`:''}${exBadge}</div><div class="rsub">${tx.date} · ${tx.cur}${tx.acctLabel?` · ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${cls}">${sign}${sym}${tx.amount.toLocaleString()}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
 }
@@ -2764,7 +2783,7 @@ function renderHome(){
   // Transfers are internal account moves now; no A/R resolver needed
   document.getElementById('resolver-zone').innerHTML='';
   // recent
-  document.getElementById('h-recent').innerHTML=dayGroupedTxnHTML(S.txns.slice(0,12),`<div style="text-align:center;padding:28px;color:var(--ink3);font-size:14px">${t('notxn')}</div>`,'home');
+  document.getElementById('h-recent').innerHTML=dayGroupedTxnHTML(walletTxnRows().slice(0,12),`<div style="text-align:center;padding:28px;color:var(--ink3);font-size:14px">${t('notxn')}</div>`,'home');
 }
 function weekdayLabel(dateStr){
   const d=new Date(dateStr);const z=S.lang==='en'?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['週日','週一','週二','週三','週四','週五','週六'];
@@ -2777,8 +2796,8 @@ function dayGroupedTxnHTML(list,emptyHtml,scope){
   const groups=[];const map={};
   list.forEach(tx=>{const k=tx.date||today();if(!map[k]){map[k]={date:k,items:[]};groups.push(map[k]);}map[k].items.push(tx);});
   return groups.map((g,i)=>{
-    const inc=g.items.filter(tx=>txReportable(tx)&&tx.type==='income').reduce((a,tx)=>a+tx.amtHKD,0);
-    const exp=g.items.filter(tx=>txReportable(tx)&&tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
+    const inc=g.items.filter(tx=>(txReportable(tx)&&tx.type==='income')||(txIsRealisedPnl(tx)&&(tx.pnlHKD||0)>0)).reduce((a,tx)=>a+(txIsRealisedPnl(tx)?Math.abs(tx.pnlHKD||0):tx.amtHKD),0);
+    const exp=g.items.filter(tx=>(txReportable(tx)&&tx.type==='expense')||(txIsRealisedPnl(tx)&&(tx.pnlHKD||0)<0)).reduce((a,tx)=>a+(txIsRealisedPnl(tx)?Math.abs(tx.pnlHKD||0):tx.amtHKD),0);
     const net=inc-exp;const open=i===0;
     const bits=[];if(inc)bits.push(`<span style="color:var(--g3)">+${fmt(inc)}</span>`);if(exp)bits.push(`<span style="color:var(--r3)">−${fmt(exp)}</span>`);if(!bits.length)bits.push(`<span>${g.items.length} ${t('txnsunit')}</span>`);
     return `<div class="day-group" data-day-scope="${scope}" data-day-idx="${i}"><button type="button" class="day-head" onclick="toggleDayGroup('${scope}',${i})"><div class="day-head-left"><i class="ti ti-chevron-down day-chev ${open?'open':''}"></i><span class="day-dot" style="background:${net>=0?'var(--g)':'var(--r)'}"></span><span class="day-date">${weekdayLabel(g.date)}</span></div><div class="day-sum">${bits.join(' · ')}</div></button><div class="day-body ${open?'open':''}">${g.items.map(txnRow).join('')}</div></div>`;
@@ -2787,7 +2806,8 @@ function dayGroupedTxnHTML(list,emptyHtml,scope){
 function toggleDayGroup(scope,i){const g=document.querySelector(`[data-day-scope="${scope}"][data-day-idx="${i}"]`);if(!g)return;const b=g.querySelector('.day-body');const c=g.querySelector('.day-chev');if(b)b.classList.toggle('open');if(c)c.classList.toggle('open',b&&b.classList.contains('open'));}
 function filterTxn(type,btn){
   if(btn){document.querySelectorAll('#pane-txn .fchip').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
-  const list=type==='all'?S.txns:type==='oneoff'?S.txns.filter(tx=>tx.oneOff):S.txns.filter(tx=>tx.type===type);
+  const rows=walletTxnRows();
+  const list=type==='all'?rows:type==='oneoff'?rows.filter(tx=>tx.oneOff):type==='income'?rows.filter(tx=>tx.type==='income'||(txIsRealisedPnl(tx)&&(tx.pnlHKD||0)>0)):type==='expense'?rows.filter(tx=>tx.type==='expense'||(txIsRealisedPnl(tx)&&(tx.pnlHKD||0)<0)):rows.filter(tx=>tx.type===type);
   document.getElementById('txn-list').innerHTML=dayGroupedTxnHTML(list,`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('notxn')}</div>`,'txn');
 }
 function filterAR(type,btn){
