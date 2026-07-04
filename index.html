@@ -1551,6 +1551,7 @@ if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return 
 function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',motionMode:S.motionMode||'dance',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
 function t(k){return LANGS[S.lang][k]||LANGS.en[k]||k;}
+function tt(zh,en){return S.lang==='en'?en:zh;}
 function catLabel(c){return S.lang==='en'?(c.labelEn||c.label):c.label;}
 function toHKD(a,c){return c==='HKD'?a:a*(FX[c]||1);}
 // fmt takes an HKD figure and renders it in the user's chosen display currency
@@ -1581,9 +1582,22 @@ function defaultAcctForSection(secId,fallbackId){const match=accountForSection(s
 function syncSectionAccountLinks(){let changed=false;(S.portfolio||[]).forEach(p=>{if(!p.secId)return;const ac=accountForSection(p.secId);if(ac&&ac.isInvest&&p.acctId!==ac.id){p.acctId=ac.id;p.acctLabel=acctLabel(ac);p.acctIcon=ac.icon;changed=true;}});return changed;}
 function fillAcctSelect(selId,selectedId){const el=document.getElementById(selId);if(!el)return;el.innerHTML=(S.accounts||[]).map(a=>`<option value="${a.id}"${a.id===selectedId?' selected':''}>${a.icon} ${acctLabel(a)}</option>`).join('');}
 function rpSignedHKD(p){return (p.dir==='p'?-1:1)*(parseFloat(p.amtHKD||0));}
+function rpIsActive(p){return p&&!p.settled&&!p.dead;}
 function rpGroups(list){const m={};(list||[]).forEach(p=>{const k=(p.friendId||p.name||'').toString().trim().toLowerCase();if(!m[k])m[k]={key:k,name:p.name,items:[],net:0};m[k].items.push(p);m[k].net+=rpSignedHKD(p);});return Object.values(m).sort((a,b)=>Math.abs(b.net)-Math.abs(a.net));}
-function rpAssetTotal(){return rpGroups((S.people||[]).filter(p=>!p.settled)).reduce((a,g)=>a+Math.max(g.net,0),0);}
-function rpDebtTotal(){return rpGroups((S.people||[]).filter(p=>!p.settled)).reduce((a,g)=>a+Math.max(-g.net,0),0);}
+function rpAssetTotal(){return rpGroups((S.people||[]).filter(rpIsActive)).reduce((a,g)=>a+Math.max(g.net,0),0);}
+function rpDebtTotal(){return rpGroups((S.people||[]).filter(rpIsActive)).reduce((a,g)=>a+Math.max(-g.net,0),0);}
+function dayDiff(a,b){const A=new Date(a||today()),B=new Date(b||today());if(isNaN(A)||isNaN(B))return 0;return Math.max(0,Math.round((B-A)/86400000));}
+function friendCredit(key){
+  key=String(key||'').toLowerCase();const rows=(S.people||[]).filter(p=>(p.friendId||p.name||'').toString().trim().toLowerCase()===key);
+  const paid=rows.filter(p=>p.settled&&!p.dead&&p.dir!=='p');const dead=rows.filter(p=>p.dead&&p.dir!=='p');const open=rows.filter(p=>rpIsActive(p)&&p.dir!=='p');
+  const days=paid.map(p=>p.payDays!=null?p.payDays:dayDiff(p.date,p.settleDate||today()));
+  const avg=days.length?Math.round(days.reduce((a,x)=>a+x,0)/days.length):null;
+  let score=80;if(avg!=null){if(avg<=2)score+=15;else if(avg<=7)score+=8;else if(avg<=14)score+=0;else if(avg<=30)score-=10;else score-=25;}
+  score-=dead.length*30;open.forEach(p=>{const age=dayDiff(p.date,today());if(age>60)score-=20;else if(age>30)score-=10;});
+  score=Math.max(0,Math.min(100,score));const grade=score>=85?'A':score>=70?'B':score>=50?'C':'D';
+  return {score,grade,avg,paid:paid.length,dead:dead.length,open:open.length,openHKD:open.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0),deadHKD:dead.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0)};
+}
+function friendCreditBadge(key){const c=friendCredit(key);const col=c.score>=85?'bg':c.score>=70?'bb':c.score>=50?'ba':'br';return `<span class="badge ${col}">${tt('信用','Credit')} ${c.grade} · ${c.score}</span>`;}
 function addRPMove(p,phase,amtOverride,amtHKDOverride){const amount=amtOverride!=null?Math.abs(amtOverride):Math.abs(p.amount||0);const amtHKD=amtHKDOverride!=null?Math.abs(amtHKDOverride):Math.abs(parseFloat(p.amtHKD||0));if(!amtHKD||!p.acctId)return null;const ac=getAcct(p.acctId);const receivable=p.dir!=='p';const direction=(phase==='open')?(receivable?'out':'in'):(receivable?'in':'out');const tx={id:Date.now()+Math.random(),type:'ar_move',direction,amount,amtHKD,cur:p.cur||'HKD',acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(phase==='open'?t('aropen'):t('arsettle'))+' · '+p.name+(p.desc?' · '+p.desc:''),date:p.date||today(),fromRP:p.id,rpPhase:phase,oneOff:true};S.txns.unshift(tx);return tx;}
 function removeRPMovesFor(ids,phase){const set=new Set([].concat(ids).filter(x=>x!=null).map(x=>String(x)));S.txns=S.txns.filter(tx=>{if(!txIsRPFlow(tx))return true;if(phase&&tx.rpPhase!==phase)return true;return !set.has(String(tx.fromRP));});}
 // R/P wallet moves are real cash movements inside the selected account, but NOT income/spending.
@@ -1594,13 +1608,21 @@ function txIsRealisedPnl(tx){return !!tx&&tx.type==='pnl_realized';}
 function txReportable(tx){return !!tx&&!tx.excluded&&!txIsRealisedPnl(tx)&&!txIsRPFlow(tx)&&!txIsDebtFlow(tx)&&tx.type!=='transfer';}
 function txCashFlowSign(tx){if(tx.type==='income')return 1;if(tx.type==='expense')return -1;return 0;}
 function realisedPnlTxnRows(){
-  return (S.portfolio||[]).filter(p=>p&&p.exitPrice).map(p=>{
+  const portRows=(S.portfolio||[]).filter(p=>p&&p.exitPrice).map(p=>{
     const pnl=parseFloat(((p.valueHKD||0)-(p.costHKD||0)).toFixed(2));
     const ac=getAcct(p.acctId);
     return {id:'pnl_'+p.id,type:'pnl_realized',pnlHKD:pnl,amount:Math.abs(pnl),amtHKD:Math.abs(pnl),cur:'HKD',
       acctId:p.acctId||'',acctLabel:p.acctLabel||(ac?acctLabel(ac):''),acctIcon:p.acctIcon||(ac?ac.icon:''),date:p.exitDate||p.date||today(),
       note:(p.name||t('realisedpnl')),sourcePosId:p.id,posType:p.type,oneOff:true};
   });
+  const pokerRows=(S.gamble||[]).filter(g=>g&&!g.open&&Math.abs((g.cashoutHKD||0)-(g.buyinHKD||0))>0.0001).map(g=>{
+    const pnl=parseFloat(((g.cashoutHKD||0)-(g.buyinHKD||0)).toFixed(2));
+    const ac=getAcct(g.acctId);
+    return {id:'pnl_g_'+g.id,type:'pnl_realized',pnlHKD:pnl,amount:Math.abs(pnl),amtHKD:Math.abs(pnl),cur:'HKD',
+      acctId:g.acctId||'',acctLabel:g.acctLabel||(ac?acctLabel(ac):''),acctIcon:g.acctIcon||(ac?ac.icon:''),date:g.date||today(),
+      note:(g.venue||t('poker')),sourceGambleId:g.id,posType:'poker',oneOff:true};
+  });
+  return [...portRows,...pokerRows];
 }
 function txSortStamp(tx){const d=tx.date||'';const n=Number(String(tx.id||'').replace(/[^\d.]/g,''))||0;return {d,n};}
 function walletTxnRows(){
@@ -2587,7 +2609,7 @@ function confirmSettle(){
     if(!p.settleTxnIds)p.settleTxnIds=[];
     if(stx){p.settleTxnIds.push(stx.id);p.settleTxnId=stx.id;}
     p.settleAcctId=ac.id;
-    if(pay>=due-0.005){p.settled=true;p.amount=0;p.amtHKD=0;}
+    if(pay>=due-0.005){p.settled=true;p.settleDate=today();p.payDays=dayDiff(p.date,p.settleDate);p.amount=0;p.amtHKD=0;}
     else{p.amount=parseFloat((p.amount-payOrig).toFixed(2));p.amtHKD=parseFloat((due-pay).toFixed(2));}
     payHKD=parseFloat((payHKD-pay).toFixed(2));
   });
@@ -2607,7 +2629,19 @@ function recallAR(id){
   } else removeRPMovesFor([p.id],'settle');
   p.settleTxnId=(p.settleTxnIds&&p.settleTxnIds.length)?p.settleTxnIds[p.settleTxnIds.length-1]:null;
   if(!p.settleTxnId)p.settleAcctId=null;
-  p.settled=false;
+  p.settled=false;p.settleDate=null;p.payDays=null;p.dead=false;p.deadDate=null;
+  saveS();setWalletPane('ar');refreshAllViews();
+}
+function markDeadGroup(ids){
+  const items=String(ids).split(',').filter(Boolean).map(id=>S.people.find(x=>String(x.id)===String(id))).filter(p=>p&&rpIsActive(p)&&p.dir!=='p');
+  if(!items.length)return;
+  const total=items.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0);
+  if(!confirm(tt('將呢筆應收標記為壞帳 / Dead money？\\n\\n之後唔再計入應收資產，但會保留記錄並影響朋友信用。\\n\\n金額: ','Mark this receivable as dead money?\\n\\nIt will no longer count as an asset, but history remains and friend credit is affected.\\n\\nAmount: ')+fmt(total)))return;
+  items.forEach(p=>{p.dead=true;p.deadDate=today();p.settled=true;p.urgent=false;});
+  saveS();setWalletPane('ar');refreshAllViews();
+}
+function reviveDeadGroup(ids){
+  String(ids).split(',').filter(Boolean).forEach(id=>{const p=S.people.find(x=>String(x.id)===String(id));if(p&&p.dead){p.dead=false;p.deadDate=null;p.settled=false;}});
   saveS();setWalletPane('ar');refreshAllViews();
 }
 // Saved friends + flexible bill split (equal by default, any share editable)
@@ -2672,8 +2706,10 @@ function saveGroupBill(){
 // Friends manager (A/R pane)
 function renderFriendsMgr(){
   const el=document.getElementById('friends-mgr');if(!el)return;
-  const fr=S.friends||[];
-  el.innerHTML='<div style="padding:11px 15px;font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">'+t('friends')+'</div>'+(fr.length?fr.map(f=>`<div style="display:flex;align-items:center;gap:10px;padding:10px 15px;border-top:0.5px solid var(--bdr)"><div onclick="quickRP(decodeURIComponent('${encodeURIComponent(f.name)}'))" style="flex:1;display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0"><div class="avatar" style="background:var(--g2);color:var(--g3)">${f.name.slice(0,2).toUpperCase()}</div><div style="flex:1;min-width:0;font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name}<span style="font-size:11px;color:var(--g3);font-weight:600;margin-left:7px">＋ R/P</span></div></div><button onclick="delFriend('${f.id}')" style="padding:6px 9px;border:none;background:none;color:var(--r3);font-size:18px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button></div>`).join(''):'<div style="padding:14px 15px;color:var(--ink3);font-size:13px;border-top:0.5px solid var(--bdr)">—</div>')+`<div style="display:flex;gap:8px;padding:10px 15px;border-top:0.5px solid var(--bdr)"><input id="fr-new" placeholder="${t('nameph')}" style="flex:1;border:1px solid var(--bdr2);border-radius:10px;padding:9px;background:var(--bg2);color:var(--ink);font-size:14px"><button onclick="addFriendMgr()" style="padding:9px 14px;background:var(--hero-grad);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">${t('add')}</button></div>`;
+  const map={};(S.friends||[]).forEach(f=>{const k=(f.id||f.name||'').toString().trim().toLowerCase();if(k)map[k]={id:f.id,name:f.name};});
+  (S.people||[]).forEach(p=>{const k=(p.friendId||p.name||'').toString().trim().toLowerCase();if(k&&!map[k])map[k]={id:p.friendId||'',name:p.name};});
+  const fr=Object.values(map);
+  el.innerHTML='<div style="padding:11px 15px;font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">'+t('friends')+' · '+tt('信用','Credit')+'</div>'+(fr.length?fr.map(f=>{const k=(f.id||f.name||'').toString().trim().toLowerCase();const c=friendCredit(k);const init=(f.name||'?').slice(0,2).toUpperCase();const meta=(c.avg!=null?tt('平均 ','avg ')+c.avg+tt('日','d'):'—')+(c.open?` · ${tt('未收','open')} ${fmt(c.openHKD)}`:'')+(c.dead?` · ${tt('壞帳','dead')} ${fmt(c.deadHKD)}`:'');return `<div style="display:flex;align-items:center;gap:10px;padding:10px 15px;border-top:0.5px solid var(--bdr)"><div onclick="quickRP(decodeURIComponent('${encodeURIComponent(f.name)}'))" style="flex:1;display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0"><div class="avatar" style="background:var(--g2);color:var(--g3)">${init}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${f.name} ${friendCreditBadge(k)}<span style="font-size:11px;color:var(--g3);font-weight:600;margin-left:7px">＋ R/P</span></div><div style="font-size:11px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${meta}</div></div></div>${f.id?`<button onclick="delFriend('${f.id}')" style="padding:6px 9px;border:none;background:none;color:var(--r3);font-size:18px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join(''):'<div style="padding:14px 15px;color:var(--ink3);font-size:13px;border-top:0.5px solid var(--bdr)">—</div>')+`<div style="display:flex;gap:8px;padding:10px 15px;border-top:0.5px solid var(--bdr)"><input id="fr-new" placeholder="${t('nameph')}" style="flex:1;border:1px solid var(--bdr2);border-radius:10px;padding:9px;background:var(--bg2);color:var(--ink);font-size:14px"><button onclick="addFriendMgr()" style="padding:9px 14px;background:var(--hero-grad);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">${t('add')}</button></div>`;
 }
 function addFriendMgr(){const el=document.getElementById('fr-new');const nm=(el.value||'').trim();if(!nm)return;S.friends=S.friends||[];S.friends.push({id:newFriendId(),name:nm});saveS();renderFriendsMgr();}
 function delFriend(id){S.friends=(S.friends||[]).filter(f=>f.id!==id);saveS();renderFriendsMgr();}
@@ -2812,14 +2848,15 @@ function filterTxn(type,btn){
 }
 function filterAR(type,btn){
   if(btn){document.querySelectorAll('#pane-ar .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
-  const active=S.people.filter(p=>!p.settled);const groups=rpGroups(active);
+  const active=(S.people||[]).filter(rpIsActive);const groups=rpGroups(active);
+  const deadRows=(S.people||[]).filter(p=>p.dead&&p.dir!=='p');const deadHKD=deadRows.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0);
   const recv=groups.reduce((a,g)=>a+Math.max(g.net,0),0);const pay=groups.reduce((a,g)=>a+Math.max(-g.net,0),0);
   const elR=document.getElementById('ar-total');if(elR)elR.textContent=fmt(recv);
   const elP=document.getElementById('ar-pay-total');if(elP)elP.textContent='−'+fmt(pay);
-  const elRc=document.getElementById('ar-ct');if(elRc)elRc.textContent=groups.filter(g=>g.net>0).length?groups.filter(g=>g.net>0).length+' '+t('outstanding'):'';
+  const elRc=document.getElementById('ar-ct');if(elRc)elRc.textContent=(groups.filter(g=>g.net>0).length?groups.filter(g=>g.net>0).length+' '+t('outstanding'):'')+(deadHKD?' · '+tt('壞帳 ','dead ')+fmt(deadHKD):'');
   const elPc=document.getElementById('ar-urgent-ct');if(elPc)elPc.textContent=groups.filter(g=>g.net<0).length?groups.filter(g=>g.net<0).length+' '+t('outstanding'):'';
-  let list=type==='pending'?groups:type==='settled'?rpGroups(S.people.filter(p=>p.settled)):type==='group'?rpGroups(S.people.filter(p=>p.isGroupSplit&&!p.settled)):[...groups,...rpGroups(S.people.filter(p=>p.settled))];
-  document.getElementById('ar-list').innerHTML=list.length?list.map((g,i)=>{const ci=i%8;const init=(g.name||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const settled=g.items.every(p=>p.settled);const urg=!settled&&g.items.some(p=>p.urgent);const isPay=g.net<0;const amtCol=isPay?'var(--r)':(urg?'var(--r)':'var(--g)');const detail=g.items.map(p=>(p.dir==='p'?'−':'+')+fmt(p.amtHKD)+(p.desc?' · '+p.desc:'')).join('<br>');const ids=g.items.filter(p=>!p.settled).map(p=>p.id).join(',');return `<div class="crow${urg?' alert-row':''}"><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div class="rinfo"><div class="rtitle">${g.name}${isPay?`<span class="badge br">${t('payable')}</span>`:''}${g.items.some(p=>p.isGroupSplit)?`<span class="badge bp">${t('group')}</span>`:''}${urg?`<span class="badge br">${t('pending')}</span>`:''}</div><div class="rsub">${detail||'—'}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">${settled?`<span class="badge bg">${t('settled')}</span>`:`<span style="font-size:15px;font-weight:700;color:${amtCol}">${isPay?'−':'+'}${fmt(Math.abs(g.net))}</span><button class="settle-btn${urg?' urgent':''}" onclick="openSettleGroup('${ids}')">${isPay?t('settlepay'):'Settle ✓'}</button>`}</div>${settled?`<button onclick="recallGroup('${g.items.map(p=>p.id).join(',')}')" title="${t('recallbtn')}" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-arrow-back-up"></i></button>`:`<button onclick="editAR('${g.items[0].id}')" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-pencil"></i></button>`}<button onclick="deleteARGroup('${encodeURIComponent(g.key)}')" style="padding:6px 7px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-trash"></i></button></div>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
+  let list=type==='pending'?groups:type==='settled'?rpGroups((S.people||[]).filter(p=>p.settled&&!p.dead)):type==='group'?rpGroups((S.people||[]).filter(p=>p.isGroupSplit&&rpIsActive(p))):[...groups,...rpGroups((S.people||[]).filter(p=>p.settled&&!p.dead)),...rpGroups(deadRows)];
+  document.getElementById('ar-list').innerHTML=list.length?list.map((g,i)=>{const ci=i%8;const init=(g.name||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const dead=g.items.every(p=>p.dead);const settled=!dead&&g.items.every(p=>p.settled);const urg=!dead&&!settled&&g.items.some(p=>p.urgent);const isPay=g.net<0;const amtCol=dead?'var(--r3)':(isPay?'var(--r)':(urg?'var(--r)':'var(--g)'));const detail=g.items.map(p=>(p.dead?'☠ ':p.dir==='p'?'−':'+')+fmt(p.amtHKD)+(p.desc?' · '+p.desc:'')+(p.payDays!=null?' · '+p.payDays+tt('日還清','d paid'):'')+(p.deadDate?' · '+tt('壞帳 ','dead ')+p.deadDate:'')).join('<br>');const ids=g.items.filter(rpIsActive).map(p=>p.id).join(',');const allIds=g.items.map(p=>p.id).join(',');const deadIds=g.items.filter(p=>rpIsActive(p)&&p.dir!=='p').map(p=>p.id).join(',');return `<div class="crow${urg?' alert-row':''}"><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div class="rinfo"><div class="rtitle">${g.name}${friendCreditBadge(g.key)}${isPay?`<span class="badge br">${t('payable')}</span>`:''}${dead?`<span class="badge br">${tt('壞帳','Dead')}</span>`:''}${g.items.some(p=>p.isGroupSplit)?`<span class="badge bp">${t('group')}</span>`:''}${urg?`<span class="badge br">${t('pending')}</span>`:''}</div><div class="rsub">${detail||'—'}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">${dead?`<span style="font-size:15px;font-weight:700;color:var(--r3)">${fmt(Math.abs(g.net))}</span><button class="settle-btn urgent" onclick="reviveDeadGroup('${allIds}')">${tt('復活','Restore')}</button>`:settled?`<span class="badge bg">${t('settled')}</span>`:`<span style="font-size:15px;font-weight:700;color:${amtCol}">${isPay?'−':'+'}${fmt(Math.abs(g.net))}</span><button class="settle-btn${urg?' urgent':''}" onclick="openSettleGroup('${ids}')">${isPay?t('settlepay'):'Settle ✓'}</button>${deadIds?`<button class="settle-btn urgent" onclick="markDeadGroup('${deadIds}')">${tt('壞帳','Dead')}</button>`:''}`}</div>${settled?`<button onclick="recallGroup('${allIds}')" title="${t('recallbtn')}" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-arrow-back-up"></i></button>`:(!dead?`<button onclick="editAR('${g.items[0].id}')" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-pencil"></i></button>`:'')}<button onclick="deleteARGroup('${encodeURIComponent(g.key)}')" style="padding:6px 7px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-trash"></i></button></div>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
 }
 function recallGroup(ids){String(ids).split(',').filter(Boolean).forEach(id=>recallAR(id));}
 function deleteARGroup(key){key=decodeURIComponent(key);if(!confirm(t('deltxnq')))return;const doomed=S.people.filter(p=>(p.friendId||p.name||'').toString().trim().toLowerCase()===key);const ids=doomed.map(p=>p.id);const gids=[...new Set(doomed.map(p=>p.groupId).filter(Boolean))];removeRPMovesFor(ids);S.txns=S.txns.filter(tx=>!(txIsRPFlow(tx)&&gids.includes(tx.groupId)));S.people=S.people.filter(p=>(p.friendId||p.name||'').toString().trim().toLowerCase()!==key);saveS();setWalletPane('ar');refreshAllViews();}
@@ -3828,7 +3865,7 @@ function exportExcel(){
   }));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(txRows.length?txRows:[{Date:'',Type:'',Note:''}]),'Transactions');
   // A/R
-  const arRows=S.people.map(p=>({Name:p.name,For:p.desc||'',Date:p.date,Amount:p.amount,Currency:p.cur,'Amount (HKD)':p.amtHKD,Status:p.settled?'Settled':'Pending',Group:p.isGroupSplit?'Yes':''}));
+  const arRows=S.people.map(p=>({Name:p.name,For:p.desc||'',Date:p.date,Amount:p.amount,Currency:p.cur,'Amount (HKD)':p.amtHKD,Status:p.dead?'Dead money':(p.settled?'Settled':'Pending'),PayDays:p.payDays||'',DeadDate:p.deadDate||'',Group:p.isGroupSplit?'Yes':''}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(arRows.length?arRows:[{Name:''}]),'Receivables');
   // Poker
   const pkRows=S.gamble.map(g=>({Date:g.date,Venue:g.venue,Notes:g.notes||'','Buy-in':g.buyin,Cashout:g.cashout,Currency:g.cur,'Buy-in (HKD)':g.buyinHKD,'Cashout (HKD)':g.cashoutHKD,'P&L (HKD)':g.open?'':(g.cashoutHKD-g.buyinHKD),Status:g.open?'Open':'Closed'}));
