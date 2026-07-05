@@ -126,7 +126,7 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
 .pnl-simple-metric{min-width:58px}
 .pnl-simple-metric .pnl-simple-val{font-size:15px;font-weight:800;margin-top:1px}
 .record-panel{display:none;margin-bottom:16px}
-.record-toggle{border:1px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:800;padding:5px 12px;cursor:pointer}
+.record-toggle{border:1px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:12px;font-weight:800;padding:8px 14px;cursor:pointer}
 .record-toggle.on{border-color:rgba(29,158,117,0.45);color:var(--g3);background:var(--g2)}
 .pnl-sec-body.collapsed{display:none}
 .sec-hide-btn{width:30px;height:30px;flex-shrink:0;border:1px solid var(--bdr2);border-radius:10px;background:var(--surf2);color:var(--ink2);cursor:pointer;display:flex;align-items:center;justify-content:center}
@@ -212,6 +212,12 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
 .modal .sbtn{position:sticky;bottom:8px;z-index:6}
 /* the txn modal instead places save right under the keypad — sticky would cover number keys */
 #m-txn .sbtn{position:static}
+/* zero-amount save feedback */
+.amt-disp.shake{animation:amt-shake .4s;color:var(--r3)}
+@keyframes amt-shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
+/* generic notification toast (validation errors etc.) */
+#app-toast{position:fixed;left:50%;bottom:calc(var(--sb) + 96px);transform:translateX(-50%) translateY(16px);background:var(--surf);border:1px solid var(--bdr2);box-shadow:0 12px 32px rgba(0,0,0,0.3);border-radius:14px;padding:11px 18px;max-width:82vw;z-index:61;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;font-size:14px;font-weight:600;color:var(--ink);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);text-align:center}
+#app-toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 /* delete-undo toast */
 #undo-toast{position:fixed;left:50%;bottom:calc(var(--sb) + 96px);transform:translateX(-50%) translateY(16px);background:var(--surf);border:1px solid var(--bdr2);box-shadow:0 12px 32px rgba(0,0,0,0.3);border-radius:14px;padding:11px 16px;display:flex;gap:16px;align-items:center;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;font-size:14px;color:var(--ink);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
 #undo-toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
@@ -392,7 +398,7 @@ body.dark #s-settings .glass-card{background:rgba(36,36,40,0.9);border-color:rgb
 .toggle::after{content:'';position:absolute;width:27px;height:27px;border-radius:50%;background:#fff;top:2px;left:2px;transition:left 0.25s;box-shadow:0 1px 4px rgba(0,0,0,0.2)}
 .toggle.on::after{left:22px}
 .seg-ctrl{display:flex;background:var(--bg2);border-radius:12px;padding:3px;margin-bottom:12px;gap:3px}
-.seg-btn{flex:1;padding:7px 2px;border:none;background:none;border-radius:9px;font-size:11px;font-weight:600;cursor:pointer;color:var(--ink3);transition:all 0.15s}
+.seg-btn{flex:1;padding:10px 2px;border:none;background:none;border-radius:9px;font-size:11px;font-weight:600;cursor:pointer;color:var(--ink3);transition:all 0.15s}
 .seg-btn.active{background:var(--surf);color:var(--ink);box-shadow:0 1px 6px rgba(0,0,0,0.1)}
 .wsub-bar{display:flex;gap:6px;padding:0 20px 4px;flex-shrink:0}
 .wsub-btn{flex:1;padding:10px 4px;border:none;background:var(--bg2);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:var(--ink3);transition:all 0.15s}
@@ -830,10 +836,10 @@ img,canvas,svg{max-width:100%;}
   <input type="hidden" id="debt-edit-id">
   <div class="fsec">
     <div class="frow"><span class="flbl" data-i="name"></span><input class="fval" id="debt-name" placeholder="政府學債 / Gov loan"></div>
-    <div class="frow"><span class="flbl" data-i="debtbalance"></span><input class="fval" type="number" id="debt-principal" placeholder="0.00" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="debtapr"></span><input class="fval" type="number" id="debt-apr" placeholder="0" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="debtmonthly"></span><input class="fval" type="number" id="debt-monthly-in" placeholder="0" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="payday"></span><input class="fval" type="number" id="debt-day" min="1" max="31" placeholder="1" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="debtbalance"></span><input class="fval" type="number" inputmode="decimal" id="debt-principal" placeholder="0.00" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="debtapr"></span><input class="fval" type="number" inputmode="decimal" id="debt-apr" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="debtmonthly"></span><input class="fval" type="number" inputmode="decimal" id="debt-monthly-in" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="payday"></span><input class="fval" type="number" inputmode="decimal" id="debt-day" min="1" max="31" placeholder="1" style="text-align:right"></div>
     <div class="frow"><span class="flbl" data-i="account"></span><select class="fval" id="debt-acct"></select></div>
     <div class="frow"><span class="flbl" data-i="debtcompound"></span><select class="fval" id="debt-compound"><option value="monthly" data-i="debtcmonthly"></option><option value="annual" data-i="debtcannual"></option><option value="simple" data-i="debtcsimple"></option></select></div>
     <div class="frow"><span class="flbl" data-i="debtnointerest"></span><button class="toggle" id="debt-nointerest" onclick="this.classList.toggle('on')"></button></div>
@@ -914,7 +920,7 @@ img,canvas,svg{max-width:100%;}
       <div style="display:flex;flex-direction:column;gap:8px">
         <input id="ai2-name" placeholder="" data-i-ph="incomename" style="border:1px solid var(--bdr2);border-radius:10px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px">
         <div style="display:flex;gap:8px">
-          <input id="ai2-amt" type="number" placeholder="0" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:10px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
+          <input id="ai2-amt" type="number" inputmode="decimal" placeholder="0" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:10px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
           <select id="ai2-cur" style="border:1px solid var(--bdr2);border-radius:10px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px;-webkit-appearance:none"><option>HKD</option><option>USD</option><option>RMB</option><option>JPY</option></select>
         </div>
         <select id="ai2-acct" style="border:1px solid var(--bdr2);border-radius:10px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px;-webkit-appearance:none"></select>
@@ -923,7 +929,7 @@ img,canvas,svg{max-width:100%;}
           <select id="ai2-freq" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:10px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px;-webkit-appearance:none">
             <option value="1" data-i="freqmonth"></option><option value="3" data-i="freqquarter"></option><option value="6" data-i="freqhalf"></option><option value="12" data-i="freqyear"></option><option value="0" data-i="freqnone"></option>
           </select>
-          <input id="ai2-day" type="number" min="1" max="31" placeholder="1" style="width:70px;border:1px solid var(--bdr2);border-radius:10px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
+          <input id="ai2-day" type="number" inputmode="decimal" min="1" max="31" placeholder="1" style="width:70px;border:1px solid var(--bdr2);border-radius:10px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
         </div>
         <button onclick="addAutoincome()" style="padding:11px;background:var(--hero-grad);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer" data-i="addincome"></button>
       </div>
@@ -1040,13 +1046,13 @@ img,canvas,svg{max-width:100%;}
     <div class="slbl" data-i="credit"></div>
     <div class="glass-card" style="padding:15px;margin-bottom:12px">
       <div style="display:flex;gap:8px;margin-bottom:8px">
-        <input id="tu-score" type="number" data-ph="tuscoreph" placeholder="TU score" style="flex:1;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px">
+        <input id="tu-score" type="number" inputmode="decimal" data-ph="tuscoreph" placeholder="TU score" style="flex:1;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px">
         <input id="tu-date" type="date" class="fval" style="border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:13px">
         <button onclick="addTuScore()" style="padding:11px 16px;background:var(--hero-grad);color:#fff;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer" data-i="addscore"></button>
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
         <span style="font-size:13px;color:var(--ink3)" data-i="creditlimit"></span>
-        <input id="tu-limit" type="number" placeholder="0" onchange="saveCreditLimit()" style="flex:1;border:1px solid var(--bdr2);border-radius:12px;padding:9px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
+        <input id="tu-limit" type="number" inputmode="decimal" placeholder="0" onchange="saveCreditLimit()" style="flex:1;border:1px solid var(--bdr2);border-radius:12px;padding:9px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
       </div>
       <div id="credit-box"></div>
       <div style="font-size:11px;color:var(--ink3);margin-top:8px" data-i="creditdisc"></div>
@@ -1201,7 +1207,7 @@ img,canvas,svg{max-width:100%;}
   <div class="mhandle"></div><div class="mtitle" data-i="editbalance"></div>
   <div class="msub-lbl" id="opening-acct-name" style="padding:0 18px 4px;font-weight:700"></div>
   <div class="fsec">
-    <div class="frow"><span class="flbl" data-i="openingbal"></span><input class="fval" type="number" id="opening-val" placeholder="0.00" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="openingbal"></span><input class="fval" type="number" inputmode="decimal" id="opening-val" placeholder="0.00" style="text-align:right"></div>
   </div>
   <button class="sbtn" onclick="saveOpening()" data-i="saveopening"></button>
 </div></div>
@@ -1267,22 +1273,22 @@ img,canvas,svg{max-width:100%;}
   <button class="mclose" onclick="closeM('m-calc')" aria-label="Close">&times;</button>
   <div class="mhandle"></div><div class="mtitle" data-i="calctitle"></div>
   <div class="fsec">
-    <div class="frow"><span class="flbl" data-i="initialamt"></span><input class="fval" type="number" id="calc-init" placeholder="0" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="dcaamt"></span><input class="fval" type="number" id="calc-dca" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="initialamt"></span><input class="fval" type="number" inputmode="decimal" id="calc-init" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="dcaamt"></span><input class="fval" type="number" inputmode="decimal" id="calc-dca" placeholder="0" style="text-align:right"></div>
   </div>
   <div class="seg-ctrl" id="calc-dca-freq" style="margin:0 18px 10px">
     <button class="seg-btn active" data-v="month" onclick="calcSeg(this)" data-i="permonth"></button>
     <button class="seg-btn" data-v="year" onclick="calcSeg(this)" data-i="peryear"></button>
   </div>
   <div class="fsec">
-    <div class="frow"><span class="flbl" data-i="growthrate"></span><input class="fval" type="number" id="calc-rate" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="growthrate"></span><input class="fval" type="number" inputmode="decimal" id="calc-rate" placeholder="0" style="text-align:right"></div>
   </div>
   <div class="seg-ctrl" id="calc-rate-freq" style="margin:0 18px 10px">
     <button class="seg-btn active" data-v="year" onclick="calcSeg(this)" data-i="peryear"></button>
     <button class="seg-btn" data-v="month" onclick="calcSeg(this)" data-i="permonth"></button>
   </div>
   <div class="fsec">
-    <div class="frow"><span class="flbl" data-i="years"></span><input class="fval" type="number" id="calc-years" placeholder="10" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="years"></span><input class="fval" type="number" inputmode="decimal" id="calc-years" placeholder="10" style="text-align:right"></div>
   </div>
   <div class="seg-ctrl" id="calc-mode" style="margin:0 18px 10px">
     <button class="seg-btn active" data-v="compound" onclick="calcSeg(this)" data-i="compound"></button>
@@ -1298,8 +1304,8 @@ img,canvas,svg{max-width:100%;}
   <div class="mhandle"></div><div class="mtitle" data-i="sellpos"></div>
   <div class="msub-lbl" id="sell-pos-name" style="font-weight:700"></div>
   <div class="fsec">
-    <div class="frow"><span class="flbl" data-i="sellqty"></span><input class="fval" type="number" id="sell-qty" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="sellprice"></span><input class="fval" type="number" id="sell-price" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="sellqty"></span><input class="fval" type="number" inputmode="decimal" id="sell-qty" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="sellprice"></span><input class="fval" type="number" inputmode="decimal" id="sell-price" style="text-align:right"></div>
   </div>
   <button class="sbtn" onclick="confirmSell()" data-i="sell"></button>
 </div></div>
@@ -1317,7 +1323,7 @@ img,canvas,svg{max-width:100%;}
   <div class="seg-ctrl" style="margin:0 0 12px"><button class="seg-btn active" id="ar-dir-r" onclick="setArDir('r',this)" data-i="dirrecv"></button><button class="seg-btn" id="ar-dir-p" onclick="setArDir('p',this)" data-i="dirpay"></button></div>
   <div class="fsec">
     <div class="frow"><span class="flbl" data-i="name"></span><input class="fval" id="ar-name" data-ph="nameph"></div>
-    <div class="frow"><span class="flbl" data-i="amount"></span><input class="fval" type="number" id="ar-amt" placeholder="0.00" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="amount"></span><input class="fval" type="number" inputmode="decimal" id="ar-amt" placeholder="0.00" style="text-align:right"></div>
     <div class="frow"><span class="flbl" data-i="currency"></span><select class="fval" id="ar-cur"><option>HKD</option><option>RMB</option><option>USD</option><option>JPY</option></select></div>
     <div class="frow"><span class="flbl" data-i="account"></span><select class="fval" id="ar-acct"></select></div>
     <div class="frow"><span class="flbl" data-i="for"></span><input class="fval" id="ar-desc" data-ph="forph"></div>
@@ -1330,7 +1336,7 @@ img,canvas,svg{max-width:100%;}
   <button class="mclose" onclick="closeM('m-settle')" aria-label="Close">&times;</button>
   <div class="mhandle"></div><div class="mtitle" id="settle-title">Settle</div>
   <div id="settle-sub" style="font-size:13px;color:var(--ink3);margin-bottom:12px"></div>
-  <div class="frow"><span class="flbl" data-i="settleamt"></span><input class="fval" type="number" id="settle-amt" placeholder="0.00" style="text-align:right"></div>
+  <div class="frow"><span class="flbl" data-i="settleamt"></span><input class="fval" type="number" inputmode="decimal" id="settle-amt" placeholder="0.00" style="text-align:right"></div>
   <div style="font-size:11px;color:var(--ink3);margin:-4px 0 10px" data-i="settleamthint"></div>
   <div class="flbl" data-i="account" style="margin-bottom:8px"></div>
   <div class="cat-scroll" id="settle-acct-chips" style="padding:2px 0 14px"></div>
@@ -1343,7 +1349,7 @@ img,canvas,svg{max-width:100%;}
   <div class="msub-lbl" data-i="splitbillhint"></div>
   <div class="fsec">
     <div class="frow"><span class="flbl" data-i="title"></span><input class="fval" id="gb-title" data-ph="billtitleph"></div>
-    <div class="frow"><span class="flbl" data-i="totalHKD"></span><input class="fval" type="number" id="gb-total" placeholder="1000" style="text-align:right" oninput="renderBillAmounts()"></div>
+    <div class="frow"><span class="flbl" data-i="totalHKD"></span><input class="fval" type="number" inputmode="decimal" id="gb-total" placeholder="1000" style="text-align:right" oninput="renderBillAmounts()"></div>
     <div class="frow"><span class="flbl" data-i="account"></span><select class="fval" id="gb-acct"></select></div>
     <div id="gb-cat-wrap" style="margin-top:10px;padding:12px;border:1.5px solid var(--bdr2);border-radius:14px;background:var(--bg2)">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:8px">
@@ -1372,16 +1378,16 @@ img,canvas,svg{max-width:100%;}
   <input type="hidden" id="pe-secid" value="">
   <div class="fsec">
     <div class="frow"><span class="flbl" data-i="name"></span><input class="fval" id="pe-name" data-ph="penameph" placeholder="FWP"></div>
-    <div class="frow"><span class="flbl" data-i="pctowned"></span><input class="fval" type="number" id="pe-pct" placeholder="—" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="invested"></span><input class="fval" type="number" id="pe-invested" placeholder="0.00" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="valuation"></span><input class="fval" type="number" id="pe-valuation" placeholder="0.00" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="pctowned"></span><input class="fval" type="number" inputmode="decimal" id="pe-pct" placeholder="—" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="invested"></span><input class="fval" type="number" inputmode="decimal" id="pe-invested" placeholder="0.00" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="valuation"></span><input class="fval" type="number" inputmode="decimal" id="pe-valuation" placeholder="0.00" style="text-align:right"></div>
     <div class="frow"><span class="flbl" data-i="currency"></span><select class="fval" id="pe-cur"><option>HKD</option><option>USD</option><option>RMB</option><option>JPY</option></select></div>
     <div class="frow"><span class="flbl" data-i="connectacct"></span><select class="fval" id="pe-acct"></select></div>
     <div class="frow"><span class="flbl" data-i="notes"></span><input class="fval" id="pe-notes" data-ph="penotesph" placeholder="Round, terms…"></div>
   </div>
   <div class="acct-lbl" data-i="dividend"></div>
   <div class="fsec">
-    <div class="frow"><span class="flbl" data-i="divyield"></span><input class="fval" type="number" id="pe-div" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="divyield"></span><input class="fval" type="number" inputmode="decimal" id="pe-div" placeholder="0" style="text-align:right"></div>
     <div style="display:flex;gap:6px;padding:6px 0 2px;justify-content:flex-end">
       <button onclick="divQuick('pe-div',365)" style="font-size:11px;padding:4px 9px;border:1px solid var(--bdr2);border-radius:14px;background:none;color:var(--ink3);cursor:pointer">÷365</button>
       <button onclick="divQuick('pe-div',12)" style="font-size:11px;padding:4px 9px;border:1px solid var(--bdr2);border-radius:14px;background:none;color:var(--ink3);cursor:pointer">÷12</button>
@@ -1404,8 +1410,8 @@ img,canvas,svg{max-width:100%;}
     <div class="frow"><span class="flbl" data-i="venue"></span>
       <select class="fval" id="g-venue"><option>Natural 8</option><option>Polymarket</option><option>HKJC</option><option>Live poker</option><option>Other</option></select>
     </div>
-    <div class="frow"><span class="flbl" data-i="buyin"></span><input class="fval" type="number" id="g-buyin" placeholder="0" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="cashout"></span><input class="fval" type="number" id="g-cashout" data-ph="cashoutph" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="buyin"></span><input class="fval" type="number" inputmode="decimal" id="g-buyin" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="cashout"></span><input class="fval" type="number" inputmode="decimal" id="g-cashout" data-ph="cashoutph" style="text-align:right"></div>
     <div class="frow"><span class="flbl" data-i="currency"></span><select class="fval" id="g-cur"><option>HKD</option><option>USD</option><option>RMB</option><option>JPY</option></select></div>
     <div class="frow"><span class="flbl" data-i="date"></span><input class="fval" type="date" id="g-date"></div>
     <div class="frow"><span class="flbl" data-i="connectacct"></span><select class="fval" id="g-acct"></select></div>
@@ -1414,9 +1420,9 @@ img,canvas,svg{max-width:100%;}
   <div class="acct-lbl" data-i="pokerdetail"></div>
   <div class="fsec">
     <div class="frow"><span class="flbl" data-i="blinds"></span><input class="fval" id="g-blinds" data-ph="blindsph"></div>
-    <div class="frow"><span class="flbl" data-i="maxplayers"></span><input class="fval" type="number" id="g-maxp" placeholder="—" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="bbsize"></span><input class="fval" type="number" id="g-bb" placeholder="—" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="resultbb"></span><input class="fval" type="number" id="g-resultbb" data-ph="resultbbph" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="maxplayers"></span><input class="fval" type="number" inputmode="decimal" id="g-maxp" placeholder="—" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="bbsize"></span><input class="fval" type="number" inputmode="decimal" id="g-bb" placeholder="—" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="resultbb"></span><input class="fval" type="number" inputmode="decimal" id="g-resultbb" data-ph="resultbbph" style="text-align:right"></div>
   </div>
   <div class="oneoff-row">
     <button class="toggle" id="g-margin-toggle" onclick="this.classList.toggle('on')"></button>
@@ -1435,11 +1441,11 @@ img,canvas,svg{max-width:100%;}
   <input type="hidden" id="port-secid" value="">
   <div class="fsec">
     <div class="frow"><span class="flbl" data-i="ticker"></span><input class="fval" id="port-name" data-ph="tickerph" placeholder="TSLA, BTC, 0700…"></div>
-    <div class="frow"><span class="flbl" data-i="qty"></span><input class="fval" type="number" id="port-qty" placeholder="0" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="entryprice"></span><input class="fval" type="number" id="port-entry" placeholder="0.00" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="currentprice"></span><input class="fval" type="number" id="port-current" placeholder="0.00" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="exitprice"></span><input class="fval" type="number" id="port-exit" placeholder="—" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="budgetprice"></span><input class="fval" type="number" id="port-budget" placeholder="—" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="qty"></span><input class="fval" type="number" inputmode="decimal" id="port-qty" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="entryprice"></span><input class="fval" type="number" inputmode="decimal" id="port-entry" placeholder="0.00" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="currentprice"></span><input class="fval" type="number" inputmode="decimal" id="port-current" placeholder="0.00" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="exitprice"></span><input class="fval" type="number" inputmode="decimal" id="port-exit" placeholder="—" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="budgetprice"></span><input class="fval" type="number" inputmode="decimal" id="port-budget" placeholder="—" style="text-align:right"></div>
     <div class="frow"><span class="flbl" data-i="currency"></span><select class="fval" id="port-cur"><option>HKD</option><option>USD</option><option>RMB</option><option>JPY</option></select></div>
     <div class="frow"><span class="flbl" data-i="connectacct"></span><select class="fval" id="port-acct"></select></div>
     <div class="frow"><span class="flbl" data-i="apisym"></span><input class="fval" id="port-apisym" data-ph="apisymph"></div>
@@ -1447,7 +1453,7 @@ img,canvas,svg{max-width:100%;}
   </div>
   <div class="acct-lbl" data-i="dividend"></div>
   <div class="fsec">
-    <div class="frow"><span class="flbl" data-i="divyield"></span><input class="fval" type="number" id="port-div" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="divyield"></span><input class="fval" type="number" inputmode="decimal" id="port-div" placeholder="0" style="text-align:right"></div>
     <div style="display:flex;gap:6px;padding:6px 0 2px;justify-content:flex-end">
       <button onclick="divQuick('port-div',365)" style="font-size:11px;padding:4px 9px;border:1px solid var(--bdr2);border-radius:14px;background:none;color:var(--ink3);cursor:pointer">÷365</button>
       <button onclick="divQuick('port-div',12)" style="font-size:11px;padding:4px 9px;border:1px solid var(--bdr2);border-radius:14px;background:none;color:var(--ink3);cursor:pointer">÷12</button>
@@ -1570,7 +1576,7 @@ function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JS
 if(!S.debts)S.debts=[];
 if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return c.id===dc.id;});if(!ex){S.cats.push({...dc,aliases:[...dc.aliases]});}else{dc.aliases.forEach(function(a){if((ex.aliases||[]).indexOf(a)<0)ex.aliases=(ex.aliases||[]).concat(a);});}});
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));}}
-function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',motionMode:S.motionMode||'dance',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
+function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',motionMode:S.motionMode||'dance',fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300)}));}catch(e){}}
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
 function t(k){return LANGS[S.lang][k]||LANGS.en[k]||k;}
 function tt(zh,en){return S.lang==='en'?en:zh;}
@@ -1584,7 +1590,7 @@ function abbrevNum(v){var neg=v<0;v=Math.abs(v);var s;
   else return (neg?'-':'')+Math.round(v).toLocaleString();
   return (neg?'-':'')+s.replace(/\.0(?=[KMB]$)/,'');}
 function numStr(v){return S.numFmt==='abbr'?abbrevNum(v):Math.round(v).toLocaleString();}
-function fmt(n){const c=S.dispCur||'HKD';const v=(c==='HKD')?n:n/(FX[c]||1);const neg=v<0&&Math.round(Math.abs(v))!==0;return (neg?'−':'')+(CUR_SYM[c]||'')+numStr(Math.abs(v));}
+function fmt(n){if(S.privacy)return '••••';const c=S.dispCur||'HKD';const v=(c==='HKD')?n:n/(FX[c]||1);const neg=v<0&&Math.round(Math.abs(v))!==0;return (neg?'−':'')+(CUR_SYM[c]||'')+numStr(Math.abs(v));}
 function fmtSigned(n){return n<0?'−'+fmt(Math.abs(n)):fmt(n);}
 function setNumFmt(m){S.numFmt=m;saveS();document.querySelectorAll('.numfmt-btn').forEach(b=>b.classList.toggle('active',b.dataset.numfmt===(S.numFmt||'full')));renderHome();if(S.activeTab==='gamble')renderGamble();if(typeof refreshWallet==='function')refreshWallet();}
 function getCat(id){return S.cats.find(c=>c.id===id)||S.cats[S.cats.length-1];}
@@ -2063,7 +2069,7 @@ function renderDebts(){
   set('debt-paid',fmt(debts.reduce((a,d)=>a+(d.paidTotal||0),0)));
   el.innerHTML=debts.length?debts.map(d=>{
     const ac=getAcct(d.acctId);const ml=estMonths(d);
-    return `<div class="crow"><div class="ibox" style="background:var(--p2);color:var(--p3);font-size:18px">🏦</div><div class="rinfo"><div class="rtitle">${d.name}${d.paused?` <span class="badge bgr">${t('debtpaused')}</span>`:''}${d.noInterest?` <span class="badge bgr">${t('debtnointerest')}</span>`:''}</div><div class="rsub">APR ${d.apr||0}% · ${t('debtmonthly')} ${fmt(d.monthly||0)}${ac?' · '+ac.icon+' '+acctLabel(ac):''}${ml?' · ~'+ml+t('mo'):''}${d.compound==='simple'?' · '+t('debtcsimple'):d.compound==='annual'?' · '+t('debtcannual'):''}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="toggleDebtPause('${d.id}')" style="font-size:11px;padding:3px 10px;border:1px solid ${d.paused?'var(--g)':'var(--bdr2)'};border-radius:20px;background:none;color:${d.paused?'var(--g3)':'var(--ink3)'};cursor:pointer">${d.paused?t('resume'):t('pause')}</button><button onclick="openDebtModal('${d.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deleteDebt('${d.id}')" style="font-size:11px;padding:3px 10px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700;color:var(--r3)">${fmt(d.balance||0)}</div><div style="font-size:11px;color:var(--ink3)">${t('debtinterest')} ${fmt(d.accInterest||0)}</div></div></div>`;
+    return `<div class="crow"><div class="ibox" style="background:var(--p2);color:var(--p3);font-size:18px">🏦</div><div class="rinfo"><div class="rtitle">${d.name}${d.paused?` <span class="badge bgr">${t('debtpaused')}</span>`:''}${d.noInterest?` <span class="badge bgr">${t('debtnointerest')}</span>`:''}</div><div class="rsub">APR ${d.apr||0}% · ${t('debtmonthly')} ${fmt(d.monthly||0)}${ac?' · '+ac.icon+' '+acctLabel(ac):''}${ml?' · ~'+ml+t('mo'):''}${d.compound==='simple'?' · '+t('debtcsimple'):d.compound==='annual'?' · '+t('debtcannual'):''}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="toggleDebtPause('${d.id}')" style="font-size:12px;padding:7px 12px;border:1px solid ${d.paused?'var(--g)':'var(--bdr2)'};border-radius:20px;background:none;color:${d.paused?'var(--g3)':'var(--ink3)'};cursor:pointer">${d.paused?t('resume'):t('pause')}</button><button onclick="openDebtModal('${d.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deleteDebt('${d.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700;color:var(--r3)">${fmt(d.balance||0)}</div><div style="font-size:11px;color:var(--ink3)">${t('debtinterest')} ${fmt(d.accInterest||0)}</div></div></div>`;
   }).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
 }
 function openDebtModal(id){
@@ -2145,13 +2151,13 @@ function divAnnual(p){const pct=parseFloat(p.divPct||0);if(!pct)return 0;return 
 function divQuick(id,n){const el=document.getElementById(id);const v=parseFloat(el.value)||0;if(!v)return;el.value=parseFloat((v/n).toFixed(6));}
 // Record one dividend now from a modal's yield% + value. valueCur = holding value in the position currency.
 function logDivIncome(amt,cur,aid,name){
-  if(amt<=0){alert(t('sellerr'));return;}
+  if(amt<=0){showToast(t('sellerr'),1);return;}
   const ac=getAcct(aid);const cat=getCat('other_inc');
   S.txns.unshift({id:Date.now(),type:'income',amount:parseFloat(amt.toFixed(2)),amtHKD:parseFloat(toHKD(amt,cur).toFixed(2)),cur,catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:aid||'',acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(name||t('dividend'))+' '+t('dividend'),date:today(),oneOff:false});
   saveS();renderHome();refreshWallet();
 }
 function recordDiv(pctId,curId,acctId,nameId){
-  const pct=parseFloat(document.getElementById(pctId).value)||0;if(pct<=0){alert(t('sellerr'));return;}
+  const pct=parseFloat(document.getElementById(pctId).value)||0;if(pct<=0){showToast(t('sellerr'),1);return;}
   let valCur;
   if(pctId==='pe-div')valCur=parseFloat(document.getElementById('pe-valuation').value)||0;
   else{const qty=parseFloat(document.getElementById('port-qty').value)||0;const px=parseFloat(document.getElementById('port-current').value||document.getElementById('port-entry').value)||0;valCur=qty*px;}
@@ -2470,7 +2476,7 @@ function renderAcctChips(){
   const addChip=`<div class="cat-chip" onclick="toggleInlineAcct()" style="border-style:dashed"><span style="font-size:20px">＋</span><span>${t('addacct')}</span></div>`;
   document.getElementById('acct-chips').innerHTML=chips+addChip;
 }
-function selAcctChip(id,el){S.selAcct=id;bumpMRU('acctMRU',id);saveS();document.querySelectorAll('#acct-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+function selAcctChip(id,el){S.selAcct=id;bumpMRU('acctMRU',id);saveS();document.querySelectorAll('#acct-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');const ac=getAcct(id);const tc=document.getElementById('t-cur');if(ac&&ac.cur&&tc)tc.value=ac.cur;}
 function renderAcctToChips(){
   let accts=(S.accounts||[]).slice();
   accts=mruSort(accts,'acctMRU',a=>a.id);
@@ -2550,14 +2556,14 @@ function undoDeleteTxn(){
 
 function saveTxn(){
   if(!finishAmtCalc())return;
-  const amt=parseFloat(S.amtStr);if(!amt||amt<=0)return;
+  const amt=parseFloat(S.amtStr);if(!amt||amt<=0){shakeAmt();return;}
   const cur=document.getElementById('t-cur').value;
   const amtHKD=parseFloat(toHKD(amt,cur).toFixed(2));
   const editId=S._editTxnId;
   if(S.curType==='transfer'){
     const fromAcct=getAcct(S.selAcct);
     const toAcct=getAcct(S.selAcctTo);
-    if(!fromAcct||!toAcct||fromAcct.id===toAcct.id){alert(t('sametransfererr'));return;}
+    if(!fromAcct||!toAcct||fromAcct.id===toAcct.id){showToast(t('sametransfererr'),1);return;}
     bumpMRU('acctMRU',fromAcct.id);bumpMRU('acctMRU',toAcct.id);
     const note=document.getElementById('t-note').value||`${acctLabel(fromAcct)} → ${acctLabel(toAcct)}`;
     const tx={id:editId||Date.now(),type:'transfer',amount:amt,amtHKD,cur,
@@ -2719,7 +2725,7 @@ function renderBillAmounts(){
   const total=parseFloat(document.getElementById('gb-total').value)||0;
   const inc=S._billInc||[];const denom=inc.length+(S._billMe?1:0);const eq=denom?total/denom:0;
   const wrap=document.getElementById('gb-members');if(!wrap)return;
-  wrap.innerHTML=inc.map(id=>{const f=(S.friends||[]).find(x=>x.id===id)||{name:'?'};const val=(S._billAmt[id]!=null)?S._billAmt[id]:(eq?eq.toFixed(2):'');return `<div class="bill-member-row"><span style="flex:1;font-size:15px;color:var(--ink)">${f.name}</span><input type="number" id="bf-${id}" value="${val}" oninput="setBillAmt('${id}',this.value)" style="width:120px;text-align:right;border:1px solid var(--bdr2);border-radius:10px;padding:7px;background:var(--bg2);color:var(--ink);font-size:14px"></div>`;}).join('');
+  wrap.innerHTML=inc.map(id=>{const f=(S.friends||[]).find(x=>x.id===id)||{name:'?'};const val=(S._billAmt[id]!=null)?S._billAmt[id]:(eq?eq.toFixed(2):'');return `<div class="bill-member-row"><span style="flex:1;font-size:15px;color:var(--ink)">${f.name}</span><input type="number" inputmode="decimal" id="bf-${id}" value="${val}" oninput="setBillAmt('${id}',this.value)" style="width:120px;text-align:right;border:1px solid var(--bdr2);border-radius:10px;padding:7px;background:var(--bg2);color:var(--ink);font-size:14px"></div>`;}).join('');
   updateSplitPreview();
 }
 function updateSplitPreview(){
@@ -2737,7 +2743,7 @@ function updateSplitPreview(){
 }
 function saveGroupBill(){
   const total=parseFloat(document.getElementById('gb-total').value);if(!total||total<=0)return;
-  const inc=S._billInc||[];if(!inc.length){alert(t('nameph'));return;}
+  const inc=S._billInc||[];if(!inc.length){showToast(t('nameph'),1);return;}
   const title=document.getElementById('gb-title').value||t('group');const dt=document.getElementById('gb-date').value||today();
   const acctId=document.getElementById('gb-acct').value||'';const ac=getAcct(acctId);
   const denom=inc.length+(S._billMe?1:0);const eq=denom?total/denom:0;const gid=Date.now();
@@ -2766,7 +2772,7 @@ function delFriend(id){S.friends=(S.friends||[]).filter(f=>f.id!==id);saveS();re
 function saveGamble(){
   const buyin=parseFloat(document.getElementById('g-buyin').value)||0;
   const cur=document.getElementById('g-cur').value;
-  const acctId=document.getElementById('g-acct').value;if(!acctId){alert(t('noinvestacct'));return;}
+  const acctId=document.getElementById('g-acct').value;if(!acctId){showToast(t('noinvestacct'),1);return;}
   const margin=document.getElementById('g-margin-toggle').classList.contains('on');
   const acct=getAcct(acctId);
   const blinds=document.getElementById('g-blinds').value.trim();
@@ -2781,7 +2787,7 @@ function saveGamble(){
   const buyinHKD=parseFloat(toHKD(buyin,cur).toFixed(2));
   const editId=document.getElementById('g-edit-id').value;
   const secId=document.getElementById('g-secid').value||'';
-  if(!margin&&co===null&&!editId){const avail=acctAvailableCash(acctId);if(buyinHKD>avail+0.001){alert(t('insufficient'));return;}}
+  if(!margin&&co===null&&!editId){const avail=acctAvailableCash(acctId);if(buyinHKD>avail+0.001){showToast(t('insufficient'),1);return;}}
   const rec={venue:document.getElementById('g-venue').value,buyin,cashout:co,buyinHKD,cashoutHKD:co===null?null:parseFloat(toHKD(co,cur).toFixed(2)),cur,date:document.getElementById('g-date').value,notes:document.getElementById('g-notes').value,open:co===null,acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin,blinds,maxp,bb,resultbb,secId};
   if(editId){const i=S.gamble.findIndex(x=>String(x.id)===String(editId));if(i>=0)S.gamble[i]={...S.gamble[i],...rec};}
   else S.gamble.unshift({id:Date.now(),...rec});
@@ -3001,7 +3007,7 @@ function savePortfolio(){
   const divFreq=document.getElementById('port-divfreq').value||'none';
   const margin=document.getElementById('port-margin-toggle').classList.contains('on');
   if(!name)return;
-  if(!acctId){alert(t('noinvestacct'));return;}
+  if(!acctId){showToast(t('noinvestacct'),1);return;}
   const acct=getAcct(acctId);
   const costHKD=parseFloat(toHKD(entryPrice*qty,cur).toFixed(2));
   const valueHKD=parseFloat(toHKD((exitPrice||currentPrice)*qty,cur).toFixed(2));
@@ -3009,7 +3015,7 @@ function savePortfolio(){
   // Cash-cover check: the account must have enough available cash, unless margin is enabled or it's a closed position
   if(!margin&&!exitPrice){
     const avail=acctAvailableCash(acctId,editId);
-    if(costHKD>avail+0.001){alert(t('insufficient'));return;}
+    if(costHKD>avail+0.001){showToast(t('insufficient'),1);return;}
   }
   if(!S.portfolio)S.portfolio=[];
   if(editId){
@@ -3086,7 +3092,7 @@ function confirmSell(){
   if(!p)return;
   const sellQty=parseFloat(document.getElementById('sell-qty').value)||0;
   const sellPx=parseFloat(document.getElementById('sell-price').value)||0;
-  if(sellQty<=0||sellQty>(p.qty||0)+1e-9||sellPx<=0){alert(t('sellerr'));return;}
+  if(sellQty<=0||sellQty>(p.qty||0)+1e-9||sellPx<=0){showToast(t('sellerr'),1);return;}
   const acct=getAcct(p.acctId);
   if(sellQty>=(p.qty||0)-1e-9){
     // selling the whole thing → just close it at the sell price
@@ -3132,7 +3138,7 @@ function savePE(){
   const notes=document.getElementById('pe-notes').value;
   const acctId=document.getElementById('pe-acct').value;
   if(!name)return;
-  if(!acctId){alert(t('noinvestacct'));return;}
+  if(!acctId){showToast(t('noinvestacct'),1);return;}
   const acct=getAcct(acctId);
   const val=isNaN(valuation)?invested:valuation;
   const costHKD=parseFloat(toHKD(invested,cur).toFixed(2));
@@ -3300,8 +3306,14 @@ function setTrendGran(g,btn){S.trendGran=g;saveS();document.querySelectorAll('#t
 function pokerRowHTML(g){
   const sp=g.open?0:((g.cashoutHKD||0)-(g.buyinHKD||0));
   const detail=[g.blinds?`${t('blinds')} ${g.blinds}`:'',g.maxp?`${t('maxplayers')} ${g.maxp}`:'',g.bb?`BB ${g.bb}`:'',g.resultbb!=null?`${g.resultbb>0?'+':''}${g.resultbb}BB`:''].filter(Boolean).join(' · ');
-  return `<div class="crow"><div class="ibox" style="background:var(--g2);font-size:17px">&#x1F0A1;</div><div class="rinfo"><div class="rtitle">${g.venue} <span class="badge ${g.open?'ba':'bg'}">${g.open?t('openstr'):t('closedstr')}</span></div><div class="rsub">${g.date} · ${t('buyin')} ${fmtCur(g.buyinHKD,g.cur)}${detail?' · '+detail:''}${g.notes?' · '+g.notes:''}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openGambleModal('${g.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deleteGamble('${g.id}')" style="font-size:11px;padding:3px 10px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0">${g.open?`<div style="font-size:12px;color:var(--a3)">${t('awaitcashout')}</div>`:`<div class="ramount ${sp>=0?'pos':'neg'}">${sp>=0?'+':''}${fmtCur(sp,g.cur)}</div>`}</div></div>`;
+  return `<div class="crow"><div class="ibox" style="background:var(--g2);font-size:17px">&#x1F0A1;</div><div class="rinfo"><div class="rtitle">${g.venue} <span class="badge ${g.open?'ba':'bg'}">${g.open?t('openstr'):t('closedstr')}</span></div><div class="rsub">${g.date} · ${t('buyin')} ${fmtCur(g.buyinHKD,g.cur)}${detail?' · '+detail:''}${g.notes?' · '+g.notes:''}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openGambleModal('${g.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deleteGamble('${g.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0">${g.open?`<div style="font-size:12px;color:var(--a3)">${t('awaitcashout')}</div><button onclick="quickCashout('${g.id}')" style="margin-top:6px;font-size:12px;font-weight:700;padding:7px 14px;border:1px solid var(--g);border-radius:20px;background:var(--g2);color:var(--g3);cursor:pointer">${t('cashout')}</button>`:`<div class="ramount ${sp>=0?'pos':'neg'}">${sp>=0?'+':''}${fmtCur(sp,g.cur)}</div>`}</div></div>`;
 }
+// shake the big amount when trying to save 0 — visible feedback instead of a silent no-op
+function shakeAmt(){const a=document.getElementById('amt-disp');if(!a)return;a.classList.remove('shake');void a.offsetWidth;a.classList.add('shake');setTimeout(function(){a.classList.remove('shake');},450);}
+// lightweight toast for validation errors / notices (replaces most native alert() popups)
+function showToast(msg,err){let el=document.getElementById('app-toast');if(!el){el=document.createElement('div');el.id='app-toast';document.body.appendChild(el);}el.textContent=msg;el.style.borderColor=err?'var(--r)':'var(--bdr2)';el.style.color=err?'var(--r3)':'var(--ink)';el.classList.add('show');clearTimeout(window._appToastT);window._appToastT=setTimeout(function(){el.classList.remove('show');},2600);}
+// open the session editor with the cashout field ready to type
+function quickCashout(id){openGambleModal(id);setTimeout(function(){const el=document.getElementById('g-cashout');if(el){el.focus();el.scrollIntoView({block:'center'});}},80);}
 // "⋯" on a holding row: reveal the secondary actions (edit / record / delete)
 function toggleRowActs(btn){
   const s=btn.nextElementSibling;if(!s)return;
@@ -3397,7 +3409,7 @@ function renderGamble(){
   document.getElementById('pe-ct').textContent=pes.length;
   document.getElementById('pe-list').innerHTML=pes.length?pes.map(p=>{
     const pnl=(p.valueHKD||0)-(p.costHKD||0);const pct=p.costHKD?(pnl/p.costHKD*100).toFixed(1):'0.0';
-    return `<div class="crow"><div class="ibox" style="background:var(--b2);font-size:11px;font-weight:700;color:var(--b3)">${p.name.slice(0,4).toUpperCase()}</div><div class="rinfo"><div class="rtitle" style="font-size:14px">${p.name}${p.pct!=null?` <span class="badge bb">${p.pct}%</span>`:''}${p.notes?` <span style="font-size:11px;color:var(--ink3)">· ${p.notes}</span>`:''}</div><div class="rsub">${t('invested')} ${p.cur}${p.invested||0}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openPEModal('${p.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePort('${p.id}')" style="font-size:11px;padding:3px 10px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700">${fmtCur(p.valueHKD,p.cur)}</div><div class="${pnl>=0?'pos':'neg'}" style="font-size:12px">${pnl>=0?'+':''}${pct}%</div><div style="font-size:11px;color:var(--ink3)">${pnl>=0?'+':''}${fmtCur(pnl,p.cur)}</div></div></div>`;
+    return `<div class="crow"><div class="ibox" style="background:var(--b2);font-size:11px;font-weight:700;color:var(--b3)">${p.name.slice(0,4).toUpperCase()}</div><div class="rinfo"><div class="rtitle" style="font-size:14px">${p.name}${p.pct!=null?` <span class="badge bb">${p.pct}%</span>`:''}${p.notes?` <span style="font-size:11px;color:var(--ink3)">· ${p.notes}</span>`:''}</div><div class="rsub">${t('invested')} ${p.cur}${p.invested||0}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openPEModal('${p.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePort('${p.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700">${fmtCur(p.valueHKD,p.cur)}</div><div class="${pnl>=0?'pos':'neg'}" style="font-size:12px">${pnl>=0?'+':''}${pct}%</div><div style="font-size:11px;color:var(--ink3)">${pnl>=0?'+':''}${fmtCur(pnl,p.cur)}</div></div></div>`;
   }).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
   document.getElementById('g-pe-pnl').textContent=fmt(pePnl);
   document.getElementById('g-pe-pnl').className='pnl-simple-val '+(pePnl>=0?' pos':' neg');
@@ -3483,17 +3495,18 @@ function renderGamble(){
         <div class="rsub">${p.qty?`${p.qty} ${t('unitslbl')} · `:''}${t('entrylbl')} ${p.cur}${p.entryPrice||0}${hasBudget?` · ${t('targetlbl')} ${p.cur}${p.budgetPrice}${distToBudget?` <span style="color:${parseFloat(distToBudget)>=0?'var(--g)':'var(--r)'}">(${parseFloat(distToBudget)>=0?'+':''}${distToBudget}%)</span>`:''}`:''}</div>
         <div class="rsub" style="margin-top:2px">${t('budget')} ${fmtCur(budgetCost,p.cur)}${divTxt}${realizedHKD?` · <span style="color:${realizedHKD>=0?'var(--g3)':'var(--r3)'}">${t('act_sell')} ${realizedHKD>=0?'+':''}${fmtCur(realizedHKD,p.cur)}</span>`:''}</div>
         <div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap;align-items:center">
-          ${(p.qty||0)>0?`<button onclick="openSell('${p.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--b);border-radius:20px;background:none;color:var(--b3);cursor:pointer">${t('sell')}</button>`:''}
-          <button onclick="toggleRowActs(this)" aria-label="More" style="font-size:13px;padding:3px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer;line-height:1">⋯</button>
+          ${(p.qty||0)>0?`<button onclick="openSell('${p.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--b);border-radius:20px;background:none;color:var(--b3);cursor:pointer">${t('sell')}</button>`:''}
+          <button onclick="toggleRowActs(this)" aria-label="More" style="font-size:14px;padding:7px 14px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer;line-height:1">⋯</button>
           <span class="row-acts" style="display:none;gap:7px;flex-wrap:wrap">
-            <button onclick="openPortModal('${p.type}','${p.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button>
-            <button onclick="openRecord(${recArgs})" style="font-size:11px;padding:3px 10px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('record')}</button>
-            <button onclick="deletePort('${p.id}')" style="font-size:11px;padding:3px 10px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button>
+            <button onclick="openPortModal('${p.type}','${p.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button>
+            <button onclick="openRecord(${recArgs})" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('record')}</button>
+            <button onclick="deletePort('${p.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button>
           </span>
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-size:14px;font-weight:700">${fmtCur(p.valueHKD,p.cur)}</div>
+        ${p.cur!=='HKD'?`<div style="font-size:10px;color:var(--ink3)">≈ ${fmt(p.valueHKD)}</div>`:''}
         <div class="${pnl>=0?'pos':'neg'}" style="font-size:12px">${pnl>=0?'+':''}${pct}%</div>
         <div style="font-size:11px;color:var(--ink3)">${pnl>=0?'+':''}${fmtCur(pnl,p.cur)}</div>
       </div>
@@ -3506,8 +3519,8 @@ function renderGamble(){
       <div class="rinfo"><div class="rtitle" style="font-size:14px">${p.name} <span class="badge bgr">${t('closedstr')}</span></div>
         <div class="rsub">${t('act_sell')} · <span style="color:${realizedHKD>=0?'var(--g3)':'var(--r3)'}">${realizedHKD>=0?'+':''}${fmtCur(realizedHKD,p.cur)}</span></div>
         <div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap">
-          <button onclick="openRecord(${recArgs})" style="font-size:11px;padding:3px 10px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('record')}</button>
-          <button onclick="deleteGroupLots(${recArgs})" style="font-size:11px;padding:3px 10px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button>
+          <button onclick="openRecord(${recArgs})" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('record')}</button>
+          <button onclick="deleteGroupLots(${recArgs})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button>
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0"><div class="${realizedHKD>=0?'pos':'neg'}" style="font-size:13px;font-weight:700">${realizedHKD>=0?'+':''}${fmtCur(realizedHKD,p.cur)}</div></div>
@@ -3528,7 +3541,7 @@ function renderGamble(){
   }
   function peRowHTML(p){
     const pnl=(p.valueHKD||0)-(p.costHKD||0);const pct=p.costHKD?(pnl/p.costHKD*100).toFixed(1):'0.0';
-    return `<div class="crow"><div class="ibox" style="background:var(--b2);font-size:11px;font-weight:700;color:var(--b3)">${p.name.slice(0,4).toUpperCase()}</div><div class="rinfo"><div class="rtitle" style="font-size:14px">${p.name}${p.pct!=null?` <span class="badge bb">${p.pct}%</span>`:''}${p.notes?` <span style="font-size:11px;color:var(--ink3)">· ${p.notes}</span>`:''}</div><div class="rsub">${t('invested')} ${p.cur}${p.invested||0}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openPEModal('${p.id}')" style="font-size:11px;padding:3px 10px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePort('${p.id}')" style="font-size:11px;padding:3px 10px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700">${fmtCur(p.valueHKD,p.cur)}</div><div class="${pnl>=0?'pos':'neg'}" style="font-size:12px">${pnl>=0?'+':''}${pct}%</div><div style="font-size:11px;color:var(--ink3)">${pnl>=0?'+':''}${fmtCur(pnl,p.cur)}</div></div></div>`;
+    return `<div class="crow"><div class="ibox" style="background:var(--b2);font-size:11px;font-weight:700;color:var(--b3)">${p.name.slice(0,4).toUpperCase()}</div><div class="rinfo"><div class="rtitle" style="font-size:14px">${p.name}${p.pct!=null?` <span class="badge bb">${p.pct}%</span>`:''}${p.notes?` <span style="font-size:11px;color:var(--ink3)">· ${p.notes}</span>`:''}</div><div class="rsub">${t('invested')} ${p.cur}${p.invested||0}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openPEModal('${p.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePort('${p.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700">${fmtCur(p.valueHKD,p.cur)}</div><div class="${pnl>=0?'pos':'neg'}" style="font-size:12px">${pnl>=0?'+':''}${pct}%</div><div style="font-size:11px;color:var(--ink3)">${pnl>=0?'+':''}${fmtCur(pnl,p.cur)}</div></div></div>`;
   }
   // ── SESSIONS LIST ──
   document.getElementById('g-sessions').innerHTML=builtPoker.length?builtPoker.map(g=>pokerRowHTML(g)).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${t('nosessions')}</div>`;
@@ -3667,7 +3680,7 @@ function applyPrivacy(){
   const b=document.getElementById('privacy-btn');
   if(b)b.innerHTML=`<i class="ti ti-${S.privacy?'eye-off':'eye'}"></i>`;
 }
-function togglePrivacy(){S.privacy=!S.privacy;saveS();applyPrivacy();}
+function togglePrivacy(){S.privacy=!S.privacy;saveS();applyPrivacy();refreshAllViews();}
 // ── DAILY BALANCE CALENDAR ──
 let _calMonth=null; // {y,m}
 function openCalendar(){const n=new Date();_calMonth={y:n.getFullYear(),m:n.getMonth()};_calSel=null;renderCalendar();document.getElementById('m-cal').classList.add('open');}
@@ -3784,7 +3797,7 @@ function toggleAcctExclude(id){const a=(S.accounts||[]).find(x=>x.id===id);if(a)
 function pickAcctEmoji(btn){document.getElementById('new-acct-icon').value=btn.textContent.trim();}
 function addAcct(){const icon=document.getElementById('new-acct-icon').value.trim()||'💳';const name=document.getElementById('new-acct-name').value.trim();if(!name)return;let id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!id)id='acct_'+Date.now();if(!S.accounts)S.accounts=[];const kind=document.getElementById('new-acct-kind').value;const isInvest=kind==='invest';const cur=document.getElementById('new-acct-cur').value||'HKD';if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,cur});['new-acct-icon','new-acct-name'].forEach(x=>document.getElementById(x).value='');document.getElementById('new-acct-cur').value=S.dispCur||'HKD';saveS();renderSettings();renderHome();refreshWallet();}
 function setAcctCur(id,cur){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.cur=cur;saveS();renderSettings();renderHome();refreshWallet();}
-function fmtCur(n,cur){cur=cur||'HKD';const v=cur==='HKD'?n:n/(FX[cur]||1);const neg=v<0&&Math.round(Math.abs(v))!==0;return (neg?'−':'')+(CUR_SYM[cur]||(cur+' '))+numStr(Math.abs(v));}
+function fmtCur(n,cur){if(S.privacy)return '••••';cur=cur||'HKD';const v=cur==='HKD'?n:n/(FX[cur]||1);const neg=v<0&&Math.round(Math.abs(v))!==0;return (neg?'−':'')+(CUR_SYM[cur]||(cur+' '))+numStr(Math.abs(v));}
 function setAcctFilter(v){S.acctFilter=v;saveS();renderAcctBalances();}
 function setAcctKind(id,kind){const a=(S.accounts||[]).find(x=>x.id===id);if(a){a.kind=kind;a.isInvest=(kind==='invest');}saveS();renderSettings();renderHome();}
 function deleteAcct(id){if((S.accounts||[]).length<=1)return;S.accounts=S.accounts.filter(a=>a.id!==id);if(S.selAcct===id)S.selAcct=S.accounts[0]?.id;saveS();renderSettings();renderHome();refreshWallet();}
@@ -3808,20 +3821,20 @@ function exportBackup(){
   const st=document.getElementById('backup-status');if(st)st.textContent=t('backupcopied');
 }
 function applyBackupObj(obj){
-  if(!obj||obj.__myfin_backup!==1||!obj.data||typeof obj.data!=='object'){alert(t('restorebad'));return;}
+  if(!obj||obj.__myfin_backup!==1||!obj.data||typeof obj.data!=='object'){showToast(t('restorebad'),1);return;}
   if(!confirm(t('restoreconfirm')))return;
-  try{Object.keys(obj.data).forEach(function(k){localStorage.setItem(k,obj.data[k]);});}catch(e){alert(t('restorebad'));return;}
+  try{Object.keys(obj.data).forEach(function(k){localStorage.setItem(k,obj.data[k]);});}catch(e){showToast(t('restorebad'),1);return;}
   alert(t('restoreok'));location.reload();
 }
 function restoreBackup(){
-  const ta=document.getElementById('backup-in');const raw=((ta&&ta.value)||'').trim();if(!raw){alert(t('restorebad'));return;}
-  let obj;try{obj=JSON.parse(raw);}catch(e){alert(t('restorebad'));return;}
+  const ta=document.getElementById('backup-in');const raw=((ta&&ta.value)||'').trim();if(!raw){showToast(t('restorebad'),1);return;}
+  let obj;try{obj=JSON.parse(raw);}catch(e){showToast(t('restorebad'),1);return;}
   applyBackupObj(obj);
 }
 function restoreFromFile(input){
   const f=input.files&&input.files[0];if(!f)return;
   const r=new FileReader();
-  r.onload=function(){let obj;try{obj=JSON.parse(String(r.result));}catch(e){alert(t('restorebad'));return;}applyBackupObj(obj);};
+  r.onload=function(){let obj;try{obj=JSON.parse(String(r.result));}catch(e){showToast(t('restorebad'),1);return;}applyBackupObj(obj);};
   r.readAsText(f);
 }
 // ─── IMPORT MONEY+ EXCEL (income/expense only, history-only/excluded, dedup, reversible) ───
@@ -3857,7 +3870,7 @@ function mpResolveCat(rawCat,type){
   return {catId:type==='income'?'other_inc':'other',catLabel:rawCat||(type==='income'?'收入':'其他'),catIcon:'📦'};
 }
 function processMpRows(rows){
-  if(!rows||rows.length<2){alert('No rows found');return;}
+  if(!rows||rows.length<2){showToast('No rows found',1);return;}
   let start=0;const h0=(rows[0]||[]).join('');if(h0.indexOf('日期')>=0||h0.toLowerCase().indexOf('date')>=0)start=1;
   const existing=new Set([].concat(S.txns||[],S.portfolio||[],S.gamble||[]).filter(x=>x._mpKey).map(x=>x._mpKey));
   let addTxn=0,addPos=0,addGmb=0,skipped=0,dup=0;
@@ -3910,7 +3923,7 @@ function processMpRows(rows){
 }
 function undoMpImport(){
   const n=(S.txns||[]).filter(x=>x.imported==='mp').length+(S.portfolio||[]).filter(x=>x.imported==='mp').length+(S.gamble||[]).filter(x=>x.imported==='mp').length;
-  if(!n){alert('冇 Money+ 匯入記錄');return;}
+  if(!n){showToast('冇 Money+ 匯入記錄',1);return;}
   if(!confirm('移除全部 '+n+' 筆 Money+ 匯入記錄（收支＋已實現＋撲克）？'))return;
   S.txns=(S.txns||[]).filter(x=>x.imported!=='mp');
   S.portfolio=(S.portfolio||[]).filter(x=>x.imported!=='mp');
@@ -4316,7 +4329,7 @@ function installMotionFeedback(){
 }
 installMotionFeedback();installNavSwipe();loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();checkDebts();renderHome();updateFab();renderProfileChip();updateNavIsland(document.querySelector('.bottom-nav .tab-btn.active'));
 // Show the last-known update time if we have one, then auto-refresh only if a day has passed.
-if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);setPriceStatus('ok',t('pricesupdated')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
+if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);const sameDay=d.toDateString()===new Date().toDateString();setPriceStatus('ok',t('pricesupdated')+' '+(sameDay?'':(d.getMonth()+1)+'/'+d.getDate()+' ')+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
 maybeAutoRefresh();
 setInterval(maybeAutoRefresh,60*60*1000); // re-check hourly so a long-running session still updates daily
 // Fade the FAB while any list is scrolling so it never blocks row amounts / buttons.
