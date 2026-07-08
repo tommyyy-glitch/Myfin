@@ -4452,10 +4452,14 @@ if('serviceWorker' in navigator){try{navigator.serviceWorker.register('./sw.js')
 if(cloudReady())setTimeout(function(){cloudPull(false);},1400);
 // Draggable global + button: drag it by finger/mouse to any phone border; it snaps and remembers the spot.
 (function initDraggableFab(){
-  const f=document.getElementById('global-fab');if(!f||!window.PointerEvent)return;
-  const KEY='myfin.fab.edge.v1';let dragging=false,moved=false,startX=0,startY=0,dx=0,dy=0,clickBlock=false;
+  const f=document.getElementById('global-fab');if(!f)return;
+  const KEY='myfin.fab.edge.v1';let dragging=false,moved=false,startX=0,startY=0,dx=0,dy=0,clickBlock=false,activeId=null;
   const num=function(v){const n=parseFloat(v);return isFinite(n)?n:0;};
   const clamp=function(v,min,max){return Math.min(Math.max(v,min),max);};
+  function point(e){
+    const t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0]);
+    return t?{x:t.clientX,y:t.clientY,id:t.identifier}:{x:e.clientX,y:e.clientY,id:e.pointerId!=null?e.pointerId:'mouse'};
+  }
   function bounds(){
     const root=getComputedStyle(document.documentElement);
     const sl=num(root.getPropertyValue('--sl')),sr=num(root.getPropertyValue('--sr')),st=num(root.getPropertyValue('--st')),sb=num(root.getPropertyValue('--sb'));
@@ -4498,27 +4502,40 @@ if(cloudReady())setTimeout(function(){cloudPull(false);},1400);
     localStorage.setItem(KEY,JSON.stringify({edge:edge,along:along,left:nl,top:nt}));
     place(nl,nt,true);
   }
-  f.addEventListener('pointerdown',function(e){
+  function start(e){
     if(e.button!=null&&e.button!==0)return;
-    const r=f.getBoundingClientRect();dragging=true;moved=false;startX=e.clientX;startY=e.clientY;dx=e.clientX-r.left;dy=e.clientY-r.top;
+    const p=point(e);if(p.x==null||p.y==null)return;
+    const r=f.getBoundingClientRect();dragging=true;moved=false;activeId=p.id;startX=p.x;startY=p.y;dx=p.x-r.left;dy=p.y-r.top;
     f.classList.remove('scrolling','drag-ready');f.classList.add('dragging','pinned');
     f.style.left=r.left+'px';f.style.top=r.top+'px';
-    try{f.setPointerCapture(e.pointerId);}catch(_e){}
-  });
-  f.addEventListener('pointermove',function(e){
+    try{if(e.pointerId!=null&&f.setPointerCapture)f.setPointerCapture(e.pointerId);}catch(_e){}
+    if(e.cancelable)e.preventDefault();
+  }
+  function move(e){
     if(!dragging)return;
-    const dist=Math.hypot(e.clientX-startX,e.clientY-startY);if(dist>6)moved=true;
+    const p=point(e);if(p.x==null||p.y==null)return;
+    const dist=Math.hypot(p.x-startX,p.y-startY);if(dist>6)moved=true;
     const b=bounds();
-    f.style.left=clamp(e.clientX-dx,b.leftMin,b.rightMax)+'px';
-    f.style.top=clamp(e.clientY-dy,b.topMin,b.bottomMax)+'px';
-    e.preventDefault();
-  },{passive:false});
+    f.style.left=clamp(p.x-dx,b.leftMin,b.rightMax)+'px';
+    f.style.top=clamp(p.y-dy,b.topMin,b.bottomMax)+'px';
+    if(e.cancelable)e.preventDefault();
+  }
   function end(e){
-    if(!dragging)return;dragging=false;f.classList.remove('dragging');
-    try{f.releasePointerCapture(e.pointerId);}catch(_e){}
+    if(!dragging)return;dragging=false;activeId=null;f.classList.remove('dragging');
+    try{if(e&&e.pointerId!=null&&f.releasePointerCapture)f.releasePointerCapture(e.pointerId);}catch(_e){}
     if(moved){clickBlock=true;snap();setTimeout(function(){clickBlock=false;},260);}
   }
-  f.addEventListener('pointerup',end);f.addEventListener('pointercancel',end);
+  if(window.PointerEvent){
+    f.addEventListener('pointerdown',start);
+    f.addEventListener('pointermove',move,{passive:false});
+    f.addEventListener('pointerup',end);f.addEventListener('pointercancel',end);
+  }else{
+    f.addEventListener('touchstart',start,{passive:false});
+    document.addEventListener('touchmove',move,{passive:false});
+    document.addEventListener('touchend',end,{passive:true});document.addEventListener('touchcancel',end,{passive:true});
+    f.addEventListener('mousedown',start);
+    document.addEventListener('mousemove',move);document.addEventListener('mouseup',end);
+  }
   f.addEventListener('click',function(e){if(clickBlock){e.preventDefault();e.stopImmediatePropagation();clickBlock=false;}},true);
   window.addEventListener('resize',function(){restore(true);},{passive:true});
   window.addEventListener('orientationchange',function(){setTimeout(function(){restore(true);},280);},{passive:true});
