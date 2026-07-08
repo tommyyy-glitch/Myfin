@@ -203,9 +203,14 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
   transition:transform 0.15s;
 }
 .fab:active{transform:scale(0.9)}
-.fab{transition:transform 0.15s,opacity 0.25s}
+.fab{transition:transform 0.15s,opacity 0.25s;touch-action:none;user-select:none;-webkit-user-select:none}
+/* draggable FAB: after the user moves it, left/top wins over responsive right/bottom rules */
+.fab.pinned{right:auto!important;bottom:auto!important}
+.fab.drag-ready{transition:left .22s ease,top .22s ease,transform .15s,opacity .25s}
+.fab.dragging{transition:none!important;opacity:.96!important;transform:scale(.96)!important;pointer-events:auto!important}
 /* fade FAB while scrolling so it never hides row amounts / buttons */
 .fab.scrolling{opacity:0.22;transform:scale(0.72);pointer-events:none}
+.fab.scrolling.dragging{opacity:.96;transform:scale(.96);pointer-events:auto}
 /* keep the last rows clear of the floating nav island + FAB */
 .scroll-body{padding-bottom:130px!important}
 /* save button stays reachable without scrolling inside modals */
@@ -1118,7 +1123,7 @@ img,canvas,svg{max-width:100%;}
   </div>
 </div>
 
-<button class="fab" id="global-fab" onclick="fabAction()" aria-label="Add"><i class="ti ti-plus" aria-hidden="true"></i></button>
+<button class="fab" id="global-fab" onclick="fabAction()" aria-label="Add — drag to move" title="Add / drag to move"><i class="ti ti-plus" aria-hidden="true"></i></button>
 
 <nav class="bottom-nav" id="bottom-nav">
   <span class="nav-island" aria-hidden="true"></span>
@@ -4445,6 +4450,81 @@ function cloudCopySql(){
 // Offline support: cache the app shell on-device (no server — pure client-side)
 if('serviceWorker' in navigator){try{navigator.serviceWorker.register('./sw.js').catch(function(){});}catch(e){}}
 if(cloudReady())setTimeout(function(){cloudPull(false);},1400);
+// Draggable global + button: drag it by finger/mouse to any phone border; it snaps and remembers the spot.
+(function initDraggableFab(){
+  const f=document.getElementById('global-fab');if(!f||!window.PointerEvent)return;
+  const KEY='myfin.fab.edge.v1';let dragging=false,moved=false,startX=0,startY=0,dx=0,dy=0,clickBlock=false;
+  const num=function(v){const n=parseFloat(v);return isFinite(n)?n:0;};
+  const clamp=function(v,min,max){return Math.min(Math.max(v,min),max);};
+  function bounds(){
+    const root=getComputedStyle(document.documentElement);
+    const sl=num(root.getPropertyValue('--sl')),sr=num(root.getPropertyValue('--sr')),st=num(root.getPropertyValue('--st')),sb=num(root.getPropertyValue('--sb'));
+    const vw=document.documentElement.clientWidth||window.innerWidth||360;
+    const vh=window.innerHeight||document.documentElement.clientHeight||640;
+    const size=f.offsetWidth||56;
+    const leftMin=10+sl,rightMax=Math.max(10+sl,vw-size-10-sr);
+    const topMin=10+st,bottomMax=Math.max(10+st,vh-size-(88+sb));
+    return {leftMin,rightMax,topMin,bottomMax,size};
+  }
+  function place(left,top,animate){
+    const b=bounds();
+    f.classList.add('pinned');
+    f.classList.toggle('drag-ready',!!animate);
+    f.style.left=clamp(left,b.leftMin,b.rightMax)+'px';
+    f.style.top=clamp(top,b.topMin,b.bottomMax)+'px';
+  }
+  function edgePos(saved){
+    const b=bounds();
+    const along=clamp(Number(saved&&saved.along)||.5,0,1);
+    let left=b.rightMax,top=b.bottomMax;
+    if(saved&&saved.edge==='left'){left=b.leftMin;top=b.topMin+along*(b.bottomMax-b.topMin);}
+    else if(saved&&saved.edge==='right'){left=b.rightMax;top=b.topMin+along*(b.bottomMax-b.topMin);}
+    else if(saved&&saved.edge==='top'){left=b.leftMin+along*(b.rightMax-b.leftMin);top=b.topMin;}
+    else if(saved&&saved.edge==='bottom'){left=b.leftMin+along*(b.rightMax-b.leftMin);top=b.bottomMax;}
+    else if(saved&&isFinite(saved.left)&&isFinite(saved.top)){left=saved.left;top=saved.top;}
+    return {left,top};
+  }
+  function restore(animate){
+    try{const saved=JSON.parse(localStorage.getItem(KEY)||'null');if(!saved)return;const p=edgePos(saved);place(p.left,p.top,animate);}catch(e){}
+  }
+  function snap(){
+    const b=bounds(),r=f.getBoundingClientRect();
+    const left=clamp(r.left,b.leftMin,b.rightMax),top=clamp(r.top,b.topMin,b.bottomMax);
+    const d={left:left-b.leftMin,right:b.rightMax-left,top:top-b.topMin,bottom:b.bottomMax-top};
+    let edge='left',best=d.left;Object.keys(d).forEach(function(k){if(d[k]<best){edge=k;best=d[k];}});
+    let along=.5,nl=left,nt=top;
+    if(edge==='left'||edge==='right'){nl=edge==='left'?b.leftMin:b.rightMax;along=(clamp(top,b.topMin,b.bottomMax)-b.topMin)/Math.max(1,b.bottomMax-b.topMin);nt=b.topMin+along*(b.bottomMax-b.topMin);}
+    else{nt=edge==='top'?b.topMin:b.bottomMax;along=(clamp(left,b.leftMin,b.rightMax)-b.leftMin)/Math.max(1,b.rightMax-b.leftMin);nl=b.leftMin+along*(b.rightMax-b.leftMin);}
+    localStorage.setItem(KEY,JSON.stringify({edge:edge,along:along,left:nl,top:nt}));
+    place(nl,nt,true);
+  }
+  f.addEventListener('pointerdown',function(e){
+    if(e.button!=null&&e.button!==0)return;
+    const r=f.getBoundingClientRect();dragging=true;moved=false;startX=e.clientX;startY=e.clientY;dx=e.clientX-r.left;dy=e.clientY-r.top;
+    f.classList.remove('scrolling','drag-ready');f.classList.add('dragging','pinned');
+    f.style.left=r.left+'px';f.style.top=r.top+'px';
+    try{f.setPointerCapture(e.pointerId);}catch(_e){}
+  });
+  f.addEventListener('pointermove',function(e){
+    if(!dragging)return;
+    const dist=Math.hypot(e.clientX-startX,e.clientY-startY);if(dist>6)moved=true;
+    const b=bounds();
+    f.style.left=clamp(e.clientX-dx,b.leftMin,b.rightMax)+'px';
+    f.style.top=clamp(e.clientY-dy,b.topMin,b.bottomMax)+'px';
+    e.preventDefault();
+  },{passive:false});
+  function end(e){
+    if(!dragging)return;dragging=false;f.classList.remove('dragging');
+    try{f.releasePointerCapture(e.pointerId);}catch(_e){}
+    if(moved){clickBlock=true;snap();setTimeout(function(){clickBlock=false;},260);}
+  }
+  f.addEventListener('pointerup',end);f.addEventListener('pointercancel',end);
+  f.addEventListener('click',function(e){if(clickBlock){e.preventDefault();e.stopImmediatePropagation();clickBlock=false;}},true);
+  window.addEventListener('resize',function(){restore(true);},{passive:true});
+  window.addEventListener('orientationchange',function(){setTimeout(function(){restore(true);},280);},{passive:true});
+  restore(false);
+})();
+
 // Fade the FAB while any list is scrolling so it never blocks row amounts / buttons.
 // Capture phase catches scrolls inside .scroll-body containers (window itself doesn't scroll).
 document.addEventListener('scroll',function(){
