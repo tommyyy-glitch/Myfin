@@ -2319,18 +2319,18 @@ function installPageSwipe(){
     const p=pt(e);if(p.x==null||p.y==null)return;
     lastX=p.x;lastY=p.y;
     const dx=lastX-startX,dy=lastY-startY,ax=Math.abs(dx),ay=Math.abs(dy);
-    // More phone-like sensitivity: start tracking earlier and allow a slightly diagonal finger path.
-    // Vertical scrolling still wins when Y movement is clearly larger.
-    if(!tracking&&ax>10&&ax>ay*.82){tracking=true;swallow=true;}
+    // High sensitivity: catch short thumb swipes while still letting clear vertical scroll win.
+    // If this ever feels too jumpy, expose these numbers as a setting later.
+    if(!tracking&&ax>6&&ax>ay*.55){tracking=true;swallow=true;}
     if(tracking&&e.cancelable)e.preventDefault();
   }
   function end(e){
     if(!down)return;down=false;
     const p=pt(e);if(p.x!=null){lastX=p.x;lastY=p.y;}
     const dx=lastX-startX,dy=lastY-startY,dt=Date.now()-startT,ax=Math.abs(dx),ay=Math.abs(dy);
-    const minDx=Math.max(38,Math.min(54,(window.innerWidth||390)*.105));
-    const deliberateSwipe=ax>minDx&&ax>ay*.9&&dt<1700;
-    const quickFlick=ax>28&&ax>ay*.7&&dt<420;
+    const minDx=Math.max(24,Math.min(36,(window.innerWidth||390)*.07));
+    const deliberateSwipe=ax>minDx&&ax>ay*.62&&dt<2200;
+    const quickFlick=ax>16&&ax>ay*.42&&dt<720;
     const enough=deliberateSwipe||quickFlick;
     if(enough){
       const i=activeTabIndex();
