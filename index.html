@@ -62,6 +62,10 @@ body{
 }
 .screen{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
 .screen.active{display:flex}
+@keyframes pageSwipeInNext{from{opacity:.72;transform:translateX(28px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pageSwipeInPrev{from{opacity:.72;transform:translateX(-28px)}to{opacity:1;transform:translateX(0)}}
+.screen.active.page-swipe-next{animation:pageSwipeInNext .24s cubic-bezier(.18,.9,.2,1)}
+.screen.active.page-swipe-prev{animation:pageSwipeInPrev .24s cubic-bezier(.18,.9,.2,1)}
 .nav-bar{
   background:var(--nav-bg);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -114,6 +118,7 @@ body.no-dance *,body.no-dance *::before,body.no-dance *::after{animation:none!im
 body.no-dance .touch-ripple{display:none!important}
 body.no-dance button:not(.toggle):active,body.no-dance .cat-chip:active,body.no-dance .acct-chip:active,body.no-dance .quick-chip:active,body.no-dance .fchip:active,body.no-dance .seg-btn:active,body.no-dance .wsub-btn:active,body.no-dance .tab-btn.active,body.no-dance .crow:active{transform:none!important;filter:none!important}
 body.no-dance .motion-pressing{transform:none!important;filter:none!important}
+body.no-dance .screen.active.page-swipe-next,body.no-dance .screen.active.page-swipe-prev{animation:none!important}
 body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!important}
 .nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
 .ai-top-btn{
@@ -2249,9 +2254,12 @@ function goTabIndex(i){
 }
 function activeTabIndex(){return Math.max(0,TAB_ORDER.indexOf(S.activeTab||'home'));}
 function goTab(n,btn){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','page-swipe-next','page-swipe-prev'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('s-'+n).classList.add('active');btn.classList.add('active');btn.classList.add('tab-pop');updateNavIsland(btn);setTimeout(()=>btn.classList.remove('tab-pop'),360);
+  const screen=document.getElementById('s-'+n);screen.classList.add('active');
+  const swipeDir=window._pageSwipeDir;
+  if(swipeDir){screen.classList.add('page-swipe-'+swipeDir);setTimeout(()=>screen.classList.remove('page-swipe-'+swipeDir),280);window._pageSwipeDir='';}
+  btn.classList.add('active');btn.classList.add('tab-pop');updateNavIsland(btn);setTimeout(()=>btn.classList.remove('tab-pop'),360);
   S.activeTab=n;updateFab();
   if(n==='home'){checkAutopay();checkAutoincome();checkDebts();renderHome();}
   if(n==='wallet'){checkAutopay();checkAutoincome();checkDebts();setWalletPane(S.walletPane||'txn');}
@@ -2287,6 +2295,60 @@ function installNavSwipe(){
   nav.addEventListener('pointerup',end);
   nav.addEventListener('pointercancel',end);
   nav.addEventListener('click',e=>{if(swallowClick){e.preventDefault();e.stopPropagation();}},true);
+}
+function installPageSwipe(){
+  let down=false,startX=0,startY=0,lastX=0,lastY=0,startT=0,tracking=false,swallow=false;
+  const ignoreSel='input,textarea,select,button,a,label,[contenteditable="true"],.fab,.bottom-nav,.modal,.modal-wrap,.touch-no-swipe';
+  function pt(e){const t=(e.touches&&e.touches[0])||(e.changedTouches&&e.changedTouches[0]);return t?{x:t.clientX,y:t.clientY}:{x:e.clientX,y:e.clientY};}
+  function modalOpen(){return !!document.querySelector('.modal-wrap.open');}
+  function canStart(e){
+    if(modalOpen())return false;
+    if(e.button!=null&&e.button!==0)return false;
+    const target=e.target;
+    if(!target||target.closest(ignoreSel))return false;
+    if(!target.closest('.screen.active'))return false;
+    return true;
+  }
+  function start(e){
+    if(!canStart(e))return;
+    const p=pt(e);if(p.x==null||p.y==null)return;
+    down=true;tracking=false;swallow=false;startX=lastX=p.x;startY=lastY=p.y;startT=Date.now();
+  }
+  function move(e){
+    if(!down)return;
+    const p=pt(e);if(p.x==null||p.y==null)return;
+    lastX=p.x;lastY=p.y;
+    const dx=lastX-startX,dy=lastY-startY;
+    if(!tracking&&Math.abs(dx)>18&&Math.abs(dx)>Math.abs(dy)*1.15){tracking=true;swallow=true;}
+    if(tracking&&e.cancelable)e.preventDefault();
+  }
+  function end(e){
+    if(!down)return;down=false;
+    const p=pt(e);if(p.x!=null){lastX=p.x;lastY=p.y;}
+    const dx=lastX-startX,dy=lastY-startY,dt=Date.now()-startT;
+    const enough=Math.abs(dx)>72&&Math.abs(dx)>Math.abs(dy)*1.35&&dt<1200;
+    if(enough){
+      const i=activeTabIndex();
+      const target=clampNavIndex(i+(dx<0?1:-1));
+      if(target!==i){window._pageSwipeDir=dx<0?'next':'prev';goTabIndex(target);}
+    }
+    setTimeout(()=>{swallow=false;},80);
+  }
+  if(window.PointerEvent){
+    document.addEventListener('pointerdown',start,{passive:true});
+    document.addEventListener('pointermove',move,{passive:false});
+    document.addEventListener('pointerup',end,{passive:true});
+    document.addEventListener('pointercancel',end,{passive:true});
+  }else{
+    document.addEventListener('touchstart',start,{passive:true});
+    document.addEventListener('touchmove',move,{passive:false});
+    document.addEventListener('touchend',end,{passive:true});
+    document.addEventListener('touchcancel',end,{passive:true});
+    document.addEventListener('mousedown',start,{passive:true});
+    document.addEventListener('mousemove',move,{passive:false});
+    document.addEventListener('mouseup',end,{passive:true});
+  }
+  document.addEventListener('click',e=>{if(swallow){e.preventDefault();e.stopPropagation();}},true);
 }
 function setWalletPane(pane){
   S.walletPane=pane;
@@ -4357,7 +4419,7 @@ function installMotionFeedback(){
   },{passive:true});
   ['pointerup','pointercancel','pointerleave','scroll'].forEach(ev=>document.addEventListener(ev,releaseAll,{passive:true}));
 }
-installMotionFeedback();installNavSwipe();loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();checkDebts();renderHome();updateFab();renderProfileChip();updateNavIsland(document.querySelector('.bottom-nav .tab-btn.active'));
+installMotionFeedback();installNavSwipe();installPageSwipe();loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();checkDebts();renderHome();updateFab();renderProfileChip();updateNavIsland(document.querySelector('.bottom-nav .tab-btn.active'));
 // Show the last-known update time if we have one, then auto-refresh only if a day has passed.
 if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);const sameDay=d.toDateString()===new Date().toDateString();setPriceStatus('ok',t('pricesupdated')+' '+(sameDay?'':(d.getMonth()+1)+'/'+d.getDate()+' ')+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
 maybeAutoRefresh();
