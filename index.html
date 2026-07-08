@@ -123,12 +123,11 @@ button:not(.toggle):active,.cat-chip:active,.acct-chip:active,.quick-chip:active
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
-body.no-dance *,body.no-dance *::before,body.no-dance *::after{animation:none!important;transition:none!important}
+/* Quiet mode only calms button/chip micro-animations. Page switch animation remains available. */
+body.no-dance button,body.no-dance .cat-chip,body.no-dance .acct-chip,body.no-dance .quick-chip,body.no-dance .fchip,body.no-dance .seg-btn,body.no-dance .wsub-btn,body.no-dance .tab-btn,body.no-dance .nav-btn,body.no-dance .ai-top-btn,body.no-dance .refresh-prices-btn,body.no-dance .add-ar-dashed,body.no-dance .record-toggle,body.no-dance .settle-btn,body.no-dance .crow{transition:none!important;animation:none!important}
 body.no-dance .touch-ripple{display:none!important}
 body.no-dance button:not(.toggle):active,body.no-dance .cat-chip:active,body.no-dance .acct-chip:active,body.no-dance .quick-chip:active,body.no-dance .fchip:active,body.no-dance .seg-btn:active,body.no-dance .wsub-btn:active,body.no-dance .tab-btn.active,body.no-dance .crow:active{transform:none!important;filter:none!important}
 body.no-dance .motion-pressing{transform:none!important;filter:none!important}
-body.no-dance .screen.active.page-swipe-next,body.no-dance .screen.active.page-swipe-prev{animation:none!important}
-body.no-dance .page-switch-card{display:none!important}
 body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!important}
 .nav-actions{display:flex;align-items:center;gap:8px;flex-shrink:0;flex-wrap:wrap;justify-content:flex-end}
 .ai-top-btn{
@@ -2265,7 +2264,7 @@ function goTabIndex(i){
 function activeTabIndex(){return Math.max(0,TAB_ORDER.indexOf(S.activeTab||'home'));}
 function playPageSwitchCard(prev,dir){
   if(!prev||!dir)return;
-  try{if(document.body.classList.contains('no-dance')||(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches))return;}catch(_e){}
+  try{if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;}catch(_e){}
   const r=prev.getBoundingClientRect();if(!r.width||!r.height)return;
   const scrolls=[...prev.querySelectorAll('.scroll-body')].map(el=>el.scrollTop||0);
   const card=prev.cloneNode(true);
