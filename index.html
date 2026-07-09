@@ -62,19 +62,10 @@ body{
 }
 .screen{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
 .screen.active{display:flex}
-/* Instagram-like page switch: the old page becomes a rounded card sliding away while the new page pushes in. */
-@keyframes pageSwipeInNext{0%{opacity:.92;transform:translateX(22%) scale(.992);filter:brightness(.88)}70%{opacity:1;filter:brightness(1)}100%{opacity:1;transform:translateX(0) scale(1);filter:brightness(1)}}
-@keyframes pageSwipeInPrev{0%{opacity:.92;transform:translateX(-22%) scale(.992);filter:brightness(.88)}70%{opacity:1;filter:brightness(1)}100%{opacity:1;transform:translateX(0) scale(1);filter:brightness(1)}}
-@keyframes pageCardOutNext{0%{opacity:1;transform:translateX(0) scale(1);border-radius:0;filter:brightness(1)}100%{opacity:.46;transform:translateX(-46%) scale(.965);border-radius:0 38px 38px 0;filter:brightness(.68)}}
-@keyframes pageCardOutPrev{0%{opacity:1;transform:translateX(0) scale(1);border-radius:0;filter:brightness(1)}100%{opacity:.46;transform:translateX(46%) scale(.965);border-radius:38px 0 0 38px;filter:brightness(.68)}}
-.screen.active.page-swipe-next{animation:pageSwipeInNext .34s cubic-bezier(.16,.86,.2,1)}
-.screen.active.page-swipe-prev{animation:pageSwipeInPrev .34s cubic-bezier(.16,.86,.2,1)}
-.page-switch-card{display:flex!important;position:fixed!important;z-index:14;pointer-events:none;overflow:hidden;background:var(--bg);box-shadow:0 18px 48px rgba(0,0,0,.34);will-change:transform,opacity,filter,border-radius;contain:layout paint;transform-origin:center center}
-.page-switch-card.next{animation:pageCardOutNext .36s cubic-bezier(.16,.86,.2,1) forwards}
-.page-switch-card.prev{animation:pageCardOutPrev .36s cubic-bezier(.16,.86,.2,1) forwards}
-.page-switch-card::after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.20),rgba(0,0,0,.08),rgba(0,0,0,.26));mix-blend-mode:multiply}
-.page-switch-card.next::after{background:linear-gradient(90deg,rgba(0,0,0,.14),rgba(0,0,0,.08),rgba(0,0,0,.32))}
-.page-switch-card.prev::after{background:linear-gradient(90deg,rgba(0,0,0,.32),rgba(0,0,0,.08),rgba(0,0,0,.14))}
+@keyframes pageSwipeInNext{from{opacity:.78;transform:translateX(34px)}to{opacity:1;transform:translateX(0)}}
+@keyframes pageSwipeInPrev{from{opacity:.78;transform:translateX(-34px)}to{opacity:1;transform:translateX(0)}}
+.screen.active.page-swipe-next{animation:pageSwipeInNext .22s cubic-bezier(.18,.9,.2,1)}
+.screen.active.page-swipe-prev{animation:pageSwipeInPrev .22s cubic-bezier(.18,.9,.2,1)}
 .nav-bar{
   background:var(--nav-bg);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -2262,33 +2253,15 @@ function goTabIndex(i){
   i=clampNavIndex(i);if(tabs[i])goTab(TAB_ORDER[i],tabs[i]);
 }
 function activeTabIndex(){return Math.max(0,TAB_ORDER.indexOf(S.activeTab||'home'));}
-function playPageSwitchCard(prev,dir){
-  if(!prev||!dir)return;
-  try{if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;}catch(_e){}
-  const r=prev.getBoundingClientRect();if(!r.width||!r.height)return;
-  const scrolls=[...prev.querySelectorAll('.scroll-body')].map(el=>el.scrollTop||0);
-  const card=prev.cloneNode(true);
-  card.classList.remove('active','page-swipe-next','page-swipe-prev','page-switch-card','next','prev');
-  card.classList.add('page-switch-card',dir);
-  card.setAttribute('aria-hidden','true');
-  card.querySelectorAll('[id]').forEach(el=>el.removeAttribute('id'));
-  card.querySelectorAll('button,input,textarea,select,a,[contenteditable="true"]').forEach(el=>{el.setAttribute('tabindex','-1');el.setAttribute('disabled','disabled');});
-  card.style.left=r.left+'px';card.style.top=r.top+'px';card.style.width=r.width+'px';card.style.height=r.height+'px';
-  document.body.appendChild(card);
-  [...card.querySelectorAll('.scroll-body')].forEach((el,i)=>{el.scrollTop=scrolls[i]||0;});
-  setTimeout(()=>card.remove(),430);
-}
 function goTab(n,btn){
-  const prev=document.querySelector('.screen.active');
   const oldI=activeTabIndex();
   const newI=Math.max(0,TAB_ORDER.indexOf(n));
   let swipeDir=window._pageSwipeDir||'';
-  if(!swipeDir&&prev&&newI!==oldI)swipeDir=newI>oldI?'next':'prev';
-  if(swipeDir&&prev&&prev.id!=='s-'+n)playPageSwitchCard(prev,swipeDir);
+  if(!swipeDir&&newI!==oldI)swipeDir=newI>oldI?'next':'prev';
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','page-swipe-next','page-swipe-prev'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   const screen=document.getElementById('s-'+n);screen.classList.add('active');
-  if(swipeDir){screen.classList.add('page-swipe-'+swipeDir);setTimeout(()=>screen.classList.remove('page-swipe-'+swipeDir),380);window._pageSwipeDir='';}
+  if(swipeDir){screen.classList.add('page-swipe-'+swipeDir);setTimeout(()=>screen.classList.remove('page-swipe-'+swipeDir),260);window._pageSwipeDir='';}
   btn.classList.add('active');btn.classList.add('tab-pop');updateNavIsland(btn);setTimeout(()=>btn.classList.remove('tab-pop'),360);
   S.activeTab=n;updateFab();
   if(n==='home'){checkAutopay();checkAutoincome();checkDebts();renderHome();}
