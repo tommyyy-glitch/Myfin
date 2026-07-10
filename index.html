@@ -62,10 +62,6 @@ body{
 }
 .screen{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
 .screen.active{display:flex}
-@keyframes pageSwipeInNext{from{opacity:.78;transform:translateX(34px)}to{opacity:1;transform:translateX(0)}}
-@keyframes pageSwipeInPrev{from{opacity:.78;transform:translateX(-34px)}to{opacity:1;transform:translateX(0)}}
-.screen.active.page-swipe-next{animation:pageSwipeInNext .22s cubic-bezier(.18,.9,.2,1)}
-.screen.active.page-swipe-prev{animation:pageSwipeInPrev .22s cubic-bezier(.18,.9,.2,1)}
 .nav-bar{
   background:var(--nav-bg);
   backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
@@ -114,7 +110,7 @@ button:not(.toggle):active,.cat-chip:active,.acct-chip:active,.quick-chip:active
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
-/* Quiet mode only calms button/chip micro-animations. Page switch animation remains available. */
+/* Quiet mode calms button/chip micro-animations. Page switching is instant to avoid swipe ghosting. */
 body.no-dance button,body.no-dance .cat-chip,body.no-dance .acct-chip,body.no-dance .quick-chip,body.no-dance .fchip,body.no-dance .seg-btn,body.no-dance .wsub-btn,body.no-dance .tab-btn,body.no-dance .nav-btn,body.no-dance .ai-top-btn,body.no-dance .refresh-prices-btn,body.no-dance .add-ar-dashed,body.no-dance .record-toggle,body.no-dance .settle-btn,body.no-dance .crow{transition:none!important;animation:none!important}
 body.no-dance .touch-ripple{display:none!important}
 body.no-dance button:not(.toggle):active,body.no-dance .cat-chip:active,body.no-dance .acct-chip:active,body.no-dance .quick-chip:active,body.no-dance .fchip:active,body.no-dance .seg-btn:active,body.no-dance .wsub-btn:active,body.no-dance .tab-btn.active,body.no-dance .crow:active{transform:none!important;filter:none!important}
@@ -2254,14 +2250,9 @@ function goTabIndex(i){
 }
 function activeTabIndex(){return Math.max(0,TAB_ORDER.indexOf(S.activeTab||'home'));}
 function goTab(n,btn){
-  const oldI=activeTabIndex();
-  const newI=Math.max(0,TAB_ORDER.indexOf(n));
-  let swipeDir=window._pageSwipeDir||'';
-  if(!swipeDir&&newI!==oldI)swipeDir=newI>oldI?'next':'prev';
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active','page-swipe-next','page-swipe-prev'));
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   const screen=document.getElementById('s-'+n);screen.classList.add('active');
-  if(swipeDir){screen.classList.add('page-swipe-'+swipeDir);setTimeout(()=>screen.classList.remove('page-swipe-'+swipeDir),260);window._pageSwipeDir='';}
   btn.classList.add('active');btn.classList.add('tab-pop');updateNavIsland(btn);setTimeout(()=>btn.classList.remove('tab-pop'),360);
   S.activeTab=n;updateFab();
   if(n==='home'){checkAutopay();checkAutoincome();checkDebts();renderHome();}
@@ -2338,7 +2329,7 @@ function installPageSwipe(){
     if(enough){
       const i=activeTabIndex();
       const target=clampNavIndex(i+(dx<0?1:-1));
-      if(target!==i){window._pageSwipeDir=dx<0?'next':'prev';goTabIndex(target);}
+      if(target!==i){goTabIndex(target);}
     }
     setTimeout(()=>{swallow=false;},80);
   }
