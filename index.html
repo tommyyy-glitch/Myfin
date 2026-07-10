@@ -687,7 +687,7 @@ img,canvas,svg{max-width:100%;}
       </div>
       <div style="display:flex;gap:8px;margin-bottom:12px">
         <button class="add-ar-dashed" id="add-ar-btn" onclick="openARModal()" style="margin-bottom:0;flex:1"></button>
-        <button class="add-ar-dashed" onclick="openIncomeModal()" style="margin-bottom:0;flex:1;border-color:rgba(29,158,117,0.45);color:var(--g3)"><i class="ti ti-cash" style="vertical-align:-2px;margin-right:6px"></i><span data-i="income"></span></button>
+        <button class="add-ar-dashed" onclick="openIncomeReceivableModal()" style="margin-bottom:0;flex:1;border-color:rgba(29,158,117,0.45);color:var(--g3)"><i class="ti ti-cash" style="vertical-align:-2px;margin-right:6px"></i><span data-i="income"></span></button>
       </div>
       <div class="glass-card" id="ar-list"></div>
       <div class="glass-card" id="friends-mgr" style="margin-top:12px"></div>
@@ -1343,12 +1343,13 @@ img,canvas,svg{max-width:100%;}
 <div class="modal-wrap" id="m-ar" onclick="closeM('m-ar')"><div class="modal" onclick="event.stopPropagation()">
   <button class="mclose" onclick="closeM('m-ar')" aria-label="Close">&times;</button>
   <div class="mhandle"></div><div class="mtitle" data-i="addar"></div>
-  <div class="seg-ctrl" style="margin:0 0 12px"><button class="seg-btn active" id="ar-dir-r" onclick="setArDir('r',this)" data-i="dirrecv"></button><button class="seg-btn" id="ar-dir-p" onclick="setArDir('p',this)" data-i="dirpay"></button></div>
+  <div class="seg-ctrl" style="margin:0 0 12px"><button class="seg-btn active" id="ar-dir-r" onclick="setArDir('r',this)" data-i="dirrecv"></button><button class="seg-btn" id="ar-dir-p" onclick="setArDir('p',this)" data-i="dirpay"></button><button class="seg-btn" id="ar-dir-ri" onclick="setArDir('ri',this)"></button></div>
   <div class="fsec">
     <div class="frow"><span class="flbl" data-i="name"></span><input class="fval" id="ar-name" data-ph="nameph"></div>
     <div class="frow"><span class="flbl" data-i="amount"></span><input class="fval" type="number" inputmode="decimal" id="ar-amt" placeholder="0.00" style="text-align:right"></div>
     <div class="frow"><span class="flbl" data-i="currency"></span><select class="fval" id="ar-cur"><option>HKD</option><option>RMB</option><option>USD</option><option>JPY</option></select></div>
     <div class="frow"><span class="flbl" data-i="account"></span><select class="fval" id="ar-acct"></select></div>
+    <div class="frow" id="ar-income-cat-row" style="display:none"><span class="flbl" data-i="incomebycat"></span><select class="fval" id="ar-cat"></select></div>
     <div class="frow"><span class="flbl" data-i="for"></span><input class="fval" id="ar-desc" data-ph="forph"></div>
     <div class="frow"><span class="flbl" data-i="date"></span><input class="fval" type="date" id="ar-date"></div>
   </div>
@@ -1634,6 +1635,7 @@ function syncSectionAccountLinks(){let changed=false;(S.portfolio||[]).forEach(p
 function fillAcctSelect(selId,selectedId){const el=document.getElementById(selId);if(!el)return;el.innerHTML=(S.accounts||[]).map(a=>`<option value="${a.id}"${a.id===selectedId?' selected':''}>${a.icon} ${acctLabel(a)}</option>`).join('');}
 function personKey(p){return (p&&p.name?p.name:(p&&p.friendId)||'').toString().trim().toLowerCase();}
 function friendNameKey(name){return String(name||'').trim().toLowerCase();}
+function isIncomeReceivable(p){return !!p&&(p.rpKind==='income'||p.incomeReceivable===true);}
 function rpSignedHKD(p){return (p.dir==='p'?-1:1)*(parseFloat(p.amtHKD||0));}
 function rpIsActive(p){return p&&!p.settled&&!p.dead;}
 function rpGroups(list){const m={};(list||[]).forEach(p=>{const k=personKey(p);if(!m[k])m[k]={key:k,name:p.name,items:[],net:0};m[k].items.push(p);m[k].net+=rpSignedHKD(p);});return Object.values(m).sort((a,b)=>Math.abs(b.net)-Math.abs(a.net));}
@@ -1651,11 +1653,27 @@ function friendCredit(key){
   return {score,grade,avg,paid:paid.length,dead:dead.length,open:open.length,openHKD:open.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0),deadHKD:dead.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0)};
 }
 function friendCreditBadge(key){const c=friendCredit(key);const col=c.score>=85?'bg':c.score>=70?'bb':c.score>=50?'ba':'br';return `<span class="badge ${col}">${tt('信用','Credit')} ${c.grade} · ${c.score}</span>`;}
-function addRPMove(p,phase,amtOverride,amtHKDOverride){const amount=amtOverride!=null?Math.abs(amtOverride):Math.abs(p.amount||0);const amtHKD=amtHKDOverride!=null?Math.abs(amtHKDOverride):Math.abs(parseFloat(p.amtHKD||0));if(!amtHKD||!p.acctId)return null;const ac=getAcct(p.acctId);const receivable=p.dir!=='p';const direction=(phase==='open')?(receivable?'out':'in'):(receivable?'in':'out');const tx={id:Date.now()+Math.random(),type:'ar_move',direction,amount,amtHKD,cur:p.cur||'HKD',acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(phase==='open'?t('aropen'):t('arsettle'))+' · '+p.name+(p.desc?' · '+p.desc:''),date:p.date||today(),fromRP:p.id,rpPhase:phase,oneOff:true};S.txns.unshift(tx);return tx;}
-function removeRPMovesFor(ids,phase){const set=new Set([].concat(ids).filter(x=>x!=null).map(x=>String(x)));S.txns=S.txns.filter(tx=>{if(!txIsRPFlow(tx))return true;if(phase&&tx.rpPhase!==phase)return true;return !set.has(String(tx.fromRP));});}
+function rpIncomeCats(){const incIds=['income','freelance','invest','cashback','other_inc'];const defIds=new Set(DEF_CATS.map(c=>c.id));const customIds=(S.cats||[]).filter(c=>!defIds.has(c.id)).map(c=>c.id);let cats=[...incIds,...customIds].map(id=>(S.cats||[]).find(c=>c.id===id)).filter(Boolean);return mruSort(cats,'catMRU',c=>c.id);}
+function renderARIncomeCats(selectedId){const el=document.getElementById('ar-cat');if(!el)return;const cats=rpIncomeCats();const sel=selectedId||(cats.find(c=>c.id===S.selCat)?.id)||'income';el.innerHTML=cats.map(c=>`<option value="${c.id}"${c.id===sel?' selected':''}>${c.icon} ${catLabel(c)}</option>`).join('');}
+function addRPIncomeTxn(p,amtOverride,amtHKDOverride){
+  const amount=amtOverride!=null?Math.abs(amtOverride):Math.abs(p.amount||0);
+  const amtHKD=amtHKDOverride!=null?Math.abs(amtHKDOverride):Math.abs(parseFloat(p.amtHKD||0));
+  if(!amtHKD||!p.acctId)return null;
+  const ac=getAcct(p.acctId);const cat=getCat(p.catId||'income')||getCat('income')||getCat('other_inc');
+  const tx={id:Date.now()+Math.random(),type:'income',amount,amtHKD,cur:p.cur||'HKD',catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(p.desc||p.name||catLabel(cat))+' · '+tt('收入應收','Income receivable'),date:today(),oneOff:false,fromRP:p.id,rpIncome:true,rpPhase:'settle_income'};
+  S.txns.unshift(tx);return tx;
+}
+function addRPMove(p,phase,amtOverride,amtHKDOverride){
+  if(isIncomeReceivable(p)){
+    if(phase==='settle')return addRPIncomeTxn(p,amtOverride,amtHKDOverride);
+    return null;
+  }
+  const amount=amtOverride!=null?Math.abs(amtOverride):Math.abs(p.amount||0);const amtHKD=amtHKDOverride!=null?Math.abs(amtHKDOverride):Math.abs(parseFloat(p.amtHKD||0));if(!amtHKD||!p.acctId)return null;const ac=getAcct(p.acctId);const receivable=p.dir!=='p';const direction=(phase==='open')?(receivable?'out':'in'):(receivable?'in':'out');const tx={id:Date.now()+Math.random(),type:'ar_move',direction,amount,amtHKD,cur:p.cur||'HKD',acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(phase==='open'?t('aropen'):t('arsettle'))+' · '+p.name+(p.desc?' · '+p.desc:''),date:p.date||today(),fromRP:p.id,rpPhase:phase,oneOff:true};S.txns.unshift(tx);return tx;
+}
+function removeRPMovesFor(ids,phase){const set=new Set([].concat(ids).filter(x=>x!=null).map(x=>String(x)));S.txns=S.txns.filter(tx=>{if(tx&&tx.rpIncome&&set.has(String(tx.fromRP))){if(phase&&phase!=='settle'&&tx.rpPhase!==phase)return true;return false;}if(!txIsRPFlow(tx))return true;if(phase&&tx.rpPhase!==phase)return true;return !set.has(String(tx.fromRP));});}
 // R/P wallet moves are real cash movements inside the selected account, but NOT income/spending.
 // This also catches older saved rows that were created as income/expense but tagged with fromRP/group R/P metadata.
-function txIsRPFlow(tx){if(!tx)return false;if(tx.type==='ar_move')return true;if(tx.fromRP||tx.rpPhase)return true;if(tx.isGroupBill&&String(tx.note||'').includes('R/P'))return true;return false;}
+function txIsRPFlow(tx){if(!tx)return false;if(tx.rpIncome)return false;if(tx.type==='ar_move')return true;if(tx.fromRP||tx.rpPhase)return true;if(tx.isGroupBill&&String(tx.note||'').includes('R/P'))return true;return false;}
 function txIsDebtFlow(tx){return !!tx&&(tx.type==='debt_move'||tx.debtPhase);}
 function txIsRealisedPnl(tx){return !!tx&&tx.type==='pnl_realized';}
 function txReportable(tx){return !!tx&&!tx.excluded&&!txIsRealisedPnl(tx)&&!txIsRPFlow(tx)&&!txIsDebtFlow(tx)&&tx.type!=='transfer';}
@@ -2392,6 +2410,13 @@ function openIncomeModal(){
   setTT('income');
   const ttl=document.querySelector('#m-txn .mtitle');if(ttl)ttl.textContent='＋ '+t('income');
 }
+function openIncomeReceivableModal(){
+  openARModal();
+  setArDir('ri');
+  const ttl=document.querySelector('#m-ar .mtitle');if(ttl){ttl.removeAttribute('data-i');ttl.textContent='＋ '+tt('收入應收','Income receivable');}
+  const name=document.getElementById('ar-name');if(name)name.placeholder=tt('付款方 / 公司 / 客戶','Payer / company / client');
+  const desc=document.getElementById('ar-desc');if(desc)desc.placeholder=tt('如 工資、回佣、退款…','e.g. salary, commission, refund…');
+}
 
 function openTxnModal(){S._editTxnId=null;S.amtStr='0';S.amtExpr='';updateAmtDisplay();document.getElementById('t-note').value='';document.getElementById('t-cur').value=S.dispCur||'HKD';document.getElementById('t-date').value=today();document.getElementById('t-person').value='';document.getElementById('oneoff-toggle').classList.remove('on');document.getElementById('recur-toggle').classList.remove('on');document.getElementById('recur-day-wrap').style.display='none';document.getElementById('inline-newcat').style.display='none';document.getElementById('inline-newacct').style.display='none';setTT('expense');renderCatChips();renderAcctChips();applyI18n();document.getElementById('m-txn').classList.add('open');}
 function editTxn(id){
@@ -2416,7 +2441,7 @@ function editTxn(id){
   document.getElementById('m-txn').classList.add('open');
 }
 function toggleRecur(){const tg=document.getElementById('recur-toggle');tg.classList.toggle('on');document.getElementById('recur-day-wrap').style.display=tg.classList.contains('on')?'block':'none';}
-function openARModal(){S._editArId=null;['ar-name','ar-amt','ar-desc'].forEach(id=>document.getElementById(id).value='');document.getElementById('ar-cur').value=S.dispCur||'HKD';fillAcctSelect('ar-acct',S.selAcct);document.getElementById('ar-date').value=today();setArDir('r');const ttl=document.querySelector('#m-ar .mtitle');if(ttl){ttl.setAttribute('data-i','addar');ttl.textContent=t('addar');}document.getElementById('m-ar').classList.add('open');}
+function openARModal(){S._editArId=null;['ar-name','ar-amt','ar-desc'].forEach(id=>document.getElementById(id).value='');const nm=document.getElementById('ar-name'),ds=document.getElementById('ar-desc');if(nm)nm.placeholder=t('nameph');if(ds)ds.placeholder=t('forph');document.getElementById('ar-cur').value=S.dispCur||'HKD';fillAcctSelect('ar-acct',S.selAcct);renderARIncomeCats(S.selCat);document.getElementById('ar-date').value=today();setArDir('r');const ttl=document.querySelector('#m-ar .mtitle');if(ttl){ttl.setAttribute('data-i','addar');ttl.textContent=t('addar');}document.getElementById('m-ar').classList.add('open');}
 function editAR(id){
   const p=S.people.find(x=>String(x.id)===String(id));if(!p)return;
   S._editArId=p.id;
@@ -2424,14 +2449,22 @@ function editAR(id){
   document.getElementById('ar-amt').value=p.amount||'';
   document.getElementById('ar-cur').value=p.cur||'HKD';
   fillAcctSelect('ar-acct',p.acctId||S.selAcct);
+  renderARIncomeCats(p.catId||S.selCat);
   document.getElementById('ar-desc').value=p.desc||'';
   document.getElementById('ar-date').value=p.date||today();
-  setArDir(p.dir==='p'?'p':'r');
+  setArDir(isIncomeReceivable(p)?'ri':(p.dir==='p'?'p':'r'));
   const ttl=document.querySelector('#m-ar .mtitle');if(ttl){ttl.removeAttribute('data-i');ttl.textContent='✏️ '+t('act_edit');}
   document.getElementById('m-ar').classList.add('open');
 }
 function quickRP(name){openARModal();const el=document.getElementById('ar-name');if(el)el.value=name;const amt=document.getElementById('ar-amt');if(amt)amt.focus();}
-function setArDir(d,btn){S.arDir=d;const r=document.getElementById('ar-dir-r'),p=document.getElementById('ar-dir-p');if(r&&p){r.classList.toggle('active',d==='r');p.classList.toggle('active',d==='p');}}
+function setArDir(d,btn){
+  S.arDir=d;
+  const r=document.getElementById('ar-dir-r'),p=document.getElementById('ar-dir-p'),ri=document.getElementById('ar-dir-ri'),catRow=document.getElementById('ar-income-cat-row');
+  if(ri)ri.textContent=tt('收入應收','Income A/R');
+  if(r&&p&&ri){r.classList.toggle('active',d==='r');p.classList.toggle('active',d==='p');ri.classList.toggle('active',d==='ri');}
+  if(catRow)catRow.style.display=d==='ri'?'flex':'none';
+  if(d==='ri')renderARIncomeCats(document.getElementById('ar-cat')?.value||S.selCat);
+}
 function openGroupModal(){document.getElementById('gb-date').value=today();document.getElementById('gb-total').value='';document.getElementById('gb-title').value='';fillAcctSelect('gb-acct',S.selAcct);S._billInc=[];S._billAmt={};S._billMe=true;S._billCat=S.selCat||'food';if(!getCat(S._billCat)||['income','freelance','cashback','other_inc'].includes(S._billCat))S._billCat='food';document.getElementById('gb-newfriend').placeholder=t('nameph');renderBillCats();renderBillFriends();document.getElementById('m-group').classList.add('open');}
 function toggleBillMe(){S._billMe=!S._billMe;renderBillCats();renderBillFriends();}
 function openGambleModal(editId,defaultSecId){
@@ -2684,22 +2717,26 @@ function saveAR(){
   if(!name||!amt)return;
   const cur=document.getElementById('ar-cur').value;
   const amtHKD=parseFloat(toHKD(amt,cur).toFixed(2));
-  const dir=S.arDir||'r';
+  const mode=S.arDir||'r';
+  const incomeRec=mode==='ri';
+  const dir=mode==='p'?'p':'r';
   const desc=document.getElementById('ar-desc').value;
   const date=document.getElementById('ar-date').value;
   const acctId=document.getElementById('ar-acct').value||'';const ac=getAcct(acctId);
+  const catId=incomeRec?(document.getElementById('ar-cat')?.value||'income'):'';
+  const cat=catId?getCat(catId):null;
   const editId=S._editArId;
   if(editId){
     const p=S.people.find(x=>String(x.id)===String(editId));
     if(p){
       // Rebuild the opening wallet movement so edited amount/account/direction stays in sync.
       removeRPMovesFor([p.id],'open');
-      p.name=name;p.amount=amt;p.amtHKD=amtHKD;p.cur=cur;p.desc=desc;p.date=date;p.dir=dir;p.acctId=acctId;p.acctLabel=ac?acctLabel(ac):'';p.acctIcon=ac?ac.icon:'';
+      p.name=name;p.amount=amt;p.amtHKD=amtHKD;p.cur=cur;p.desc=desc;p.date=date;p.dir=dir;p.rpKind=incomeRec?'income':'cash';p.incomeReceivable=incomeRec;p.catId=catId;p.catLabel=cat?catLabel(cat):'';p.catIcon=cat?cat.icon:'';p.acctId=acctId;p.acctLabel=ac?acctLabel(ac):'';p.acctIcon=ac?ac.icon:'';
       if(!p.settled){const openTx=addRPMove(p,'open');p.openTxnId=openTx?openTx.id:null;}
     }
     S._editArId=null;
   } else {
-    const rec={id:Date.now(),name,amount:amt,amtHKD,cur,desc,date,settled:false,dir,acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:''};
+    const rec={id:Date.now(),name,amount:amt,amtHKD,cur,desc,date,settled:false,dir,rpKind:incomeRec?'income':'cash',incomeReceivable:incomeRec,catId,catLabel:cat?catLabel(cat):'',catIcon:cat?cat.icon:'',acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:''};
     const openTx=addRPMove(rec,'open');rec.openTxnId=openTx?openTx.id:null;S.people.unshift(rec);
   }
   ['ar-name','ar-amt','ar-desc'].forEach(id=>document.getElementById(id).value='');
@@ -2998,7 +3035,7 @@ function filterAR(type,btn){
   const elRc=document.getElementById('ar-ct');if(elRc)elRc.textContent=(groups.filter(g=>g.net>0).length?groups.filter(g=>g.net>0).length+' '+t('outstanding'):'')+(deadHKD?' · '+tt('壞帳 ','dead ')+fmt(deadHKD):'');
   const elPc=document.getElementById('ar-urgent-ct');if(elPc)elPc.textContent=groups.filter(g=>g.net<0).length?groups.filter(g=>g.net<0).length+' '+t('outstanding'):'';
   let list=type==='pending'?groups:type==='settled'?[...rpGroups((S.people||[]).filter(p=>p.settled&&!p.dead)),...rpGroups(deadRows)]:type==='group'?rpGroups((S.people||[]).filter(p=>p.isGroupSplit&&rpIsActive(p))):groups;
-  document.getElementById('ar-list').innerHTML=list.length?list.map((g,i)=>{const ci=i%8;const init=(g.name||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const dead=g.items.every(p=>p.dead);const settled=!dead&&g.items.every(p=>p.settled);const urg=!dead&&!settled&&g.items.some(p=>p.urgent&&!p.isGroupSplit);const isPay=g.net<0;const amtCol=dead?'var(--r3)':(isPay?'var(--r)':'var(--g)');/* green=receivable, red=payable; urgency shows as a badge, not by flipping the colour */const detail=g.items.map(p=>(p.dead?'☠ ':p.dir==='p'?'−':'+')+fmt(p.amtHKD)+(p.desc?' · '+p.desc:'')+(p.payDays!=null?' · '+p.payDays+tt('日還清','d paid'):'')+(p.deadDate?' · '+tt('壞帳 ','dead ')+p.deadDate:'')).join('<br>');const ids=g.items.filter(rpIsActive).map(p=>p.id).join(',');const allIds=g.items.map(p=>p.id).join(',');const deadIds=g.items.filter(p=>rpIsActive(p)&&p.dir!=='p').map(p=>p.id).join(',');return `<div class="crow${urg?' alert-row':''}"><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div class="rinfo"><div class="rtitle">${g.name}${friendCreditBadge(g.key)}${isPay?`<span class="badge br">${t('payable')}</span>`:''}${dead?`<span class="badge br">${tt('壞帳','Dead')}</span>`:''}${g.items.some(p=>p.isGroupSplit)?`<span class="badge bp">${t('group')}</span>`:''}${urg?`<span class="badge br">${t('pending')}</span>`:''}</div><div class="rsub">${detail||'—'}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">${dead?`<span style="font-size:15px;font-weight:700;color:var(--r3)">${fmt(Math.abs(g.net))}</span><button class="settle-btn urgent" onclick="reviveDeadGroup('${allIds}')">${tt('復活','Restore')}</button>`:settled?`<span class="badge bg">${t('settled')}</span>`:`<span style="font-size:15px;font-weight:700;color:${amtCol}">${isPay?'−':'+'}${fmt(Math.abs(g.net))}</span><button class="settle-btn${urg?' urgent':''}" onclick="openSettleGroup('${ids}')">${isPay?t('settlepay'):tt('收回 ✓','Settle ✓')}</button>${deadIds?`<button class="settle-btn urgent" onclick="markDeadGroup('${deadIds}')">${tt('壞帳','Dead')}</button>`:''}`}</div>${settled?`<button onclick="recallGroup('${allIds}')" title="${t('recallbtn')}" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-arrow-back-up"></i></button>`:(!dead?`<button onclick="editAR('${g.items[0].id}')" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-pencil"></i></button>`:'')}<button onclick="deleteARGroup('${encodeURIComponent(g.key)}')" style="padding:6px 7px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-trash"></i></button></div>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
+  document.getElementById('ar-list').innerHTML=list.length?list.map((g,i)=>{const ci=i%8;const init=(g.name||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();const dead=g.items.every(p=>p.dead);const settled=!dead&&g.items.every(p=>p.settled);const urg=!dead&&!settled&&g.items.some(p=>p.urgent&&!p.isGroupSplit);const isPay=g.net<0;const hasIncome=g.items.some(isIncomeReceivable);const amtCol=dead?'var(--r3)':(isPay?'var(--r)':'var(--g)');/* green=receivable, red=payable; urgency shows as a badge, not by flipping the colour */const detail=g.items.map(p=>(p.dead?'☠ ':p.dir==='p'?'−':'+')+fmt(p.amtHKD)+(isIncomeReceivable(p)?' · '+(p.catIcon||'💼')+' '+(p.catLabel||tt('收入應收','Income A/R')):'')+(p.desc?' · '+p.desc:'')+(p.payDays!=null?' · '+p.payDays+tt('日還清','d paid'):'')+(p.deadDate?' · '+tt('壞帳 ','dead ')+p.deadDate:'')).join('<br>');const ids=g.items.filter(rpIsActive).map(p=>p.id).join(',');const allIds=g.items.map(p=>p.id).join(',');const deadIds=g.items.filter(p=>rpIsActive(p)&&p.dir!=='p').map(p=>p.id).join(',');return `<div class="crow${urg?' alert-row':''}"><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div class="rinfo"><div class="rtitle">${g.name}${friendCreditBadge(g.key)}${hasIncome?`<span class="badge bg">${tt('收入應收','Income A/R')}</span>`:''}${isPay?`<span class="badge br">${t('payable')}</span>`:''}${dead?`<span class="badge br">${tt('壞帳','Dead')}</span>`:''}${g.items.some(p=>p.isGroupSplit)?`<span class="badge bp">${t('group')}</span>`:''}${urg?`<span class="badge br">${t('pending')}</span>`:''}</div><div class="rsub">${detail||'—'}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">${dead?`<span style="font-size:15px;font-weight:700;color:var(--r3)">${fmt(Math.abs(g.net))}</span><button class="settle-btn urgent" onclick="reviveDeadGroup('${allIds}')">${tt('復活','Restore')}</button>`:settled?`<span class="badge bg">${t('settled')}</span>`:`<span style="font-size:15px;font-weight:700;color:${amtCol}">${isPay?'−':'+'}${fmt(Math.abs(g.net))}</span><button class="settle-btn${urg?' urgent':''}" onclick="openSettleGroup('${ids}')">${isPay?t('settlepay'):tt('收回 ✓','Settle ✓')}</button>${deadIds?`<button class="settle-btn urgent" onclick="markDeadGroup('${deadIds}')">${tt('壞帳','Dead')}</button>`:''}`}</div>${settled?`<button onclick="recallGroup('${allIds}')" title="${t('recallbtn')}" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-arrow-back-up"></i></button>`:(!dead?`<button onclick="editAR('${g.items[0].id}')" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-pencil"></i></button>`:'')}<button onclick="deleteARGroup('${encodeURIComponent(g.key)}')" style="padding:6px 7px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-trash"></i></button></div>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
 }
 function recallGroup(ids){String(ids).split(',').filter(Boolean).forEach(id=>recallAR(id));}
 function deleteARGroup(key){key=decodeURIComponent(key);if(!confirm(t('deltxnq')))return;const doomed=S.people.filter(p=>personKey(p)===key);const ids=doomed.map(p=>p.id);const gids=[...new Set(doomed.map(p=>p.groupId).filter(Boolean))];removeRPMovesFor(ids);S.txns=S.txns.filter(tx=>!(txIsRPFlow(tx)&&gids.includes(tx.groupId)));S.people=S.people.filter(p=>personKey(p)!==key);saveS();setWalletPane('ar');refreshAllViews();}
