@@ -1108,6 +1108,22 @@ img,canvas,svg{max-width:100%;}
       <div id="tax-cat-list" style="margin-top:10px"></div>
     </div>
 
+    <div class="slbl" data-i="notifications"></div>
+    <div class="glass-card" style="padding:15px;margin-bottom:12px">
+      <div class="msub" id="notify-hint" style="margin-bottom:12px;line-height:1.6"></div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <button class="toggle" id="notify-on" onclick="toggleNotifyOn()"></button>
+        <span id="notify-enable-lbl" style="font-size:14px;color:var(--ink2)"></span>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <button id="notify-allow-btn" onclick="requestNotifyPermission()" style="flex:1;min-width:120px;padding:11px;background:var(--hero-grad);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer"></button>
+        <button id="notify-test-btn" onclick="notifyTest()" style="flex:1;min-width:120px;padding:11px;border:1.5px solid var(--bdr2);border-radius:12px;background:var(--surf2);color:var(--ink2);font-size:13px;font-weight:700;cursor:pointer"></button>
+      </div>
+      <div id="notify-rules" style="display:flex;flex-direction:column;gap:8px"></div>
+      <button onclick="saveNotifySettings()" style="width:100%;margin-top:12px;padding:13px;background:var(--hero-grad);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer" data-i="save"></button>
+      <div id="notify-status" class="msub" style="margin-top:10px;line-height:1.55"></div>
+    </div>
+
     <div class="slbl" data-i="stockapi"></div>
     <div class="glass-card" style="padding:15px;margin-bottom:12px">
       <div style="font-size:13px;color:var(--ink3);margin-bottom:11px" data-i="stockapihint"></div>
@@ -1633,7 +1649,7 @@ const DEF_ACCTS=[
 const ACCT_KINDS=['cash','debit','credit','bank','ewallet','invest','other'];
 function kindLabel(k){return t('kind'+(k||'other'))||'';}
 
-let S={txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),curType:'expense',amtStr:'0',selCat:'food',selAcct:'cash',selAcctTo:'debit',apSelCat:'fitness',apSelAcct:'debit',mergeSelected:[],memberCount:2,lang:'zh',period:'month',activeTab:'home',walletPane:'txn',trendView:'total',catPeriodSpend:'week',catPeriodIncome:'week',dispCur:'HKD',privacy:false,pnlOrder:['poker','stock','crypto','pe','debt'],pnlHidden:{},pnlNetHidden:{},ai:{provider:'gemini',key:'',model:''},tuScores:[],friends:[],customSections:[],autoincome:[],debts:[],changelog:[],_billInc:[],_billAmt:{}};
+let S={txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},notify:{on:false,budgetLow:true,budgetPct:20,budgetOver:true,autopayDue:true,autopayDays:3,rpOverdue:true,rpDays:14,negCash:true},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),curType:'expense',amtStr:'0',selCat:'food',selAcct:'cash',selAcctTo:'debit',apSelCat:'fitness',apSelAcct:'debit',mergeSelected:[],memberCount:2,lang:'zh',period:'month',activeTab:'home',walletPane:'txn',trendView:'total',catPeriodSpend:'week',catPeriodIncome:'week',dispCur:'HKD',privacy:false,pnlOrder:['poker','stock','crypto','pe','debt'],pnlHidden:{},pnlNetHidden:{},ai:{provider:'gemini',key:'',model:''},tuScores:[],friends:[],customSections:[],autoincome:[],debts:[],changelog:[],_billInc:[],_billAmt:{}};
 
 // ── MULTI-ACCOUNT (local profiles; no login) ──
 // The "default" profile keeps using the original fos8 key, so existing data is never touched.
@@ -1642,7 +1658,7 @@ function ensureProfiles(){let m=profilesMeta();if(!m){m={active:'default',list:[
 function saveProfilesMeta(m){localStorage.setItem('fos_profiles',JSON.stringify(m));}
 function activeProfileId(){return ensureProfiles().active;}
 function profileKey(id){id=id||activeProfileId();return id==='default'?'fos8':'fos8_p_'+id;}
-function profileDefaults(){return {txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),portfolio:[],pnlOrder:['poker','stock','crypto','pe','debt'],pnlHidden:{},pnlNetHidden:{},customSections:[],autoincome:[],tuScores:[],friends:[],changelog:[],creditLimit:0,_billInc:[],_billAmt:{}};}
+function profileDefaults(){return {txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},notify:{on:false,budgetLow:true,budgetPct:20,budgetOver:true,autopayDue:true,autopayDays:3,rpOverdue:true,rpDays:14,negCash:true},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),portfolio:[],pnlOrder:['poker','stock','crypto','pe','debt'],pnlHidden:{},pnlNetHidden:{},customSections:[],autoincome:[],tuScores:[],friends:[],changelog:[],creditLimit:0,_billInc:[],_billAmt:{}};}
 function reloadActiveProfile(){Object.assign(S,profileDefaults());loadS();applyTheme();applyPrivacy();applyI18n();renderHome();updateFab();if(typeof refreshWallet==='function')refreshWallet();if(S.activeTab==='gamble')renderGamble();if(S.activeTab==='settings'&&typeof renderSettings==='function')renderSettings();renderProfileChip();}
 function switchProfile(id){if(id===activeProfileId()){closeM('m-profiles');return;}saveS();const m=ensureProfiles();m.active=id;saveProfilesMeta(m);reloadActiveProfile();closeM('m-profiles');}
 function addProfile(){const nmEl=document.getElementById('newprof-name'),emEl=document.getElementById('newprof-emoji');const nm=((nmEl&&nmEl.value)||'').trim()||'新帳戶';const em=((emEl&&emEl.value)||'').trim()||'👤';saveS();const id='p_'+Date.now();const m=ensureProfiles();m.list.push({id,name:nm,emoji:em});m.active=id;saveProfilesMeta(m);reloadActiveProfile();renderProfilesModal();}
@@ -1656,11 +1672,12 @@ if(!S.budget)S.budget={amount:0,cur:'HKD',startDay:1,cutoffDay:31};
 if(S.budget.startDay==null)S.budget.startDay=((parseInt(S.budget.cutoffDay||31)||31)%31)+1; // preserve old cutoff-only cycles
 if(!S.tax)S.tax={year:0,allowance:145000,deductions:0,excludedCats:[]};
 if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
+S.notify=notifyCfg();
 if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return c.id===dc.id;});if(!ex){S.cats.push({...dc,aliases:[...dc.aliases]});}else{dc.aliases.forEach(function(a){if((ex.aliases||[]).indexOf(a)<0)ex.aliases=(ex.aliases||[]).concat(a);});}});
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));}}
-function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:(S.cloud||{}).url||'',key:(S.cloud||{}).key||'',pass:(S.cloud||{}).pass||'',salt:(S.cloud||{}).salt||'',on:!!(S.cloud||{}).on,ver:(S.cloud||{}).ver||0,last:(S.cloud||{}).last||0}}));if(!window._cloudMute&&S.cloud&&S.cloud.on&&S.cloud.url&&S.cloud.key&&S.cloud.pass){S.cloud._dirty=true;clearTimeout(window._cloudT);window._cloudT=setTimeout(function(){cloudPush();},4000);}}catch(e){}}
+function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:(S.cloud||{}).url||'',key:(S.cloud||{}).key||'',pass:(S.cloud||{}).pass||'',salt:(S.cloud||{}).salt||'',on:!!(S.cloud||{}).on,ver:(S.cloud||{}).ver||0,last:(S.cloud||{}).last||0}}));if(!window._cloudMute&&S.cloud&&S.cloud.on&&S.cloud.url&&S.cloud.key&&S.cloud.pass){S.cloud._dirty=true;clearTimeout(window._cloudT);window._cloudT=setTimeout(function(){cloudPush();},4000);}if(typeof notifySchedule==='function')notifySchedule('save');}catch(e){}}
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
-function t(k){const fb={budgetplanner:S.lang==='en'?'Monthly budget':'月度預算',taxestimate:S.lang==='en'?'Tax estimate':'稅務預計'};return LANGS[S.lang][k]||LANGS.en[k]||fb[k]||k;}
+function t(k){const fb={budgetplanner:S.lang==='en'?'Monthly budget':'月度預算',taxestimate:S.lang==='en'?'Tax estimate':'稅務預計',notifications:S.lang==='en'?'Notifications':'通知'};return LANGS[S.lang][k]||LANGS.en[k]||fb[k]||k;}
 function tt(zh,en){return S.lang==='en'?en:zh;}
 function catLabel(c){return S.lang==='en'?(c.labelEn||c.label):c.label;}
 function toHKD(a,c){return c==='HKD'?a:a*(FX[c]||1);}
@@ -3119,6 +3136,46 @@ function saveTaxSettings(){
   saveS();renderTaxSettings();showToast(tt('已更新稅務預估','Tax estimate updated'));
 }
 function toggleTaxCat(id){const cfg=taxCfg(),i=cfg.excludedCats.indexOf(id);if(i>=0)cfg.excludedCats.splice(i,1);else cfg.excludedCats.push(id);S.tax={...S.tax,excludedCats:cfg.excludedCats};saveS();renderTaxSettings();}
+// ─── LOCAL NOTIFICATIONS (static/PWA-friendly) ─────────────────
+// This version checks conditions while the app is open / reopened, then uses the
+// browser/PWA notification channel. True server-side push while the app is fully
+// closed needs a push service + VAPID private key, which should not live in GitHub Pages.
+function notifyDefaults(){return {on:false,budgetLow:true,budgetPct:20,budgetOver:true,autopayDue:true,autopayDays:3,rpOverdue:true,rpDays:14,negCash:true};}
+function notifyCfg(){const d=notifyDefaults();S.notify={...d,...(S.notify||{})};S.notify.budgetPct=Math.max(1,Math.min(100,parseFloat(S.notify.budgetPct||d.budgetPct)||d.budgetPct));S.notify.autopayDays=Math.max(0,Math.min(31,parseInt(S.notify.autopayDays||d.autopayDays)||d.autopayDays));S.notify.rpDays=Math.max(1,Math.min(365,parseInt(S.notify.rpDays||d.rpDays)||d.rpDays));return S.notify;}
+function notifySupported(){return typeof Notification!=='undefined';}
+function notifyPerm(){return notifySupported()?Notification.permission:'unsupported';}
+function notifyRuleRow(id,label,extra){const c=notifyCfg();return `<div class="frow" style="gap:10px"><button class="toggle ${c[id]?'on':''}" id="notify-${id}" onclick="this.classList.toggle('on')"></button><span style="flex:1;min-width:0;font-size:13px;color:var(--ink2);font-weight:700">${label}</span>${extra||''}</div>`;}
+function renderNotifySettings(){
+  const card=document.getElementById('notify-rules');if(!card)return;const c=notifyCfg();
+  const hint=document.getElementById('notify-hint');if(hint)hint.textContent=tt('條件命中時發手機通知。靜態 GitHub Pages 版本會喺 app 開住、重新打開、或記帳後檢查；如要 app 完全關閉都即時推送，需要之後接 Supabase/Push server。','Send phone notifications when selected conditions are hit. On static GitHub Pages, checks run while the app is open/reopened or after saving; true closed-app push needs a Supabase/Push server later.');
+  const on=document.getElementById('notify-on');if(on)on.classList.toggle('on',!!c.on);
+  const en=document.getElementById('notify-enable-lbl');if(en)en.textContent=tt('啟用條件通知','Enable condition notifications');
+  const allow=document.getElementById('notify-allow-btn');if(allow)allow.textContent=tt('允許手機通知','Allow phone notifications');
+  const test=document.getElementById('notify-test-btn');if(test)test.textContent=tt('測試通知','Test notification');
+  card.innerHTML=notifyRuleRow('budgetLow',tt('預算剩餘低於','Budget remaining below'),`<input id="notify-budget-pct" type="number" inputmode="decimal" min="1" max="100" value="${c.budgetPct}" style="width:68px;border:1px solid var(--bdr2);border-radius:10px;padding:8px;background:var(--bg2);color:var(--ink);font-size:13px;text-align:right"><span class="msub">%</span>`)+
+    notifyRuleRow('budgetOver',tt('預算已超支','Budget overspent'))+
+    notifyRuleRow('autopayDue',tt('自動繳費即將到期','Auto-pay due soon'),`<input id="notify-autopay-days" type="number" inputmode="decimal" min="0" max="31" value="${c.autopayDays}" style="width:68px;border:1px solid var(--bdr2);border-radius:10px;padding:8px;background:var(--bg2);color:var(--ink);font-size:13px;text-align:right"><span class="msub">${tt('日','days')}</span>`)+
+    notifyRuleRow('rpOverdue',tt('應收超過未還','Receivable overdue'),`<input id="notify-rp-days" type="number" inputmode="decimal" min="1" max="365" value="${c.rpDays}" style="width:68px;border:1px solid var(--bdr2);border-radius:10px;padding:8px;background:var(--bg2);color:var(--ink);font-size:13px;text-align:right"><span class="msub">${tt('日','days')}</span>`)+
+    notifyRuleRow('negCash',tt('戶口現金變成負數','Account cash turns negative'));
+  const st=document.getElementById('notify-status');if(st){const p=notifyPerm();let msg;if(p==='unsupported')msg=tt('此瀏覽器暫不支援 Web Notification。','This browser does not support Web Notifications.');else if(p==='granted')msg=tt('狀態：已允許。iPhone 建議用「加到主畫面」嘅 PWA 開啟。','Status: allowed. On iPhone, use the Home Screen PWA for best results.');else if(p==='denied')msg=tt('狀態：已封鎖，請到 Safari/系統設定重新允許。','Status: blocked. Re-enable it in Safari/system settings.');else msg=tt('狀態：未允許，請先按「允許手機通知」。','Status: not allowed yet. Tap Allow phone notifications first.');st.textContent=msg;}
+}
+async function requestNotifyPermission(){if(!notifySupported()){showToast(tt('此瀏覽器不支援通知','Notifications are not supported here'),1);renderNotifySettings();return false;}let p=Notification.permission;if(p==='default')p=await Notification.requestPermission();if(p==='granted'){S.notify=notifyCfg();S.notify.on=true;saveS();renderNotifySettings();showToast(tt('已允許通知','Notifications allowed'));return true;}showToast(tt('通知未允許','Notification permission not granted'),1);renderNotifySettings();return false;}
+async function toggleNotifyOn(){S.notify=notifyCfg();S.notify.on=!S.notify.on;if(S.notify.on&&notifyPerm()==='default'){await requestNotifyPermission();return;}saveS();renderNotifySettings();if(S.notify.on)notifySchedule('toggle');}
+async function saveNotifySettings(){const c=notifyCfg();['budgetLow','budgetOver','autopayDue','rpOverdue','negCash'].forEach(k=>{const el=document.getElementById('notify-'+k);if(el)c[k]=el.classList.contains('on');});const bp=document.getElementById('notify-budget-pct'),ad=document.getElementById('notify-autopay-days'),rd=document.getElementById('notify-rp-days');if(bp)c.budgetPct=Math.max(1,Math.min(100,parseFloat(bp.value)||20));if(ad)c.autopayDays=Math.max(0,Math.min(31,parseInt(ad.value)||0));if(rd)c.rpDays=Math.max(1,Math.min(365,parseInt(rd.value)||14));const on=document.getElementById('notify-on');c.on=!!(on&&on.classList.contains('on'));S.notify=c;if(c.on&&notifyPerm()==='default'){const ok=await requestNotifyPermission();if(!ok)return;}saveS();renderNotifySettings();showToast(tt('已更新通知設定','Notification settings updated'));notifySchedule('save-settings');}
+async function notifyShow(title,body,tag){if(!notifySupported()||Notification.permission!=='granted')return false;const opts={body,tag:'myfin-'+(tag||Date.now()),renotify:false,silent:false,data:{url:location.href}};try{if(navigator.serviceWorker&&navigator.serviceWorker.ready){const reg=await navigator.serviceWorker.ready;if(reg&&reg.showNotification){await reg.showNotification(title,opts);return true;}}}catch(e){}try{new Notification(title,opts);return true;}catch(e){return false;}}
+async function notifyTest(){if(!notifyCfg().on){S.notify.on=true;const on=document.getElementById('notify-on');if(on)on.classList.add('on');}if(notifyPerm()!=='granted'){const ok=await requestNotifyPermission();if(!ok)return;}const ok=await notifyShow('Myfin',tt('測試通知成功。如果你見到呢條，即係手機通知可用。','Test notification worked. If you see this, phone notifications are available.'),'test');showToast(ok?tt('已送出測試通知','Test notification sent'):tt('測試通知失敗','Test notification failed'),!ok);}
+function notifySeen(key,stamp){const k='notify_'+profileKey()+'_'+key;return localStorage.getItem(k)===stamp;}
+function notifyMark(key,stamp){try{localStorage.setItem('notify_'+profileKey()+'_'+key,stamp);}catch(e){}}
+function notifyEvents(){const c=notifyCfg(),ev=[];const now=new Date(),todayKey=today();
+  try{const b=budgetInfo();if(b.targetHKD>0){const cycle=ymd(b.win.start)+'_'+ymd(b.win.end);if(c.budgetOver&&b.remain<0)ev.push({key:'budget_over_'+cycle,stamp:'1',title:tt('預算已超支','Budget overspent'),body:tt('本期已超支 ','This cycle is over budget by ')+fmt(Math.abs(b.remain))});else if(c.budgetLow&&b.remain>=0&&b.remain<=b.targetHKD*(c.budgetPct/100))ev.push({key:'budget_low_'+cycle,stamp:'1',title:tt('預算快用完','Budget running low'),body:tt('本期剩餘 ','Remaining this cycle: ')+fmt(b.remain)+' · '+c.budgetPct+'%'});}}catch(e){}
+  if(c.autopayDue){(S.autopay||[]).filter(ap=>ap.active).forEach(ap=>{const pd=ap.day===31?dimM(now.getFullYear(),now.getMonth()):Math.min(ap.day,dimM(now.getFullYear(),now.getMonth()));if(localStorage.getItem('ap_'+ap.id+'_'+now.getFullYear()+'_'+now.getMonth()))return;const due=new Date(now.getFullYear(),now.getMonth(),pd);const days=Math.ceil((dateOnly(due)-dateOnly(now))/86400000);if(days>=0&&days<=c.autopayDays){ev.push({key:'autopay_'+ap.id+'_'+now.getFullYear()+'_'+now.getMonth(),stamp:'1',title:tt('自動繳費即將到期','Auto-pay due soon'),body:(ap.name||t('autopay'))+' · '+(days===0?tt('今日','today'):days+tt(' 日後',' days later'))+' · '+(ap.cur||'HKD')+' '+(ap.amount||0)});}});}
+  if(c.rpOverdue){(S.people||[]).filter(p=>rpIsActive(p)&&p.dir!=='p').forEach(p=>{const d=parseDateOnly(p.date);const age=Math.floor((dateOnly(now)-dateOnly(d))/86400000);if(age>=c.rpDays){ev.push({key:'rp_'+p.id,stamp:String(c.rpDays),title:tt('應收款未收回','Receivable overdue'),body:(p.name||t('person'))+' · '+fmt(Math.abs(p.amtHKD||0))+' · '+age+tt(' 日',' days')+(p.desc?' · '+p.desc:'')});}});}
+  if(c.negCash){(S.accounts||[]).filter(a=>!a.excluded).forEach(a=>{const bal=acctCash(a.id);if(bal<0){ev.push({key:'negcash_'+a.id,stamp:todayKey,title:tt('戶口現金為負','Account cash is negative'),body:(acctLabel(a)||a.id)+' · '+fmt(bal)});}});}
+  return ev;
+}
+let _notifyT=null,_notifyBusy=false;
+function notifySchedule(reason){clearTimeout(_notifyT);_notifyT=setTimeout(function(){notifyCheck(reason);},900);}
+async function notifyCheck(reason){const c=notifyCfg();if(!c.on||!notifySupported()||Notification.permission!=='granted'||_notifyBusy)return;_notifyBusy=true;try{const ev=notifyEvents().filter(e=>!notifySeen(e.key,e.stamp)).slice(0,4);for(const e of ev){const ok=await notifyShow(e.title,e.body,e.key);if(ok)notifyMark(e.key,e.stamp);}}finally{_notifyBusy=false;}}
 function togglePnlPieCash(){S.pnlPieNoCash=!S.pnlPieNoCash;saveS();renderGamble();}
 function toggleHeroDetail(kind){
   const isAsset=kind==='asset';
@@ -4053,14 +4110,14 @@ function calDayDetail(day){
   }).join('');
   det.innerHTML=html;
 }
-function setIcon(key){const ic={language:'world',theme:'palette',dispcur:'currency-dollar',pnlsections:'chart-pie',autopay:'repeat',autoincome:'coin',mergecats:'category',addalias:'tag',addcat:'plus',allcats:'list',accounts:'credit-card',allaccts:'wallet',aiassist:'message-circle',credit:'gauge',budgetplanner:'pig-money',taxestimate:'receipt-tax',stockapi:'chart-line',dataexport:'file-spreadsheet',databackup:'database',mpimport:'file-import',cloudsync:'cloud-up'}[key]||'settings';return '<i class="ti ti-'+ic+'"></i>';}
+function setIcon(key){const ic={language:'world',theme:'palette',dispcur:'currency-dollar',pnlsections:'chart-pie',autopay:'repeat',autoincome:'coin',mergecats:'category',addalias:'tag',addcat:'plus',allcats:'list',accounts:'credit-card',allaccts:'wallet',aiassist:'message-circle',credit:'gauge',budgetplanner:'pig-money',taxestimate:'receipt-tax',stockapi:'chart-line',dataexport:'file-spreadsheet',databackup:'database',mpimport:'file-import',notifications:'bell',cloudsync:'cloud-up'}[key]||'settings';return '<i class="ti ti-'+ic+'"></i>';}
 function renderSettings(){
   renderAutopay();renderAutoincome();
   const tk=document.getElementById('td-key');if(tk)tk.value=S.tdKey||'';
   const cc=(typeof cloudCfg==='function')?cloudCfg():null;const cu=document.getElementById('cloud-url');
   if(cc&&cu){cu.value=cc.url||'';document.getElementById('cloud-key').value=cc.key||'';document.getElementById('cloud-pass').value=cc.pass||'';document.getElementById('cloud-on').classList.toggle('on',!!cc.on);if(typeof setCloudStatus==='function')setCloudStatus(cc.on?(cc.ver?'ok':''):'');}
   const dc=document.getElementById('disp-cur');if(dc)dc.value=S.dispCur||'HKD';
-  renderPnlSecMgr();renderAiSettings();renderCredit();renderBudgetSettings();renderTaxSettings();
+  renderPnlSecMgr();renderAiSettings();renderCredit();renderBudgetSettings();renderTaxSettings();renderNotifySettings();
   document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme===(S.theme||'auto')));
   document.querySelectorAll('.motion-btn').forEach(b=>b.classList.toggle('active',b.dataset.motion===(S.motionMode||'dance')));
   document.querySelectorAll('.numfmt-btn').forEach(b=>b.classList.toggle('active',b.dataset.numfmt===(S.numFmt||'full')));
@@ -4645,7 +4702,7 @@ function installMotionFeedback(){
   },{passive:true});
   ['pointerup','pointercancel','pointerleave','scroll'].forEach(ev=>document.addEventListener(ev,releaseAll,{passive:true}));
 }
-installMotionFeedback();installNavSwipe();installPageSwipe();loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();checkDebts();renderHome();updateFab();renderProfileChip();updateNavIsland(document.querySelector('.bottom-nav .tab-btn.active'));
+installMotionFeedback();installNavSwipe();installPageSwipe();loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();checkDebts();renderHome();updateFab();renderProfileChip();notifySchedule('open');updateNavIsland(document.querySelector('.bottom-nav .tab-btn.active'));
 // Show the last-known update time if we have one, then auto-refresh only if a day has passed.
 if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);const sameDay=d.toDateString()===new Date().toDateString();setPriceStatus('ok',t('pricesupdated')+' '+(sameDay?'':(d.getMonth()+1)+'/'+d.getDate()+' ')+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
 maybeAutoRefresh();
