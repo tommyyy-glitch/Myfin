@@ -1,7 +1,7 @@
 // Myfin offline cache — pure client-side, no server involved.
 // Network-first for the app shell (so updates land immediately when online),
 // cache fallback when offline. CDN assets (icons font, xlsx) are cache-first.
-const CACHE='myfin-v6';
+const CACHE='myfin-v7';
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html'])).catch(()=>{}));
   self.skipWaiting();
@@ -28,4 +28,12 @@ self.addEventListener('fetch',e=>{
       caches.match(e.request).then(m=>m||fetch(e.request).then(r=>{const cp=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cp));return r;}))
     );
   }
+});
+
+self.addEventListener('notificationclick',e=>{
+  e.notification.close();
+  e.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{
+    for(const c of list){if('focus' in c)return c.focus();}
+    if(clients.openWindow)return clients.openWindow('./');
+  }));
 });
