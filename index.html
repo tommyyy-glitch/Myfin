@@ -1084,6 +1084,10 @@ img,canvas,svg{max-width:100%;}
         <select id="budget-cur" style="width:84px;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px;-webkit-appearance:none"><option>HKD</option><option>USD</option><option>RMB</option><option>JPY</option></select>
       </div>
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--ink3);flex:1" id="budget-start-lbl"></span>
+        <input id="budget-start" type="number" inputmode="decimal" min="1" max="31" placeholder="1" style="width:88px;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
         <span style="font-size:13px;color:var(--ink3);flex:1" id="budget-cutoff-lbl"></span>
         <input id="budget-cutoff" type="number" inputmode="decimal" min="1" max="31" placeholder="31" style="width:88px;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
       </div>
@@ -1629,7 +1633,7 @@ const DEF_ACCTS=[
 const ACCT_KINDS=['cash','debit','credit','bank','ewallet','invest','other'];
 function kindLabel(k){return t('kind'+(k||'other'))||'';}
 
-let S={txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),curType:'expense',amtStr:'0',selCat:'food',selAcct:'cash',selAcctTo:'debit',apSelCat:'fitness',apSelAcct:'debit',mergeSelected:[],memberCount:2,lang:'zh',period:'month',activeTab:'home',walletPane:'txn',trendView:'total',catPeriodSpend:'week',catPeriodIncome:'week',dispCur:'HKD',privacy:false,pnlOrder:['poker','stock','crypto','pe','debt'],pnlHidden:{},pnlNetHidden:{},ai:{provider:'gemini',key:'',model:''},tuScores:[],friends:[],customSections:[],autoincome:[],debts:[],changelog:[],_billInc:[],_billAmt:{}};
+let S={txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),curType:'expense',amtStr:'0',selCat:'food',selAcct:'cash',selAcctTo:'debit',apSelCat:'fitness',apSelAcct:'debit',mergeSelected:[],memberCount:2,lang:'zh',period:'month',activeTab:'home',walletPane:'txn',trendView:'total',catPeriodSpend:'week',catPeriodIncome:'week',dispCur:'HKD',privacy:false,pnlOrder:['poker','stock','crypto','pe','debt'],pnlHidden:{},pnlNetHidden:{},ai:{provider:'gemini',key:'',model:''},tuScores:[],friends:[],customSections:[],autoincome:[],debts:[],changelog:[],_billInc:[],_billAmt:{}};
 
 // ── MULTI-ACCOUNT (local profiles; no login) ──
 // The "default" profile keeps using the original fos8 key, so existing data is never touched.
@@ -1638,7 +1642,7 @@ function ensureProfiles(){let m=profilesMeta();if(!m){m={active:'default',list:[
 function saveProfilesMeta(m){localStorage.setItem('fos_profiles',JSON.stringify(m));}
 function activeProfileId(){return ensureProfiles().active;}
 function profileKey(id){id=id||activeProfileId();return id==='default'?'fos8':'fos8_p_'+id;}
-function profileDefaults(){return {txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),portfolio:[],pnlOrder:['poker','stock','crypto','pe','debt'],pnlHidden:{},pnlNetHidden:{},customSections:[],autoincome:[],tuScores:[],friends:[],changelog:[],creditLimit:0,_billInc:[],_billAmt:{}};}
+function profileDefaults(){return {txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),portfolio:[],pnlOrder:['poker','stock','crypto','pe','debt'],pnlHidden:{},pnlNetHidden:{},customSections:[],autoincome:[],tuScores:[],friends:[],changelog:[],creditLimit:0,_billInc:[],_billAmt:{}};}
 function reloadActiveProfile(){Object.assign(S,profileDefaults());loadS();applyTheme();applyPrivacy();applyI18n();renderHome();updateFab();if(typeof refreshWallet==='function')refreshWallet();if(S.activeTab==='gamble')renderGamble();if(S.activeTab==='settings'&&typeof renderSettings==='function')renderSettings();renderProfileChip();}
 function switchProfile(id){if(id===activeProfileId()){closeM('m-profiles');return;}saveS();const m=ensureProfiles();m.active=id;saveProfilesMeta(m);reloadActiveProfile();closeM('m-profiles');}
 function addProfile(){const nmEl=document.getElementById('newprof-name'),emEl=document.getElementById('newprof-emoji');const nm=((nmEl&&nmEl.value)||'').trim()||'新帳戶';const em=((emEl&&emEl.value)||'').trim()||'👤';saveS();const id='p_'+Date.now();const m=ensureProfiles();m.list.push({id,name:nm,emoji:em});m.active=id;saveProfilesMeta(m);reloadActiveProfile();renderProfilesModal();}
@@ -1648,7 +1652,8 @@ function openProfilesModal(){renderProfilesModal();document.getElementById('m-pr
 function renderProfilesModal(){const el=document.getElementById('profiles-list');if(!el)return;const m=ensureProfiles();el.innerHTML=m.list.map(p=>{const active=p.id===m.active;return `<div class="frow" style="gap:10px"><button onclick="switchProfile('${p.id}')" style="flex:1;display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--ink);cursor:pointer;text-align:left;font-size:15px;font-weight:600;min-width:0"><span style="font-size:22px;flex-shrink:0">${p.emoji||'👤'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>${active?'<span class="badge bg" style="flex-shrink:0">使用中</span>':''}</button>${p.id!=='default'?`<button onclick="deleteProfile('${p.id}')" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join('');}
 function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d);Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
 if(!S.debts)S.debts=[];
-if(!S.budget)S.budget={amount:0,cur:'HKD',cutoffDay:31};
+if(!S.budget)S.budget={amount:0,cur:'HKD',startDay:1,cutoffDay:31};
+if(S.budget.startDay==null)S.budget.startDay=((parseInt(S.budget.cutoffDay||31)||31)%31)+1; // preserve old cutoff-only cycles
 if(!S.tax)S.tax={year:0,allowance:145000,deductions:0,excludedCats:[]};
 if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
 if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return c.id===dc.id;});if(!ex){S.cats.push({...dc,aliases:[...dc.aliases]});}else{dc.aliases.forEach(function(a){if((ex.aliases||[]).indexOf(a)<0)ex.aliases=(ex.aliases||[]).concat(a);});}});
@@ -3005,26 +3010,32 @@ function currentTaxStartYear(){
   const d=new Date();return d.getMonth()>=3?d.getFullYear():d.getFullYear()-1;
 }
 function budgetCfg(){
-  S.budget=S.budget||{amount:0,cur:'HKD',cutoffDay:31};
+  S.budget=S.budget||{amount:0,cur:'HKD',startDay:1,cutoffDay:31};
   const amount=Math.max(0,parseFloat(S.budget.amount||0)||0);
   const cur=['HKD','USD','RMB','JPY'].includes(S.budget.cur)?S.budget.cur:'HKD';
+  const startDay=Math.max(1,Math.min(31,parseInt(S.budget.startDay||1)||1));
   const cutoffDay=Math.max(1,Math.min(31,parseInt(S.budget.cutoffDay||31)||31));
-  return {amount,cur,cutoffDay};
+  return {amount,cur,startDay,cutoffDay};
 }
 function budgetWindow(base){
   base=dateOnly(base||new Date());
-  const c=budgetCfg().cutoffDay;
+  const cfg=budgetCfg(),s=cfg.startDay,c=cfg.cutoffDay;
   const dim=(y,m)=>dimM(y,m);
-  const makeEnd=(y,m)=>new Date(y,m,Math.min(c,dim(y,m)));
-  let y=base.getFullYear(),m=base.getMonth(),end=makeEnd(y,m),start;
-  if(base.getTime()>end.getTime()){
-    start=new Date(y,m,Math.min(c,dim(y,m))+1);
-    end=makeEnd(y,m+1);
-  }else{
-    const prevEnd=makeEnd(y,m-1);
-    start=new Date(prevEnd);start.setDate(prevEnd.getDate()+1);
+  const makeDay=(y,m,d)=>new Date(y,m,Math.min(d,dim(y,m)));
+  const mk=(y,m)=>{
+    const start=makeDay(y,m,s);
+    const end=s<=c?makeDay(y,m,c):makeDay(y,m+1,c);
+    return {start,end};
+  };
+  const y=base.getFullYear(),m=base.getMonth();
+  for(let off=-2;off<=2;off++){
+    const w=mk(y,m+off);
+    if(base>=w.start&&base<=w.end)return w;
   }
-  return {start,end};
+  // If the user creates a short same-month window and today falls outside it,
+  // show the nearest upcoming cycle rather than pretending the 1st is the start.
+  const candidates=[-1,0,1,2].map(off=>mk(y,m+off)).sort((a,b)=>a.start-b.start);
+  return candidates.find(w=>base<w.start)||candidates[candidates.length-1];
 }
 function budgetInfo(){
   const cfg=budgetCfg(),win=budgetWindow(new Date());
@@ -3051,15 +3062,16 @@ function renderBudgetCard(){
 }
 function renderBudgetSettings(){
   const cfg=budgetCfg(),b=budgetInfo();
-  const a=document.getElementById('budget-amount'),c=document.getElementById('budget-cur'),d=document.getElementById('budget-cutoff');
+  const a=document.getElementById('budget-amount'),c=document.getElementById('budget-cur'),s=document.getElementById('budget-start'),d=document.getElementById('budget-cutoff');
   if(!a)return;
-  a.value=cfg.amount||'';c.value=cfg.cur;d.value=cfg.cutoffDay;
-  document.getElementById('budget-hint').textContent=tt('設定每個預算週期可用金額。首頁會顯示剩餘預算同每日平均可用額；流動資金 / 現金只作參考。','Set the spend budget for each cycle. Home shows remaining budget and daily allowance; liquid cash is shown as context.');
-  document.getElementById('budget-cutoff-lbl').textContent=tt('截止 / 重置日（1–31）','Cutoff / reset day (1–31)');
+  a.value=cfg.amount||'';c.value=cfg.cur;s.value=cfg.startDay;d.value=cfg.cutoffDay;
+  document.getElementById('budget-hint').textContent=tt('設定每個預算週期可用金額。可以自訂開始日同截止日；例如 25 → 24 代表每月 25 號開始、下月 24 號截止。','Set the spend budget for each cycle. You can choose both start and cutoff day; e.g. 25 → 24 means it starts on the 25th and ends on the 24th next month.');
+  document.getElementById('budget-start-lbl').textContent=tt('開始 / 重置日（1–31）','Start / reset day (1–31)');
+  document.getElementById('budget-cutoff-lbl').textContent=tt('截止日（1–31，可跨月）','Cutoff day (1–31, can cross month)');
   document.getElementById('budget-settings-preview').innerHTML=cfg.amount?`${tt('目前週期','Current cycle')}: ${ymd(b.win.start)} → ${ymd(b.win.end)} · ${tt('剩餘','Remaining')} <strong style="color:${b.remain>=0?'var(--g3)':'var(--r3)'}">${fmtSigned(b.remain)}</strong>`:tt('未設定預算金額。','No budget amount set yet.');
 }
 function saveBudgetSettings(){
-  S.budget={amount:parseFloat(document.getElementById('budget-amount').value)||0,cur:document.getElementById('budget-cur').value||'HKD',cutoffDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-cutoff').value)||31))};
+  S.budget={amount:parseFloat(document.getElementById('budget-amount').value)||0,cur:document.getElementById('budget-cur').value||'HKD',startDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-start').value)||1)),cutoffDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-cutoff').value)||31))};
   saveS();renderBudgetSettings();renderHome();showToast(tt('已更新預算','Budget updated'));
 }
 function taxCfg(){
