@@ -735,6 +735,7 @@ img,canvas,svg{max-width:100%;}
         <div class="pnl-simple-metric" data-sec="stock"><div class="mlabel" data-i="stocks"></div><div class="pnl-simple-val" id="g-stock-pnl">HK$0</div></div>
         <div class="pnl-simple-metric" data-sec="crypto"><div class="mlabel" data-i="crypto"></div><div class="pnl-simple-val" id="g-crypto-pnl">HK$0</div></div>
         <div class="pnl-simple-metric" data-sec="pe"><div class="mlabel" data-i="privateequity"></div><div class="pnl-simple-val" id="g-pe-pnl">HK$0</div></div>
+        <div class="pnl-simple-metric" data-sec="loan"><div class="mlabel" data-i="privatedebt"></div><div class="pnl-simple-val" id="g-loan-pnl">HK$0</div></div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:14px">
         <canvas id="pnl-pie" width="160" height="160" style="width:160px;height:160px;flex-shrink:0"></canvas>
@@ -828,6 +829,23 @@ img,canvas,svg{max-width:100%;}
     <div class="glass-card" id="pe-list" style="margin-bottom:16px"></div>
     </div>
     </div>
+    </div>
+    <div class="pnl-sec" id="sec-loan">
+      <div class="slbl" style="display:flex;align-items:center;justify-content:space-between"><span>🤝 <span data-i="privatedebt"></span></span><div style="display:flex;gap:6px;align-items:center"><button onclick="openLoanModal()" style="border:1.5px solid var(--g);border-radius:20px;background:var(--g2);color:var(--g3);font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer;text-transform:none;letter-spacing:0">+ <span data-i="addloan"></span></button><button class="sec-hide-btn" id="hide-btn-loan" onclick="toggleSecBody('loan')"><i class="ti ti-chevron-down"></i></button></div></div>
+      <div class="pnl-sec-body" id="body-loan">
+        <div class="glass-card" style="padding:14px;margin-bottom:4px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+            <div><div class="mlabel" data-i="outstandingprincipal"></div><div class="mval" id="loan-principal">HK$0</div></div>
+            <div style="text-align:right"><div class="mlabel" data-i="accruedinterest"></div><div style="font-size:15px;font-weight:700;color:var(--g3)" id="loan-accrued">HK$0</div></div>
+          </div>
+          <div style="display:flex;gap:14px;font-size:12px;color:var(--ink3);flex-wrap:wrap;margin-top:8px">
+            <span><span data-i="receivedinterest"></span>: <strong id="loan-realized" style="color:var(--g3)">HK$0</strong></span>
+            <span><span data-i="valuelbl"></span>: <strong id="loan-asset" style="color:var(--ink)">HK$0</strong></span>
+            <span><span data-i="holdings"></span>: <strong id="loan-ct" style="color:var(--ink)">0</strong></span>
+          </div>
+        </div>
+        <div class="glass-card" id="loan-list" style="margin-bottom:16px"></div>
+      </div>
     </div>
     <div class="pnl-sec" id="sec-debt">
       <div class="slbl" style="display:flex;align-items:center;justify-content:space-between"><span>🏦 <span data-i="longdebt"></span></span><div style="display:flex;gap:6px;align-items:center"><button onclick="openDebtModal()" style="border:1.5px solid var(--p);border-radius:20px;background:var(--p2);color:var(--p3);font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer;text-transform:none;letter-spacing:0">+ <span data-i="adddebt"></span></button><button class="sec-hide-btn" id="hide-btn-debt" onclick="toggleSecBody('debt')"><i class="ti ti-chevron-down"></i></button></div></div>
@@ -1504,6 +1522,38 @@ img,canvas,svg{max-width:100%;}
   <button class="sbtn" onclick="savePE()" data-i="save"></button>
 </div></div>
 
+<div class="modal-wrap" id="m-loan" onclick="closeM('m-loan')"><div class="modal" onclick="event.stopPropagation()">
+  <button class="mclose" onclick="closeM('m-loan')" aria-label="Close">&times;</button>
+  <div class="mhandle"></div><div class="mtitle" data-i="addloan"></div>
+  <input type="hidden" id="loan-edit-id">
+  <datalist id="loan-friends"></datalist>
+  <div class="fsec">
+    <div class="frow"><span class="flbl" data-i="borrower"></span><input class="fval" id="loan-borrower" list="loan-friends" placeholder="朋友 / 公司"></div>
+    <div class="frow"><span class="flbl" data-i="principal"></span><input class="fval" type="number" inputmode="decimal" id="loan-principal-in" placeholder="0.00" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="annualrate"></span><input class="fval" type="number" inputmode="decimal" id="loan-rate" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="currency"></span><select class="fval" id="loan-cur"><option>HKD</option><option>USD</option><option>RMB</option><option>JPY</option></select></div>
+    <div class="frow"><span class="flbl" data-i="startdate"></span><input class="fval" type="date" id="loan-start"></div>
+    <div class="frow"><span class="flbl" data-i="duedate"></span><input class="fval" type="date" id="loan-due"></div>
+    <div class="frow"><span class="flbl" data-i="account"></span><select class="fval" id="loan-acct"></select></div>
+    <div class="frow"><span class="flbl" data-i="notes"></span><input class="fval" id="loan-notes" placeholder="用途 / 還款條款"></div>
+  </div>
+  <div class="msub" style="padding:0 18px 8px;line-height:1.5" data-i="loanhint"></div>
+  <button class="sbtn" onclick="savePrivateLoan()" data-i="save"></button>
+</div></div>
+
+<div class="modal-wrap" id="m-loan-pay" onclick="closeM('m-loan-pay')"><div class="modal" onclick="event.stopPropagation()">
+  <button class="mclose" onclick="closeM('m-loan-pay')" aria-label="Close">&times;</button>
+  <div class="mhandle"></div><div class="mtitle" data-i="recordpayment"></div>
+  <input type="hidden" id="loan-pay-id">
+  <div id="loan-pay-name" style="padding:0 18px 10px;font-size:13px;color:var(--ink3)"></div>
+  <div class="fsec">
+    <div class="frow"><span class="flbl" data-i="principalreturn"></span><input class="fval" type="number" inputmode="decimal" id="loan-pay-principal" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="interestreceived"></span><input class="fval" type="number" inputmode="decimal" id="loan-pay-interest" placeholder="0" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="date"></span><input class="fval" type="date" id="loan-pay-date"></div>
+  </div>
+  <button class="sbtn" onclick="saveLoanPayment()" data-i="save"></button>
+</div></div>
+
 <div class="modal-wrap" id="m-gamble" onclick="closeM('m-gamble')"><div class="modal" onclick="event.stopPropagation()">
   <button class="mclose" onclick="closeM('m-gamble')" aria-label="Close">&times;</button>
   <div class="mhandle"></div><div class="mtitle" data-i="newsession"></div>
@@ -1658,7 +1708,7 @@ const DEF_ACCTS=[
 const ACCT_KINDS=['cash','debit','credit','bank','ewallet','invest','other'];
 function kindLabel(k){return t('kind'+(k||'other'))||'';}
 
-let S={txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},notify:{on:false,budgetLow:true,budgetPct:20,budgetOver:true,autopayDue:true,autopayDays:3,rpOverdue:true,rpDays:14,negCash:true,customRules:[]},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),curType:'expense',amtStr:'0',selCat:'food',selAcct:'cash',selAcctTo:'debit',apSelCat:'fitness',apSelAcct:'debit',mergeSelected:[],memberCount:2,lang:'zh',period:'month',activeTab:'home',walletPane:'txn',trendView:'total',catPeriodSpend:'week',catPeriodIncome:'week',dispCur:'HKD',privacy:false,pnlOrder:['poker','stock','crypto','pe','debt'],pnlHidden:{},pnlNetHidden:{},ai:{provider:'gemini',key:'',model:''},tuScores:[],friends:[],customSections:[],autoincome:[],debts:[],changelog:[],_billInc:[],_billAmt:{}};
+let S={txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},notify:{on:false,budgetLow:true,budgetPct:20,budgetOver:true,autopayDue:true,autopayDays:3,rpOverdue:true,rpDays:14,negCash:true,customRules:[]},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),curType:'expense',amtStr:'0',selCat:'food',selAcct:'cash',selAcctTo:'debit',apSelCat:'fitness',apSelAcct:'debit',mergeSelected:[],memberCount:2,lang:'zh',period:'month',activeTab:'home',walletPane:'txn',trendView:'total',catPeriodSpend:'week',catPeriodIncome:'week',dispCur:'HKD',privacy:false,pnlOrder:['poker','stock','crypto','pe','loan','debt'],pnlHidden:{},pnlNetHidden:{},ai:{provider:'gemini',key:'',model:''},tuScores:[],friends:[],customSections:[],autoincome:[],debts:[],privateLoans:[],changelog:[],_billInc:[],_billAmt:{}};
 
 // ── MULTI-ACCOUNT (local profiles; no login) ──
 // The "default" profile keeps using the original fos8 key, so existing data is never touched.
@@ -1667,7 +1717,7 @@ function ensureProfiles(){let m=profilesMeta();if(!m){m={active:'default',list:[
 function saveProfilesMeta(m){localStorage.setItem('fos_profiles',JSON.stringify(m));}
 function activeProfileId(){return ensureProfiles().active;}
 function profileKey(id){id=id||activeProfileId();return id==='default'?'fos8':'fos8_p_'+id;}
-function profileDefaults(){return {txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},notify:{on:false,budgetLow:true,budgetPct:20,budgetOver:true,autopayDue:true,autopayDays:3,rpOverdue:true,rpDays:14,negCash:true,customRules:[]},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),portfolio:[],pnlOrder:['poker','stock','crypto','pe','debt'],pnlHidden:{},pnlNetHidden:{},customSections:[],autoincome:[],tuScores:[],friends:[],changelog:[],creditLimit:0,_billInc:[],_billAmt:{}};}
+function profileDefaults(){return {txns:[],people:[],gamble:[],autopay:[],motionMode:'dance',budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},notify:{on:false,budgetLow:true,budgetPct:20,budgetOver:true,autopayDue:true,autopayDays:3,rpOverdue:true,rpDays:14,negCash:true,customRules:[]},cats:DEF_CATS.map(c=>({...c,aliases:[...c.aliases]})),accounts:DEF_ACCTS.map(a=>({...a})),portfolio:[],pnlOrder:['poker','stock','crypto','pe','loan','debt'],pnlHidden:{},pnlNetHidden:{},customSections:[],autoincome:[],tuScores:[],friends:[],changelog:[],creditLimit:0,privateLoans:[],_billInc:[],_billAmt:{}};}
 function reloadActiveProfile(){Object.assign(S,profileDefaults());loadS();applyTheme();applyPrivacy();applyI18n();renderHome();updateFab();if(typeof refreshWallet==='function')refreshWallet();if(S.activeTab==='gamble')renderGamble();if(S.activeTab==='settings'&&typeof renderSettings==='function')renderSettings();renderProfileChip();}
 function switchProfile(id){if(id===activeProfileId()){closeM('m-profiles');return;}saveS();const m=ensureProfiles();m.active=id;saveProfilesMeta(m);reloadActiveProfile();closeM('m-profiles');}
 function addProfile(){const nmEl=document.getElementById('newprof-name'),emEl=document.getElementById('newprof-emoji');const nm=((nmEl&&nmEl.value)||'').trim()||'新帳戶';const em=((emEl&&emEl.value)||'').trim()||'👤';saveS();const id='p_'+Date.now();const m=ensureProfiles();m.list.push({id,name:nm,emoji:em});m.active=id;saveProfilesMeta(m);reloadActiveProfile();renderProfilesModal();}
@@ -1677,6 +1727,7 @@ function openProfilesModal(){renderProfilesModal();document.getElementById('m-pr
 function renderProfilesModal(){const el=document.getElementById('profiles-list');if(!el)return;const m=ensureProfiles();el.innerHTML=m.list.map(p=>{const active=p.id===m.active;return `<div class="frow" style="gap:10px"><button onclick="switchProfile('${p.id}')" style="flex:1;display:flex;align-items:center;gap:10px;background:none;border:none;color:var(--ink);cursor:pointer;text-align:left;font-size:15px;font-weight:600;min-width:0"><span style="font-size:22px;flex-shrink:0">${p.emoji||'👤'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.name}</span>${active?'<span class="badge bg" style="flex-shrink:0">使用中</span>':''}</button>${p.id!=='default'?`<button onclick="deleteProfile('${p.id}')" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join('');}
 function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d);Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
 if(!S.debts)S.debts=[];
+if(!S.privateLoans)S.privateLoans=[];
 if(!S.budget)S.budget={amount:0,cur:'HKD',startDay:1,cutoffDay:31};
 if(S.budget.startDay==null)S.budget.startDay=((parseInt(S.budget.cutoffDay||31)||31)%31)+1; // preserve old cutoff-only cycles
 if(!S.tax)S.tax={year:0,allowance:145000,deductions:0,excludedCats:[]};
@@ -1684,9 +1735,9 @@ if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
 S.notify=notifyCfg();
 if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return c.id===dc.id;});if(!ex){S.cats.push({...dc,aliases:[...dc.aliases]});}else{dc.aliases.forEach(function(a){if((ex.aliases||[]).indexOf(a)<0)ex.aliases=(ex.aliases||[]).concat(a);});}});
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));}}
-function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:(S.cloud||{}).url||'',key:(S.cloud||{}).key||'',pass:(S.cloud||{}).pass||'',salt:(S.cloud||{}).salt||'',on:!!(S.cloud||{}).on,ver:(S.cloud||{}).ver||0,last:(S.cloud||{}).last||0}}));if(!window._cloudMute&&S.cloud&&S.cloud.on&&S.cloud.url&&S.cloud.key&&S.cloud.pass){S.cloud._dirty=true;clearTimeout(window._cloudT);window._cloudT=setTimeout(function(){cloudPush();},4000);}if(typeof notifySchedule==='function')notifySchedule('save');}catch(e){}}
+function saveS(){try{localStorage.setItem(profileKey(),JSON.stringify({txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:(S.cloud||{}).url||'',key:(S.cloud||{}).key||'',pass:(S.cloud||{}).pass||'',salt:(S.cloud||{}).salt||'',on:!!(S.cloud||{}).on,ver:(S.cloud||{}).ver||0,last:(S.cloud||{}).last||0}}));if(!window._cloudMute&&S.cloud&&S.cloud.on&&S.cloud.url&&S.cloud.key&&S.cloud.pass){S.cloud._dirty=true;clearTimeout(window._cloudT);window._cloudT=setTimeout(function(){cloudPush();},4000);}if(typeof notifySchedule==='function')notifySchedule('save');}catch(e){}}
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
-function t(k){const fb={budgetplanner:S.lang==='en'?'Monthly budget':'月度預算',taxestimate:S.lang==='en'?'Tax estimate':'稅務預計',notifications:S.lang==='en'?'Notifications':'通知'};return LANGS[S.lang][k]||LANGS.en[k]||fb[k]||k;}
+function t(k){const en=S.lang==='en';const fb={budgetplanner:en?'Monthly budget':'月度預算',taxestimate:en?'Tax estimate':'稅務預計',notifications:en?'Notifications':'通知',privatedebt:en?'Private debt':'私人債權',addloan:en?'Add private loan':'新增私人借款',borrower:en?'Borrower':'借款人',principal:en?'Principal':'本金',annualrate:en?'Annual interest %':'年利率 %',startdate:en?'Start date':'借出日期',duedate:en?'Due date':'到期日',outstandingprincipal:en?'Outstanding principal':'未收回本金',accruedinterest:en?'Accrued interest':'應計利息',receivedinterest:en?'Interest received':'已收利息',recordpayment:en?'Record repayment':'記錄還款',principalreturn:en?'Principal returned':'收回本金',interestreceived:en?'Interest received':'收到利息',loanhint:en?'Principal leaves the selected normal account and becomes a fixed asset. Interest is accrued daily using simple annual interest.':'本金會由所選普通戶口扣除並列作固定資產；利息按單利每日計算。'};return LANGS[S.lang][k]||LANGS.en[k]||fb[k]||k;}
 function tt(zh,en){return S.lang==='en'?en:zh;}
 function catLabel(c){return S.lang==='en'?(c.labelEn||c.label):c.label;}
 function toHKD(a,c){return c==='HKD'?a:a*(FX[c]||1);}
@@ -1737,6 +1788,26 @@ function friendCredit(key){
   return {score,grade,avg,paid:paid.length,dead:dead.length,open:open.length,openHKD:open.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0),deadHKD:dead.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0)};
 }
 function friendCreditBadge(key){const c=friendCredit(key);const col=c.score>=85?'bg':c.score>=70?'bb':c.score>=50?'ba':'br';return `<span class="badge ${col}">${tt('信用','Credit')} ${c.grade} · ${c.score}</span>`;}
+// ── PRIVATE DEBT INVESTMENTS ──
+// A loan moves cash out of a normal account and replaces it with a financial asset.
+// Interest accrues on the outstanding principal using simple annual interest, capped at due date.
+function normalLoanAccts(){return (S.accounts||[]).filter(a=>!a.excluded&&a.kind!=='invest'&&a.kind!=='credit');}
+function fillNormalAcctSelect(selId,selectedId){const el=document.getElementById(selId);if(!el)return;const rows=normalLoanAccts();el.innerHTML=rows.map(a=>`<option value="${a.id}"${String(a.id)===String(selectedId)?' selected':''}>${a.icon||'💵'} ${acctLabel(a)}</option>`).join('');}
+function loanPayments(l){return Array.isArray(l&&l.payments)?l.payments:[];}
+function loanPrincipalReturned(l){return loanPayments(l).reduce((a,p)=>a+(Number(p.principalHKD)||0),0);}
+function loanInterestReceived(l){return loanPayments(l).reduce((a,p)=>a+(Number(p.interestHKD)||0),0);}
+function loanOutstandingPrincipal(l){return Math.max(0,(Number(l&&l.principalHKD)||0)-loanPrincipalReturned(l));}
+function loanAccruedTotal(l,through){if(!l)return 0;const rate=Math.max(0,Number(l.annualRate)||0)/100;if(!rate)return 0;let end=parseDateOnly(through||today()),start=parseDateOnly(l.startDate||today());if(l.dueDate){const due=parseDateOnly(l.dueDate);if(due<end)end=due;}if(end<=start)return 0;let bal=Number(l.principalHKD)||0,last=start,total=0;const pays=loanPayments(l).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));pays.forEach(p=>{const d=parseDateOnly(p.date||today());if(d<=start||d>end)return;const days=Math.max(0,(dateOnly(d)-dateOnly(last))/86400000);total+=bal*rate*days/365;bal=Math.max(0,bal-(Number(p.principalHKD)||0));last=d;});const tail=Math.max(0,(dateOnly(end)-dateOnly(last))/86400000);total+=bal*rate*tail/365;return Math.max(0,total);}
+function loanAccruedOutstanding(l){return Math.max(0,loanAccruedTotal(l,today())-loanInterestReceived(l));}
+function privateLoanStats(){const rows=S.privateLoans||[];const principal=rows.reduce((a,l)=>a+loanOutstandingPrincipal(l),0),accrued=rows.reduce((a,l)=>a+loanAccruedOutstanding(l),0),realized=rows.reduce((a,l)=>a+loanInterestReceived(l),0);return {principal,accrued,realized,asset:principal+accrued,pnl:realized+accrued,count:rows.filter(l=>loanOutstandingPrincipal(l)>0.005||loanAccruedOutstanding(l)>0.005).length};}
+function privateLoanAssetTotal(){return pnlNetExcluded('loan')?0:privateLoanStats().asset;}
+function syncLoanOpenTxn(l){S.txns=S.txns||[];let tx=S.txns.find(x=>x.type==='loan_move'&&String(x.loanId)===String(l.id)&&x.loanPhase==='open');const ac=getAcct(l.acctId);const rec={type:'loan_move',direction:'out',amount:Number(l.principal)||0,amtHKD:Number(l.principalHKD)||0,cur:l.cur||'HKD',acctId:l.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:t('privatedebt')+' · '+l.borrower,date:l.startDate||today(),loanId:l.id,loanPhase:'open',oneOff:true};if(tx)Object.assign(tx,rec);else{tx={id:'loan_open_'+l.id,...rec};S.txns.unshift(tx);}return tx;}
+function openLoanModal(editId){const l=editId?(S.privateLoans||[]).find(x=>String(x.id)===String(editId)):null;document.getElementById('loan-edit-id').value=editId||'';document.getElementById('loan-borrower').value=l?l.borrower:'';document.getElementById('loan-principal-in').value=l?l.principal:'';document.getElementById('loan-rate').value=l?l.annualRate:'';document.getElementById('loan-cur').value=l?(l.cur||'HKD'):(S.dispCur||'HKD');document.getElementById('loan-start').value=l?(l.startDate||today()):today();document.getElementById('loan-due').value=l?(l.dueDate||''):'';document.getElementById('loan-notes').value=l?(l.notes||''):'';fillNormalAcctSelect('loan-acct',l?l.acctId:(normalLoanAccts()[0]||{}).id);const dl=document.getElementById('loan-friends');if(dl)dl.innerHTML=(S.friends||[]).map(f=>`<option value="${notifyEsc(f.name)}"></option>`).join('');applyI18n();document.getElementById('m-loan').classList.add('open');}
+function savePrivateLoan(){const editId=document.getElementById('loan-edit-id').value,old=editId?(S.privateLoans||[]).find(x=>String(x.id)===String(editId)):null;const borrower=document.getElementById('loan-borrower').value.trim(),principal=parseFloat(document.getElementById('loan-principal-in').value)||0,annualRate=Math.max(0,parseFloat(document.getElementById('loan-rate').value)||0),cur=document.getElementById('loan-cur').value,startDate=document.getElementById('loan-start').value||today(),dueDate=document.getElementById('loan-due').value,acctId=document.getElementById('loan-acct').value,notes=document.getElementById('loan-notes').value.trim();if(!borrower||principal<=0||!acctId){showToast(tt('請輸入借款人、本金及戶口','Enter borrower, principal and account'),1);return;}if(old&&loanPayments(old).length&&cur!==old.cur){showToast(tt('已有還款記錄後不可更改幣種','Currency cannot change after repayments exist'),1);return;}if(dueDate&&parseDateOnly(dueDate)<=parseDateOnly(startDate)){showToast(tt('到期日必須遲過借出日','Due date must be after start date'),1);return;}const principalHKD=parseFloat(toHKD(principal,cur).toFixed(2)),alreadyReturned=old?loanPrincipalReturned(old):0;if(principalHKD+0.005<alreadyReturned){showToast(tt('本金不可低過已收回本金','Principal cannot be below principal already returned'),1);return;}const available=acctCash(acctId)+(old&&old.acctId===acctId?(Number(old.principalHKD)||0):0);if(principalHKD>available+0.005){showToast(t('insufficient'),1);return;}S.privateLoans=S.privateLoans||[];let friend=(S.friends||[]).find(f=>friendNameKey(f.name)===friendNameKey(borrower));if(!friend){friend={id:newFriendId(),name:borrower};S.friends=S.friends||[];S.friends.push(friend);}const rec={borrower,friendId:friend.id,principal,principalHKD,annualRate,cur,startDate,dueDate,acctId,notes};let l;if(old){Object.assign(old,rec);l=old;}else{l={id:'loan_'+Date.now(),payments:[],...rec};S.privateLoans.unshift(l);}syncLoanOpenTxn(l);const ac=getAcct(l.acctId);(S.txns||[]).filter(tx=>String(tx.loanId)===String(l.id)).forEach(tx=>{tx.acctId=l.acctId;tx.acctLabel=ac?acctLabel(ac):'';tx.acctIcon=ac?ac.icon:'';});saveS();closeM('m-loan');renderGamble();renderHome();refreshWallet();}
+function openLoanPayment(id){const l=(S.privateLoans||[]).find(x=>String(x.id)===String(id));if(!l)return;document.getElementById('loan-pay-id').value=l.id;document.getElementById('loan-pay-principal').value='';document.getElementById('loan-pay-interest').value='';document.getElementById('loan-pay-date').value=today();document.getElementById('loan-pay-name').textContent=l.borrower+' · '+tt('未收回 ','Outstanding ')+fmtCur(loanOutstandingPrincipal(l),l.cur);applyI18n();document.getElementById('m-loan-pay').classList.add('open');}
+function saveLoanPayment(){const l=(S.privateLoans||[]).find(x=>String(x.id)===String(document.getElementById('loan-pay-id').value));if(!l)return;const principal=Math.max(0,parseFloat(document.getElementById('loan-pay-principal').value)||0),interest=Math.max(0,parseFloat(document.getElementById('loan-pay-interest').value)||0),date=document.getElementById('loan-pay-date').value||today();if(principal<=0&&interest<=0){showToast(tt('請輸入還款金額','Enter a repayment amount'),1);return;}const principalHKD=parseFloat(toHKD(principal,l.cur).toFixed(2)),interestHKD=parseFloat(toHKD(interest,l.cur).toFixed(2));if(principalHKD>loanOutstandingPrincipal(l)+0.01){showToast(tt('收回本金超過未收回本金','Principal returned exceeds outstanding principal'),1);return;}const pay={id:'lp_'+Date.now(),date,principal,interest,principalHKD,interestHKD};l.payments=l.payments||[];l.payments.push(pay);const ac=getAcct(l.acctId);S.txns.unshift({id:'loan_pay_'+pay.id,type:'loan_move',direction:'in',amount:principal+interest,amtHKD:principalHKD+interestHKD,cur:l.cur,acctId:l.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:t('recordpayment')+' · '+l.borrower,date,loanId:l.id,loanPaymentId:pay.id,loanPhase:'payment',principalHKD,interestHKD,oneOff:true});saveS();closeM('m-loan-pay');renderGamble();renderHome();refreshWallet();}
+function deleteLoanPayment(loanId,payId){if(!confirm(t('deltxnq')))return;const l=(S.privateLoans||[]).find(x=>String(x.id)===String(loanId));if(!l)return;l.payments=loanPayments(l).filter(p=>String(p.id)!==String(payId));S.txns=(S.txns||[]).filter(tx=>String(tx.loanPaymentId)!==String(payId));saveS();renderGamble();renderHome();refreshWallet();}
+function deletePrivateLoan(id){if(!confirm(t('deltxnq')))return;S.privateLoans=(S.privateLoans||[]).filter(x=>String(x.id)!==String(id));S.txns=(S.txns||[]).filter(tx=>String(tx.loanId)!==String(id));saveS();renderGamble();renderHome();refreshWallet();}
 function rpIncomeCats(){const incIds=['income','freelance','invest','cashback','other_inc'];const defIds=new Set(DEF_CATS.map(c=>c.id));const customIds=(S.cats||[]).filter(c=>!defIds.has(c.id)).map(c=>c.id);let cats=[...incIds,...customIds].map(id=>(S.cats||[]).find(c=>c.id===id)).filter(Boolean);return mruSort(cats,'catMRU',c=>c.id);}
 function renderARIncomeCats(selectedId){const el=document.getElementById('ar-cat');if(!el)return;const cats=rpIncomeCats();const sel=selectedId||(cats.find(c=>c.id===S.selCat)?.id)||'income';el.innerHTML=cats.map(c=>`<option value="${c.id}"${c.id===sel?' selected':''}>${c.icon} ${catLabel(c)}</option>`).join('');}
 function addRPIncomeTxn(p,amtOverride,amtHKDOverride){
@@ -1759,8 +1830,9 @@ function removeRPMovesFor(ids,phase){const set=new Set([].concat(ids).filter(x=>
 // This also catches older saved rows that were created as income/expense but tagged with fromRP/group R/P metadata.
 function txIsRPFlow(tx){if(!tx)return false;if(tx.rpIncome)return false;if(tx.type==='ar_move')return true;if(tx.fromRP||tx.rpPhase)return true;if(tx.isGroupBill&&String(tx.note||'').includes('R/P'))return true;return false;}
 function txIsDebtFlow(tx){return !!tx&&(tx.type==='debt_move'||tx.debtPhase);}
+function txIsLoanFlow(tx){return !!tx&&(tx.type==='loan_move'||tx.loanPhase);}
 function txIsRealisedPnl(tx){return !!tx&&tx.type==='pnl_realized';}
-function txReportable(tx){return !!tx&&!tx.excluded&&!txIsRealisedPnl(tx)&&!txIsRPFlow(tx)&&!txIsDebtFlow(tx)&&tx.type!=='transfer';}
+function txReportable(tx){return !!tx&&!tx.excluded&&!txIsRealisedPnl(tx)&&!txIsRPFlow(tx)&&!txIsDebtFlow(tx)&&!txIsLoanFlow(tx)&&tx.type!=='transfer';}
 function txCashFlowSign(tx){if(tx.type==='income')return 1;if(tx.type==='expense')return -1;return 0;}
 function realisedPnlTxnRows(){
   const portRows=(S.portfolio||[]).filter(p=>p&&p.exitPrice).map(p=>{
@@ -1796,7 +1868,7 @@ function acctCashTxns(acctId){
     else if(tx.type==='transfer'){
       if(tx.acctId===acctId)bal-=tx.amtHKD;
       if(tx.toAcctId===acctId)bal+=tx.amtHKD;
-    } else if((tx.type==='ar_move'||tx.type==='debt_move')&&tx.acctId===acctId){
+    } else if((tx.type==='ar_move'||tx.type==='debt_move'||tx.type==='loan_move')&&tx.acctId===acctId){
       bal+=(tx.direction==='in'?tx.amtHKD:-tx.amtHKD);
     }
   });
@@ -1919,7 +1991,7 @@ function acctFlows(acctId){
     else if(tx.type==='transfer'){
       if(tx.toAcctId===acctId)inn+=tx.amtHKD;
       if(tx.acctId===acctId)out+=tx.amtHKD;
-    } else if(tx.type==='ar_move'&&tx.acctId===acctId){
+    } else if((tx.type==='ar_move'||tx.type==='debt_move'||tx.type==='loan_move')&&tx.acctId===acctId){
       if(tx.direction==='in')inn+=tx.amtHKD;else out+=tx.amtHKD;
     }
   });
@@ -2024,10 +2096,11 @@ function setPeriod(p,btn){S.period=p;saveS();syncPeriodUI();renderHome();}
 function txnsInPeriod(period,kind){return S.txns.filter(tx=>periodMatchDate(tx.date,period));}
 function setCatPeriod(kind,period,btn){setPeriod(period,btn);}
 function pnlIncomeItems(period){
-  let realised=0,unrealised=0;
-  (S.portfolio||[]).forEach(p=>{const pnl=(p.valueHKD||0)-(p.costHKD||0);if(p.exitPrice){if(periodMatchDate(p.exitDate||p.date||today(),period))realised+=pnl;}else if(period==='all'){unrealised+=pnl;}});
-  (S.gamble||[]).forEach(g=>{if(!g.open&&periodMatchDate(g.date||today(),period))realised+=(g.cashoutHKD||0)-(g.buyinHKD||0);});
-  return [{label:t('realisedpnl'),v:realised},{label:t('unrealisedpnl'),v:unrealised}].filter(x=>Math.abs(x.v)>0.0001);
+  const items=[];
+  (S.portfolio||[]).forEach(p=>{const pnl=(p.valueHKD||0)-(p.costHKD||0);if(p.exitPrice&&periodMatchDate(p.exitDate||p.date||today(),period))items.push({label:(p.name||t('position'))+' · '+t('realisedpnl'),v:pnl});else if(!p.exitPrice&&period==='all'&&Math.abs(pnl)>0.0001)items.push({label:(p.name||t('position'))+' · '+t('unrealisedpnl'),v:pnl});});
+  (S.gamble||[]).forEach(g=>{if(!g.open&&periodMatchDate(g.date||today(),period))items.push({label:(g.venue||t('poker'))+' · '+t('realisedpnl'),v:(g.cashoutHKD||0)-(g.buyinHKD||0)});});
+  (S.privateLoans||[]).forEach(l=>{loanPayments(l).forEach(p=>{if((p.interestHKD||0)&&periodMatchDate(p.date||today(),period))items.push({label:(l.borrower||t('privatedebt'))+' · '+t('interestreceived'),v:p.interestHKD});});if(period==='all'){const acc=loanAccruedOutstanding(l);if(acc>0.0001)items.push({label:(l.borrower||t('privatedebt'))+' · '+t('accruedinterest'),v:acc});}});
+  return items.filter(x=>Math.abs(x.v)>0.0001);
 }
 function pnlIncomeTotal(period){return pnlIncomeItems(period).reduce((a,x)=>a+x.v,0);}
 function renderCatPie(kind){
@@ -2036,7 +2109,7 @@ function renderCatPie(kind){
   const totals={};
   txns.forEach(tx=>{const lab=tx.catLabel||(S.lang==='en'?'Other':'其他');totals[lab]=(totals[lab]||0)+tx.amtHKD;});
   if(kind==='income')pnlIncomeItems(period).forEach(x=>{totals[x.label]=(totals[x.label]||0)+x.v;});
-  const data=Object.entries(totals).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,8).map(([label,v])=>({label,v}));
+  const data=Object.entries(totals).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).map(([label,v])=>({label,v}));
   const canvasId=kind==='spend'?'pie-canvas':'income-pie-canvas';
   const legendId=kind==='spend'?'pie-legend':'income-pie-legend';
   drawCatPie(canvasId,legendId,data,kind);
@@ -2076,7 +2149,10 @@ function drawCatPie(canvasId,legendId,rawData,kind){
   const W=130,H=130,cx=65,cy=65,R=60;
   canvas.width=W*2;canvas.height=H*2;ctx.scale(2,2);ctx.clearRect(0,0,W,H);
   const signed=kind==='income';
-  const {data,total}=piePrepData((rawData||[]).map(d=>({label:d.label,val:signed?Math.abs(d.v):d.v,displayVal:signed?d.v:undefined})),{minPct:1.5,cap:8});
+  // Income needs source-level visibility (for example VOO realised P&L or a
+  // borrower's interest), even when that source is a small share of salary.
+  // Keep the spending chart compact, but only group income after 12 sources.
+  const {data,total}=piePrepData((rawData||[]).map(d=>({label:d.label,val:signed?Math.abs(d.v):d.v,displayVal:signed?d.v:undefined})),{minPct:signed?0:1.5,cap:signed?12:8});
   if(!total){legend.innerHTML=`<span style="font-size:13px;color:var(--ink3)">${kind==='spend'?t('nothisperiod'):t('nothisincome')}</span>`;ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=document.body.classList.contains('dark')?'#222':'#eee';ctx.fill();return;}
   data.forEach((d,i)=>d.color=(signed&&d.displayVal<0)?'#D85A30':PIE_COLORS[i%8]);
   drawSolidPie(ctx,cx,cy,R,data,total);
@@ -2581,7 +2657,8 @@ function renderPositionAdders(){
     {ic:'📈',label:t('stocks'),on:"closeM('m-txn');openPortModal('stock')",bg:'var(--p2)',col:'var(--p3)'},
     {ic:'₿',label:t('crypto'),on:"closeM('m-txn');openPortModal('crypto')",bg:'var(--a2)',col:'var(--a3)'},
     {ic:'🂡',label:t('poker'),on:"closeM('m-txn');openGambleModal()",bg:'var(--g2)',col:'var(--g3)'},
-    {ic:'🏢',label:t('privateequity'),on:"closeM('m-txn');openPEModal()",bg:'var(--b2)',col:'var(--b3)'}
+    {ic:'🏢',label:t('privateequity'),on:"closeM('m-txn');openPEModal()",bg:'var(--b2)',col:'var(--b3)'},
+    {ic:'🤝',label:t('privatedebt'),on:"closeM('m-txn');openLoanModal()",bg:'var(--g2)',col:'var(--g3)'}
   ];
   (S.customSections||[]).forEach(cs=>{const icon=cs.icon||(cs.base==='crypto'?'₿':cs.base==='stock'?'📈':'🏢');const nm=(cs.name||'').replace(/</g,'&lt;');items.push({ic:icon,label:nm,on:"closeM('m-txn');addToSection('"+cs.id+"','"+cs.base+"')",bg:'var(--bg2)',col:'var(--ink2)'});});
   el.innerHTML='<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+items.map(it=>`<button onclick="${it.on}" style="display:flex;align-items:center;gap:10px;padding:16px 14px;border:none;border-radius:16px;background:${it.bg};color:${it.col};font-size:15px;font-weight:700;cursor:pointer"><span style="font-size:22px">${it.ic}</span><span>+ ${it.label}</span></button>`).join('')+'</div>';
@@ -2717,6 +2794,10 @@ function txnRow(tx){
   if(tx.type==='debt_move'){
     const incoming=tx.direction!=='out';
     return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--r2)">🏦</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}<span class="badge br">${t('longdebt')}</span></div><div class="rsub">${tx.date} · ${tx.cur}${tx.acctLabel?` · ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${incoming?'pos':'neg'}">${incoming?'+':'-'}${sym}${tx.amount.toLocaleString()}</span>${exBtn}${delBtn}</div></div>`;
+  }
+  if(tx.type==='loan_move'){
+    const incoming=tx.direction==='in';const detail=tx.loanPhase==='payment'?(t('principalreturn')+' '+fmt(tx.principalHKD||0)+' · '+t('interestreceived')+' '+fmt(tx.interestHKD||0)):t('privatedebt');
+    return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--g2)">🤝</div><div class="rinfo"><div class="rtitle">${tx.note}<span class="badge bg">${t('privatedebt')}</span></div><div class="rsub">${tx.date} · ${detail}${tx.acctLabel?` · ${tx.acctLabel}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${incoming?'pos':'neg'}">${incoming?'+':'−'}${sym}${Number(tx.amount||0).toLocaleString()}</span></div></div>`;
   }
   if(tx.type==='transfer'){
     return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--b2)">⇄</div><div class="rinfo"><div class="rtitle">${tx.note}${exBadge}</div><div class="rsub">${tx.date} · ${tx.acctLabel||''} → ${tx.toAcctLabel||''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount" style="color:var(--b3)">⇄ ${sym}${tx.amount.toLocaleString()}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
@@ -3020,7 +3101,7 @@ function skipTransfer(txnId){const tx=S.txns.find(x=>x.id===txnId);if(tx)tx._res
 function balanceSheetBreakdown(){
   const accts=(S.accounts||[]).filter(ac=>!ac.excluded);
   const quickAsset=accts.reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
-  const fixedAsset=accts.reduce((a,ac)=>a+acctOpenValue(ac.id),0);
+  const fixedAsset=accts.reduce((a,ac)=>a+acctOpenValue(ac.id),0)+privateLoanAssetTotal();
   const receivable=rpAssetTotal();
   const payable=rpDebtTotal();
   const shortDebt=accts.reduce((a,ac)=>a+Math.max(-acctCash(ac.id),0),0);
@@ -3155,7 +3236,7 @@ function notifySupported(){return typeof Notification!=='undefined';}
 function notifyPerm(){return notifySupported()?Notification.permission:'unsupported';}
 function notifyRuleRow(id,label,extra){const c=notifyCfg();return `<div class="frow" style="gap:10px"><button class="toggle ${c[id]?'on':''}" id="notify-${id}" onclick="this.classList.toggle('on')"></button><span style="flex:1;min-width:0;font-size:13px;color:var(--ink2);font-weight:700">${label}</span>${extra||''}</div>`;}
 function notifyEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));}
-function notifyPortfolioStats(){let cost=0,value=0;(S.portfolio||[]).filter(p=>!p.exitPrice).forEach(p=>{cost+=Number(p.costHKD)||0;value+=Number(p.valueHKD)||0;});(S.gamble||[]).filter(g=>g.open).forEach(g=>{cost+=Number(g.buyinHKD)||0;value+=Number(g.buyinHKD)||0;});return {cost,value,pnlPct:cost?((value-cost)/cost*100):0};}
+function notifyPortfolioStats(){let cost=0,value=0;(S.portfolio||[]).filter(p=>!p.exitPrice).forEach(p=>{cost+=Number(p.costHKD)||0;value+=Number(p.valueHKD)||0;});(S.gamble||[]).filter(g=>g.open).forEach(g=>{cost+=Number(g.buyinHKD)||0;value+=Number(g.buyinHKD)||0;});(S.privateLoans||[]).forEach(l=>{const principal=loanOutstandingPrincipal(l);cost+=principal;value+=principal+loanAccruedOutstanding(l);});return {cost,value,pnlPct:cost?((value-cost)/cost*100):0};}
 function notifyCustomTypeLabel(type){return {account_balance:tt('戶口結餘','Account balance'),portfolio_pnl_pct:tt('投資組合損益率','Portfolio P&L %'),portfolio_move_pct:tt('投資組合市值變動','Portfolio value move'),position_pnl_pct:tt('單一持倉損益率','Position P&L %')}[type]||type;}
 function notifyCustomTypeOptions(sel){return ['account_balance','portfolio_pnl_pct','portfolio_move_pct','position_pnl_pct'].map(x=>`<option value="${x}" ${x===sel?'selected':''}>${notifyCustomTypeLabel(x)}</option>`).join('');}
 function notifyCustomTargetOptions(r){if(r.type==='account_balance')return (S.accounts||[]).map(a=>`<option value="${notifyEsc(a.id)}" ${String(a.id)===String(r.target)?'selected':''}>${notifyEsc(acctLabel(a))}</option>`).join('');if(r.type==='position_pnl_pct')return (S.portfolio||[]).map(p=>`<option value="${notifyEsc(p.id)}" ${String(p.id)===String(r.target)?'selected':''}>${notifyEsc(p.name||p.type)}${p.exitPrice?' · '+tt('已結算','closed'):''}</option>`).join('');return '';}
@@ -3557,7 +3638,7 @@ function savePE(){
 }
 // ── P&L SECTION SHOW / HIDE / REORDER ──
 function pnlOrderSafe(){
-  const def=['poker','stock','crypto','pe','debt'];
+  const def=['poker','stock','crypto','pe','loan','debt'];
   const custom=(S.customSections||[]).map(c=>c.id);
   const valid=def.concat(custom);
   let o=(S.pnlOrder&&S.pnlOrder.length)?S.pnlOrder.slice():def.slice();
@@ -3566,14 +3647,14 @@ function pnlOrderSafe(){
   return o;
 }
 function secName(id){
-  const names={poker:'🂡 Poker',stock:'📈 '+t('stocks'),crypto:'₿ '+t('crypto'),pe:'🏢 '+t('privateequity'),debt:'🏦 '+t('longdebt')};
+  const names={poker:'🂡 Poker',stock:'📈 '+t('stocks'),crypto:'₿ '+t('crypto'),pe:'🏢 '+t('privateequity'),loan:'🤝 '+t('privatedebt'),debt:'🏦 '+t('longdebt')};
   if(names[id])return names[id];
   const c=(S.customSections||[]).find(x=>x.id===id);
   if(c){const ic=c.icon||(c.base==='crypto'?'₿':c.base==='stock'?'📈':c.base==='poker'?'♠️':'🏢');return ic+' '+c.name;}
   return id;
 }
 function secIcon(id){
-  const icons={total:(S.lang==='en'?'All':'全'),poker:'🂡',stock:'📈',crypto:'₿',pe:'🏢',debt:'🏦'};
+  const icons={total:(S.lang==='en'?'All':'全'),poker:'🂡',stock:'📈',crypto:'₿',pe:'🏢',loan:'🤝',debt:'🏦'};
   if(icons[id])return icons[id];
   const c=(S.customSections||[]).find(x=>x.id===id);
   if(c)return c.icon||(c.base==='crypto'?'₿':c.base==='stock'?'📈':c.base==='poker'?'♠️':'🏢');
@@ -3663,14 +3744,16 @@ function drawTrend(){
   const cust=(S.customSections||[]).find(c=>c.id===view);
   const addPort=(filt)=>{S.portfolio.filter(filt).forEach(p=>{if(p.exitPrice){events.push({date:p.date||today(),v:p.valueHKD-p.costHKD});}else{openPnl+=(p.valueHKD-p.costHKD);}});};
   const addPoker=()=>{S.gamble.filter(g=>!g.open).forEach(g=>events.push({date:g.date||today(),v:(g.cashoutHKD||0)-g.buyinHKD}));};
-  if(view==='total'){addPort(p=>p.type==='stock');addPort(p=>p.type==='crypto');addPoker();}
+  const addLoans=()=>{(S.privateLoans||[]).forEach(l=>{loanPayments(l).forEach(p=>{if(p.interestHKD)events.push({date:p.date||today(),v:p.interestHKD});});openPnl+=loanAccruedOutstanding(l);});};
+  if(view==='total'){addPort(p=>p.type==='stock');addPort(p=>p.type==='crypto');addPoker();addLoans();}
   else if(view==='stock'){addPort(p=>p.type==='stock');}
   else if(view==='crypto'){addPort(p=>p.type==='crypto');}
   else if(view==='pe'){addPort(p=>p.type==='pe');}
+  else if(view==='loan'){addLoans();}
   else if(view==='poker'){addPoker();}
   else if(cust){addPort(p=>String(p.secId)===String(view));}
   events.sort((a,b)=>a.date<b.date?-1:1);
-  const color=view==='stock'?'#534AB7':view==='crypto'?'#BA7517':view==='poker'?'#1D9E75':view==='pe'?'#185FA5':cust?'#1D9E75':'#0F6E56';
+  const color=view==='stock'?'#534AB7':view==='crypto'?'#BA7517':view==='poker'?'#1D9E75':view==='pe'?'#185FA5':view==='loan'?'#0F6E56':cust?'#1D9E75':'#0F6E56';
   // time-bucketed cumulative realised P&L (+ current unrealised on the last bucket) — same granularity as the wealth trend
   const gran=S.trendGran||'month';
   document.querySelectorAll('#trend-gran .fchip').forEach((b,i)=>b.classList.toggle('active',['day','week','month'][i]===gran));
@@ -3742,9 +3825,13 @@ function toggleSecBody(id){
   const btn=document.getElementById('hide-btn-'+id);if(btn)btn.classList.toggle('collapsed',collapsed);
   if(collapsed)_collapsedSecs.add(id);else _collapsedSecs.delete(id);
 }
+function renderPrivateLoans(){const list=document.getElementById('loan-list');if(!list)return;const loans=S.privateLoans||[],st=privateLoanStats();const set=(id,val,cls)=>{const el=document.getElementById(id);if(el){el.textContent=fmt(val);if(cls)el.className=cls;}};set('loan-principal',st.principal,'mval');set('loan-accrued',st.accrued);set('loan-realized',st.realized);set('loan-asset',st.asset);const ct=document.getElementById('loan-ct');if(ct)ct.textContent=st.count;const gp=document.getElementById('g-loan-pnl');if(gp){gp.textContent=fmt(st.pnl);gp.className='pnl-simple-val '+(st.pnl>=0?'pos':'neg');}
+  list.innerHTML=loans.length?loans.map(l=>{const outstanding=loanOutstandingPrincipal(l),accrued=loanAccruedOutstanding(l),received=loanInterestReceived(l),asset=outstanding+accrued,expected=loanAccruedTotal(l,l.dueDate||today()),closed=outstanding<0.005&&accrued<0.005,overdue=!closed&&l.dueDate&&parseDateOnly(l.dueDate)<parseDateOnly(today()),status=closed?tt('已完成','completed'):overdue?tt('已逾期','overdue'):tt('進行中','active'),statusCls=closed?'bg':overdue?'br':'ba',key=friendNameKey(l.borrower),payments=loanPayments(l).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date)));return `<div style="padding:14px 15px;border-bottom:0.5px solid var(--bdr)"><div style="display:flex;gap:10px;align-items:flex-start"><div class="ibox" style="background:var(--g2);font-size:18px">🤝</div><div class="rinfo"><div class="rtitle">${notifyEsc(l.borrower)} <span class="badge ${statusCls}">${status}</span></div><div class="rsub">${l.startDate||''}${l.dueDate?' → '+l.dueDate:''} · ${Number(l.annualRate||0)}% / ${tt('年','yr')}</div><div class="rsub" style="margin-top:3px">${friendCreditBadge(key)}</div>${l.notes?`<div class="rsub" style="margin-top:3px">${notifyEsc(l.notes)}</div>`:''}<div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openLoanPayment('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--g);border-radius:20px;background:var(--g2);color:var(--g3);cursor:pointer">${t('recordpayment')}</button><button onclick="openLoanModal('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePrivateLoan('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800">${fmtCur(asset,l.cur)}</div><div class="rsub">${t('principal')} ${fmtCur(outstanding,l.cur)}</div><div style="font-size:11px;color:var(--g3)">${t('accruedinterest')} ${fmtCur(accrued,l.cur)}</div></div></div><div style="margin-top:9px;padding:9px 10px;border-radius:11px;background:var(--bg2);font-size:11px;color:var(--ink3);display:flex;gap:10px;flex-wrap:wrap"><span>${tt('到期預計利息','Expected interest')}: <strong style="color:var(--ink)">${fmtCur(expected,l.cur)}</strong></span><span>${t('receivedinterest')}: <strong style="color:var(--g3)">${fmtCur(received,l.cur)}</strong></span></div>${payments.length?`<div style="margin-top:8px">${payments.map(p=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 2px;font-size:11px;color:var(--ink3)"><span style="flex:1">${p.date} · ${t('principalreturn')} ${fmtCur(p.principalHKD||0,l.cur)} · ${t('interestreceived')} ${fmtCur(p.interestHKD||0,l.cur)}</span><button onclick="deleteLoanPayment('${l.id}','${p.id}')" aria-label="${t('deletepos')}" style="border:none;background:none;color:var(--r3);font-size:15px;padding:5px;cursor:pointer"><i class="ti ti-trash"></i></button></div>`).join('')}</div>`:''}</div>`;}).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;}
 function renderGamble(){
   if(!S.portfolio)S.portfolio=[];
+  if(!S.privateLoans)S.privateLoans=[];
   syncSectionAccountLinks();
+  renderPrivateLoans();
   // ── POKER ──
   // Built-in poker section only shows sessions that are not assigned to a custom P&L section.
   // Grand totals below still include every poker session (built-in + custom sections).
@@ -3820,8 +3907,10 @@ function renderGamble(){
   // ── TOTAL + PIE (grand total spans ALL holdings incl. custom sections) ──
   const allPosPnl=S.portfolio.reduce((a,p)=>a+((p.valueHKD||0)-(p.costHKD||0)),0);
   const allPosCost=S.portfolio.reduce((a,p)=>a+(p.costHKD||0),0);
-  const totalPnl=allPokerPnl+allPosPnl;
-  const totalIn=allPokerIn+allPosCost;
+  const loanSt=privateLoanStats();
+  const loanOriginalCost=(S.privateLoans||[]).reduce((a,l)=>a+(Number(l.principalHKD)||0),0);
+  const totalPnl=allPokerPnl+allPosPnl+loanSt.pnl;
+  const totalIn=allPokerIn+allPosCost+loanOriginalCost;
   const roi=totalIn?((totalPnl/totalIn)*100).toFixed(1):'0.0';
   document.getElementById('g-pnl').textContent=fmt(totalPnl);
   document.getElementById('g-pnl').className='mval'+(totalPnl>=0?' pos':' neg');
@@ -3832,9 +3921,9 @@ function renderGamble(){
   const openPosValue=(S.accounts||[]).reduce((a,ac)=>a+acctOpenValue(ac.id),0);
   const marginDebt=(S.accounts||[]).reduce((a,ac)=>a+acctMarginDebt(ac.id),0);
   // Deployed = own money currently tied up in open positions (margin principal is borrowed, not own money)
-  const deployed=S.portfolio.filter(p=>!p.exitPrice&&!p.margin&&p.type!=='pe').reduce((a,p)=>a+p.costHKD,0)+S.gamble.filter(g=>g.open&&!g.margin).reduce((a,g)=>a+g.buyinHKD,0);
+  const deployed=S.portfolio.filter(p=>!p.exitPrice&&!p.margin&&p.type!=='pe').reduce((a,p)=>a+p.costHKD,0)+S.gamble.filter(g=>g.open&&!g.margin).reduce((a,g)=>a+g.buyinHKD,0)+loanSt.principal;
   // Total worth = realized cash + current value of open positions − outstanding margin debt
-  const totalWorth=totalCash+openPosValue-marginDebt;
+  const totalWorth=totalCash+openPosValue-marginDebt+(pnlNetExcluded('loan')?0:loanSt.asset);
   // Margin used = borrowed principal still outstanding on OPEN margin positions (disappears once the position ends)
   const marginUsed=marginDebt;
   document.getElementById('g-worth').textContent=fmt(totalWorth);
@@ -3860,6 +3949,7 @@ function renderGamble(){
   // slice reconciles with totalWorth (which already subtracts margin debt) instead of overstating exposure
   S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v});});
   S.gamble.filter(g=>g.open&&g.buyinHKD>0).forEach(g=>pieRaw.push({label:g.venue,val:g.buyinHKD}));
+  (S.privateLoans||[]).forEach(l=>{const v=loanOutstandingPrincipal(l)+loanAccruedOutstanding(l);if(v>0)pieRaw.push({label:'🤝 '+l.borrower,val:v});});
   const allCash=(S.accounts||[]).filter(ac=>!ac.excluded&&ac.kind==='invest').reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
   if(allCash>0&&!S.pnlPieNoCash)pieRaw.push({label:t('positioncash'),val:allCash,_cash:true});
   const {data:pieData,total:pieTotal}=piePrepData(pieRaw,{minPct:1.5,cap:9});
@@ -4362,6 +4452,8 @@ function exportExcel(){
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(apRows.length?apRows:[{Name:''}]),'Auto-pay');
   const dbRows=(S.debts||[]).map(d=>({Name:d.name,'Balance':d.balance,'Original principal':d.principal0,'APR %':d.apr,'Monthly':d.monthly,'Pay day':d.day,'Interest type':d.compound||'',NoInterest:d.noInterest?'Y':'',Paused:d.paused?'Y':'','Interest accrued':d.accInterest||0,Repaid:d.paidTotal||0,Start:d.startDate||''}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(dbRows.length?dbRows:[{Name:''}]),'Debts');
+  const loanRows=(S.privateLoans||[]).map(l=>({Borrower:l.borrower,Principal:l.principal,Currency:l.cur,'Principal (HKD)':l.principalHKD,'Outstanding (HKD)':loanOutstandingPrincipal(l),'Annual rate %':l.annualRate,'Start date':l.startDate,'Due date':l.dueDate||'','Accrued interest (HKD)':loanAccruedOutstanding(l),'Interest received (HKD)':loanInterestReceived(l),Account:(getAcct(l.acctId)?acctLabel(getAcct(l.acctId)):''),Notes:l.notes||''}));
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(loanRows.length?loanRows:[{Borrower:''}]),'Private loans');
   const aiRows=(S.autoincome||[]).map(a=>({Name:a.name||'',Amount:a.amount||0,Currency:a.cur||'HKD','Freq (months)':a.freq||'',Day:a.day||'',Account:a.acct||'',Position:a.posName||'',Active:a.active?'Y':''}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(aiRows.length?aiRows:[{Name:''}]),'Auto-income');
   // Accounts & Categories reference
@@ -4494,12 +4586,13 @@ function openAI(){if(S.privacy)showToast(tt('私隱模式：AI 仍會用真實�
   document.getElementById('m-ai').classList.add('open');
 }
 function buildAiContext(){const _p=S.privacy;S.privacy=false;try{
-  const L=[];
+  const L=[],bs=balanceSheetBreakdown();
   L.push('Display currency: '+(S.dispCur||'HKD'));
-  L.push('Net worth: '+fmt(totalNet())+' (assets '+fmt(totalAssets())+', debt '+fmt(totalDebt())+')');
+  L.push('Net worth: '+fmt(bs.netWorth)+' (assets '+fmt(bs.assets)+', debt '+fmt(bs.debt)+')');
   L.push('Accounts:');(S.accounts||[]).forEach(a=>L.push('- '+acctLabel(a)+': '+fmt(acctBalance(a.id))+(a.excluded?' [excluded]':'')+(a.isInvest?' [investment]':'')));
   const ar=(S.people||[]).filter(p=>!p.settled);if(ar.length){L.push('Owed to you (A/R):');ar.forEach(p=>L.push('- '+p.name+' '+fmt(p.amtHKD)+(p.desc?' for '+p.desc:'')));}
   if((S.portfolio||[]).length){L.push('Investments:');S.portfolio.forEach(p=>L.push('- '+p.type+' '+p.name+': value '+fmt(p.valueHKD)+', cost '+fmt(p.costHKD)+', P&L '+fmt(p.valueHKD-p.costHKD)+(p.exitPrice?' [closed]':'')));}
+  if((S.privateLoans||[]).length){L.push('Private debt investments:');S.privateLoans.forEach(l=>L.push('- '+l.borrower+': principal outstanding '+fmt(loanOutstandingPrincipal(l))+', accrued interest '+fmt(loanAccruedOutstanding(l))+', interest received '+fmt(loanInterestReceived(l))+', rate '+l.annualRate+'%, due '+(l.dueDate||'—')));}
   L.push('Recent transactions (latest 40):');
   S.txns.slice(0,40).forEach(tx=>L.push('- '+tx.date+' '+tx.type+' '+(tx.catLabel||'')+' '+tx.cur+tx.amount+(tx.note?' ('+tx.note+')':'')+(tx.excluded?' [excluded]':'')));
   return L.join('\n');}finally{S.privacy=_p;}
