@@ -350,6 +350,11 @@ body.dark #s-settings .glass-card{background:rgba(36,36,40,0.9);border-color:rgb
 .rinfo{flex:1;min-width:0}
 .rtitle{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rsub{font-size:12px;color:var(--ink3);margin-top:2px}
+.rp-detail-list{display:flex;flex-direction:column;gap:3px;margin-top:5px}
+.rp-detail-row{display:flex;align-items:flex-start;gap:5px;min-width:0}
+.rp-detail-text{flex:1;min-width:0;line-height:1.45;overflow-wrap:anywhere}
+.rp-detail-edit{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 30px;margin-top:-6px;border:none;border-radius:9px;background:transparent;color:var(--ink3);font-size:14px;cursor:pointer}
+.rp-detail-edit:active{background:var(--bdr)}
 .ramount{font-size:15px;font-weight:700;text-align:right;flex-shrink:0;letter-spacing:-0.3px}
 .badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600;margin-left:5px}
 .bg{background:var(--g2);color:var(--g3)}.br{background:var(--r2);color:var(--r3)}
@@ -3442,6 +3447,30 @@ function filterTxn(type,btn){
   const list=type==='all'?rows:type==='oneoff'?rows.filter(tx=>tx.oneOff):type==='income'?rows.filter(tx=>tx.type==='income'||(txIsRealisedPnl(tx)&&(tx.pnlHKD||0)>0)):type==='expense'?rows.filter(tx=>tx.type==='expense'||(txIsRealisedPnl(tx)&&(tx.pnlHKD||0)<0)):rows.filter(tx=>tx.type===type);
   document.getElementById('txn-list').innerHTML=dayGroupedTxnHTML(list,`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('notxn')}</div>`,'txn');
 }
+function rpDetailText(p){
+  const parts=[(p.dead?'☠ ':p.dir==='p'?'−':'+')+fmt(p.amtHKD)];
+  if(isIncomeReceivable(p))parts.push((p.catIcon||'💼')+' '+(p.catLabel||tt('收入應收','Income A/R')));
+  if(p.desc)parts.push(p.desc);
+  if(p.date)parts.push(p.date);
+  const account=((p.acctIcon||'')+' '+(p.acctLabel||'')).trim();if(account)parts.push(account);
+  if(p.payDays!=null)parts.push(p.payDays+tt('日還清','d paid'));
+  if(p.deadDate)parts.push(tt('壞帳 ','dead ')+p.deadDate);
+  return parts.join(' · ');
+}
+function rpDetailHTML(p){
+  const canEdit=rpIsActive(p)&&!p.isGroupSplit;
+  const label=tt('編輯此記錄','Edit this record');
+  return `<div class="rp-detail-row"><span class="rp-detail-text">${escapeHtml(rpDetailText(p))}</span>${canEdit?`<button class="rp-detail-edit" type="button" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}" onclick="editAR(${inlineJsString(p.id)})"><i class="ti ti-pencil"></i></button>`:''}</div>`;
+}
+function enhanceARRecordEditing(groups){
+  document.querySelectorAll('#ar-list .crow').forEach((row,i)=>{
+    const g=groups[i];if(!g)return;
+    row.querySelectorAll('button[onclick^="editAR("]').forEach(btn=>btn.remove());
+    const detail=row.querySelector('.rsub');if(!detail)return;
+    detail.classList.add('rp-detail-list');
+    detail.innerHTML=g.items.map(rpDetailHTML).join('')||'—';
+  });
+}
 function filterAR(type,btn){
   if(btn){document.querySelectorAll('#pane-ar .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
   const active=(S.people||[]).filter(rpIsActive);const groups=rpGroups(active);
@@ -3453,6 +3482,7 @@ function filterAR(type,btn){
   const elPc=document.getElementById('ar-urgent-ct');if(elPc)elPc.textContent=groups.filter(g=>g.net<0).length?groups.filter(g=>g.net<0).length+' '+t('outstanding'):'';
   let list=type==='pending'?groups:type==='settled'?[...rpGroups((S.people||[]).filter(p=>p.settled&&!p.dead)),...rpGroups(deadRows)]:type==='group'?rpGroups((S.people||[]).filter(p=>p.isGroupSplit&&rpIsActive(p))):groups;
   document.getElementById('ar-list').innerHTML=list.length?list.map((g,i)=>{const ci=i%8;const init=escapeHtml((g.name||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase());const dead=g.items.every(p=>p.dead);const settled=!dead&&g.items.every(p=>p.settled);const urg=!dead&&!settled&&g.items.some(p=>p.urgent&&!p.isGroupSplit);const isPay=g.net<0;const hasIncome=g.items.some(isIncomeReceivable);const amtCol=dead?'var(--r3)':(isPay?'var(--r)':'var(--g)');/* green=receivable, red=payable; urgency shows as a badge, not by flipping the colour */const detail=g.items.map(p=>escapeHtml((p.dead?'☠ ':p.dir==='p'?'−':'+')+fmt(p.amtHKD)+(isIncomeReceivable(p)?' · '+(p.catIcon||'💼')+' '+(p.catLabel||tt('收入應收','Income A/R')):'')+(p.desc?' · '+p.desc:'')+(p.payDays!=null?' · '+p.payDays+tt('日還清','d paid'):'')+(p.deadDate?' · '+tt('壞帳 ','dead ')+p.deadDate:''))).join('<br>');const ids=g.items.filter(rpIsActive).map(p=>p.id).join(',');const allIds=g.items.map(p=>p.id).join(',');const deadIds=g.items.filter(p=>rpIsActive(p)&&p.dir!=='p').map(p=>p.id).join(',');return `<div class="crow${urg?' alert-row':''}"><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div class="rinfo"><div class="rtitle">${escapeHtml(g.name)}${friendCreditBadge(g.key)}${hasIncome?`<span class="badge bg">${tt('收入應收','Income A/R')}</span>`:''}${isPay?`<span class="badge br">${t('payable')}</span>`:''}${dead?`<span class="badge br">${tt('壞帳','Dead')}</span>`:''}${g.items.some(p=>p.isGroupSplit)?`<span class="badge bp">${t('group')}</span>`:''}${urg?`<span class="badge br">${t('pending')}</span>`:''}</div><div class="rsub">${detail||'—'}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">${dead?`<span style="font-size:15px;font-weight:700;color:var(--r3)">${fmt(Math.abs(g.net))}</span><button class="settle-btn urgent" onclick="reviveDeadGroup('${allIds}')">${tt('復活','Restore')}</button>`:settled?`<span class="badge bg">${t('settled')}</span>`:`<span style="font-size:15px;font-weight:700;color:${amtCol}">${isPay?'−':'+'}${fmt(Math.abs(g.net))}</span><button class="settle-btn${urg?' urgent':''}" onclick="openSettleGroup('${ids}')">${isPay?t('settlepay'):tt('收回 ✓','Settle ✓')}</button>${deadIds?`<button class="settle-btn urgent" onclick="markDeadGroup('${deadIds}')">${tt('壞帳','Dead')}</button>`:''}`}</div>${settled?`<button onclick="recallGroup('${allIds}')" title="${t('recallbtn')}" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-arrow-back-up"></i></button>`:(!dead?`<button onclick="editAR('${g.items[0].id}')" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-pencil"></i></button>`:'')}<button onclick="deleteARGroup('${encodeURIComponent(g.key)}')" style="padding:6px 7px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-trash"></i></button></div>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
+  enhanceARRecordEditing(list);
 }
 function recallGroup(ids){String(ids).split(',').filter(Boolean).forEach(id=>recallAR(id));}
 function deleteARGroup(key){key=decodeURIComponent(key);if(!confirm(t('deltxnq')))return;const doomed=S.people.filter(p=>personKey(p)===key);const ids=doomed.map(p=>p.id);const gids=[...new Set(doomed.map(p=>p.groupId).filter(Boolean))];removeRPMovesFor(ids);S.txns=S.txns.filter(tx=>!(txIsRPFlow(tx)&&gids.includes(tx.groupId)));S.people=S.people.filter(p=>personKey(p)!==key);saveS();setWalletPane('ar');refreshAllViews();}
