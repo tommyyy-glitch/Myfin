@@ -19,6 +19,8 @@ const code=[
   declaration('inlineJsString'),
   declaration('isIncomeReceivable'),
   declaration('rpIsActive'),
+  declaration('rpIncomeReceiptTxns'),
+  declaration('rpIncomeAccruedTotals'),
   declaration('addRPIncomeTxn'),
   declaration('rpDetailText'),
   declaration('rpDetailHTML'),
@@ -66,10 +68,12 @@ assert.doesNotMatch(context.result.settledHtml,/editAR\(/);
 
 assert.equal(context.result.incomeTxn.type,'income');
 assert.equal(context.result.incomeTxn.rpIncome,true);
-assert.equal(context.result.incomeTxn.rpPhase,'settle_income');
+assert.equal(context.result.incomeTxn.rpPhase,'accrual');
 assert.equal(context.result.incomeTxn.fromRP,'older');
 assert.equal(context.result.incomeTxn.catId,'freelance');
-assert.equal(context.result.incomeTxn.date,'2026-07-15');
+assert.equal(context.result.incomeTxn.date,'2026-06-30');
+assert.equal(context.result.incomeTxn.nonCash,true);
+assert.equal(context.result.incomeTxn.rpAccrual,true);
 
 const filterCode=declaration('filterAR');
 assert.match(filterCode,/enhanceARRecordEditing\(list\)/);

@@ -1775,7 +1775,7 @@ if(!S.tax)S.tax={year:0,allowance:145000,deductions:0,excludedCats:[]};
 if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
 S.notify=notifyCfg();
 if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return c.id===dc.id;});if(!ex){S.cats.push({...dc,aliases:[...dc.aliases]});}else{dc.aliases.forEach(function(a){if((ex.aliases||[]).indexOf(a)<0)ex.aliases=(ex.aliases||[]).concat(a);});}});
-(S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));showStorageError('load',e);}}
+(S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(typeof ensureRPIncomeAccruals==='function'&&ensureRPIncomeAccruals())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));showStorageError('load',e);}}
 function profileSnapshot(){const cloud=S.cloud||{};return {txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
 function saveS(opt){
   opt=opt||{};
@@ -1867,22 +1867,47 @@ function deleteLoanPayment(loanId,payId){if(!confirm(t('deltxnq')))return;const 
 function deletePrivateLoan(id){if(!confirm(t('deltxnq')))return;S.privateLoans=(S.privateLoans||[]).filter(x=>String(x.id)!==String(id));S.txns=(S.txns||[]).filter(tx=>String(tx.loanId)!==String(id));saveS();renderGamble();renderHome();refreshWallet();}
 function rpIncomeCats(){const incIds=['income','freelance','invest','cashback','other_inc'];const defIds=new Set(DEF_CATS.map(c=>c.id));const customIds=(S.cats||[]).filter(c=>!defIds.has(c.id)).map(c=>c.id);let cats=[...incIds,...customIds].map(id=>(S.cats||[]).find(c=>c.id===id)).filter(Boolean);return mruSort(cats,'catMRU',c=>c.id);}
 function renderARIncomeCats(selectedId){const el=document.getElementById('ar-cat');if(!el)return;const cats=rpIncomeCats();const sel=selectedId||(cats.find(c=>c.id===S.selCat)?.id)||'income';el.innerHTML=cats.map(c=>`<option value="${escapeHtml(c.id)}"${c.id===sel?' selected':''}>${escapeHtml(c.icon)} ${escapeHtml(catLabel(c))}</option>`).join('');}
-function addRPIncomeTxn(p,amtOverride,amtHKDOverride){
+function rpIncomeReceiptTxns(p){
+  return (S.txns||[]).filter(tx=>String(tx.fromRP)===String(p.id)&&((tx.type==='ar_move'&&tx.direction==='in'&&tx.rpPhase==='settle')||(tx.rpIncome&&tx.rpPhase==='settle_income')));
+}
+function rpIncomeAccruedTotals(p){
+  const paid=rpIncomeReceiptTxns(p).reduce((a,tx)=>({amount:a.amount+Math.abs(Number(tx.amount)||0),amtHKD:a.amtHKD+Math.abs(Number(tx.amtHKD)||0)}),{amount:0,amtHKD:0});
+  return {amount:parseFloat((Math.abs(Number(p.amount)||0)+paid.amount).toFixed(2)),amtHKD:parseFloat((Math.abs(Number(p.amtHKD)||0)+paid.amtHKD).toFixed(2))};
+}
+// Income receivables use accrual accounting: recognise income on the R/P date,
+// but keep it out of account cash until the receivable is actually collected.
+function addRPIncomeTxn(p){
+  const totals=rpIncomeAccruedTotals(p);const amount=totals.amount;const amtHKD=totals.amtHKD;
+  if(!amtHKD)return null;
+  const ac=p.acctId?getAcct(p.acctId):null;const cat=getCat(p.catId||'income')||getCat('income')||getCat('other_inc');
+  const rec={type:'income',amount,amtHKD,cur:p.cur||'HKD',catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(p.desc||p.name||catLabel(cat))+' · '+tt('收入應收','Income receivable'),date:p.date||today(),oneOff:false,fromRP:p.id,rpIncome:true,rpAccrual:true,rpPhase:'accrual',nonCash:true};
+  let tx=(S.txns||[]).find(x=>x.rpIncome&&x.rpPhase==='accrual'&&String(x.fromRP)===String(p.id));
+  if(tx)Object.assign(tx,rec);else{tx={id:'rp_income_'+p.id,...rec};S.txns.unshift(tx);}
+  p.incomeTxnId=tx.id;return tx;
+}
+function addRPIncomeReceiptTxn(p,amtOverride,amtHKDOverride){
   const amount=amtOverride!=null?Math.abs(amtOverride):Math.abs(p.amount||0);
   const amtHKD=amtHKDOverride!=null?Math.abs(amtHKDOverride):Math.abs(parseFloat(p.amtHKD||0));
   if(!amtHKD||!p.acctId)return null;
-  const ac=getAcct(p.acctId);const cat=getCat(p.catId||'income')||getCat('income')||getCat('other_inc');
-  const tx={id:Date.now()+Math.random(),type:'income',amount,amtHKD,cur:p.cur||'HKD',catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(p.desc||p.name||catLabel(cat))+' · '+tt('收入應收','Income receivable'),date:today(),oneOff:false,fromRP:p.id,rpIncome:true,rpPhase:'settle_income'};
+  const ac=getAcct(p.acctId);
+  const tx={id:Date.now()+Math.random(),type:'ar_move',direction:'in',amount,amtHKD,cur:p.cur||'HKD',acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:t('arsettle')+' · '+p.name+(p.desc?' · '+p.desc:''),date:today(),fromRP:p.id,rpPhase:'settle',rpIncomeReceipt:true,oneOff:true};
   S.txns.unshift(tx);return tx;
 }
 function addRPMove(p,phase,amtOverride,amtHKDOverride){
   if(isIncomeReceivable(p)){
-    if(phase==='settle')return addRPIncomeTxn(p,amtOverride,amtHKDOverride);
+    if(phase==='open')return addRPIncomeTxn(p);
+    if(phase==='settle')return addRPIncomeReceiptTxn(p,amtOverride,amtHKDOverride);
     return null;
   }
   const amount=amtOverride!=null?Math.abs(amtOverride):Math.abs(p.amount||0);const amtHKD=amtHKDOverride!=null?Math.abs(amtHKDOverride):Math.abs(parseFloat(p.amtHKD||0));if(!amtHKD||!p.acctId)return null;const ac=getAcct(p.acctId);const receivable=p.dir!=='p';const direction=(phase==='open')?(receivable?'out':'in'):(receivable?'in':'out');const tx={id:Date.now()+Math.random(),type:'ar_move',direction,amount,amtHKD,cur:p.cur||'HKD',acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(phase==='open'?t('aropen'):t('arsettle'))+' · '+p.name+(p.desc?' · '+p.desc:''),date:p.date||today(),fromRP:p.id,rpPhase:phase,oneOff:true};S.txns.unshift(tx);return tx;
 }
-function removeRPMovesFor(ids,phase){const set=new Set([].concat(ids).filter(x=>x!=null).map(x=>String(x)));S.txns=S.txns.filter(tx=>{if(tx&&tx.rpIncome&&set.has(String(tx.fromRP))){if(phase&&phase!=='settle'&&tx.rpPhase!==phase)return true;return false;}if(!txIsRPFlow(tx))return true;if(phase&&tx.rpPhase!==phase)return true;return !set.has(String(tx.fromRP));});}
+function removeRPMovesFor(ids,phase){const set=new Set([].concat(ids).filter(x=>x!=null).map(x=>String(x)));S.txns=S.txns.filter(tx=>{if(!set.has(String(tx&&tx.fromRP)))return true;if(!phase)return false;if(phase==='open')return tx.rpPhase!=='open'&&tx.rpPhase!=='accrual';if(phase==='settle')return tx.rpPhase!=='settle'&&tx.rpPhase!=='settle_income';return tx.rpPhase!==phase;});}
+function ensureRPIncomeAccruals(){
+  S.txns=S.txns||[];S.people=S.people||[];let changed=false;
+  S.txns.forEach(tx=>{if(tx.rpIncome&&tx.rpPhase==='settle_income'){tx.type='ar_move';tx.direction='in';tx.rpIncomeReceipt=true;tx.rpPhase='settle';delete tx.rpIncome;delete tx.rpAccrual;delete tx.nonCash;changed=true;}});
+  S.people.filter(isIncomeReceivable).forEach(p=>{const old=S.txns.find(tx=>tx.rpIncome&&tx.rpPhase==='accrual'&&String(tx.fromRP)===String(p.id));const before=old?JSON.stringify([old.amount,old.amtHKD,old.cur,old.catId,old.acctId,old.note,old.date,old.nonCash,old.rpAccrual,p.incomeTxnId]):'';const tx=addRPIncomeTxn(p);const after=tx?JSON.stringify([tx.amount,tx.amtHKD,tx.cur,tx.catId,tx.acctId,tx.note,tx.date,tx.nonCash,tx.rpAccrual,p.incomeTxnId]):'';if(before!==after)changed=true;});
+  return changed;
+}
 // R/P wallet moves are real cash movements inside the selected account, but NOT income/spending.
 // This also catches older saved rows that were created as income/expense but tagged with fromRP/group R/P metadata.
 function txIsRPFlow(tx){if(!tx)return false;if(tx.rpIncome)return false;if(tx.type==='ar_move')return true;if(tx.fromRP||tx.rpPhase)return true;if(tx.isGroupBill&&String(tx.note||'').includes('R/P'))return true;return false;}
@@ -1890,7 +1915,8 @@ function txIsDebtFlow(tx){return !!tx&&(tx.type==='debt_move'||tx.debtPhase);}
 function txIsLoanFlow(tx){return !!tx&&(tx.type==='loan_move'||tx.loanPhase);}
 function txIsRealisedPnl(tx){return !!tx&&tx.type==='pnl_realized';}
 function txReportable(tx){return !!tx&&!tx.excluded&&!txIsRealisedPnl(tx)&&!txIsRPFlow(tx)&&!txIsDebtFlow(tx)&&!txIsLoanFlow(tx)&&tx.type!=='transfer';}
-function txCashFlowSign(tx){if(tx.type==='income')return 1;if(tx.type==='expense')return -1;return 0;}
+function txCashFlowSign(tx){if(tx.nonCash)return 0;if(tx.type==='income')return 1;if(tx.type==='expense')return -1;return 0;}
+function txAccountingSign(tx){if(tx.type==='income')return 1;if(tx.type==='expense')return -1;return 0;}
 function realisedPnlTxnRows(){
   const portRows=(S.portfolio||[]).filter(p=>p&&p.exitPrice).map(p=>{
     const pnl=parseFloat(((p.valueHKD||0)-(p.costHKD||0)).toFixed(2));
@@ -1920,7 +1946,7 @@ function acctCashTxns(acctId){
   const _ac=(S.accounts.find(a=>a.id===acctId)||{});let bal=toHKD(parseFloat(_ac.opening||0),_ac.cur||'HKD');
   S.txns.forEach(tx=>{
     if(tx.excluded)return; // excluded items don't count toward balances
-    if(tx.type==='income'&&tx.acctId===acctId)bal+=tx.amtHKD;
+    if(tx.type==='income'&&!tx.nonCash&&tx.acctId===acctId)bal+=tx.amtHKD;
     else if(tx.type==='expense'&&tx.acctId===acctId)bal-=tx.amtHKD;
     else if(tx.type==='transfer'){
       if(tx.acctId===acctId)bal-=tx.amtHKD;
@@ -2043,7 +2069,7 @@ function acctFlows(acctId){
   let inn=0,out=0;
   S.txns.forEach(tx=>{
     if(tx.excluded)return;
-    if(tx.type==='income'&&tx.acctId===acctId)inn+=tx.amtHKD;
+    if(tx.type==='income'&&!tx.nonCash&&tx.acctId===acctId)inn+=tx.amtHKD;
     else if(tx.type==='expense'&&tx.acctId===acctId)out+=tx.amtHKD;
     else if(tx.type==='transfer'){
       if(tx.toAcctId===acctId)inn+=tx.amtHKD;
@@ -2238,7 +2264,7 @@ function drawWealth(){
   }
   let cum=0;
   const pts=buckets.map(b=>{
-    const sum=S.txns.filter(tx=>txReportable(tx)&&b.match(tx)).reduce((a,tx)=>a+(txCashFlowSign(tx)*tx.amtHKD),0);
+    const sum=S.txns.filter(tx=>txReportable(tx)&&b.match(tx)).reduce((a,tx)=>a+(txAccountingSign(tx)*tx.amtHKD),0);
     cum+=sum;return {label:b.label,val:cum,has:sum!==0};
   });
   // start the chart at the first bucket with real activity — a long flat-zero lead-in
@@ -2864,10 +2890,15 @@ function txnRow(tx){
     const win=pnl>=0;
     return `<div class="crow" style="${dim}"><div class="ibox" style="background:${win?'var(--g2)':'var(--r2)'}"><i class="ti ti-chart-line"></i></div><div class="rinfo"><div class="rtitle">${note}<span class="badge bb">P&L</span><span class="badge ${win?'bg':'br'}">${t('realisedpnl')}</span></div><div class="rsub">${date} · HKD${acct?` · ${acct}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${win?'pos':'neg'}">${win?'+':'−'}${fmt(Math.abs(pnl))}</span></div></div>`;
   }
+  if(tx.rpAccrual){
+    const cat=getCat(tx.catId);const rpEditId=inlineJsString(tx.fromRP);const rpLabel=tt('收入應收','Income receivable');
+    const rpEditBtn=`<button onclick="editAR(${rpEditId})" title="${t('editpos')}" aria-label="${t('editpos')}" style="padding:10px 9px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0"><i class="ti ti-pencil"></i></button>`;
+    return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${escapeHtml(cat.icon)}</div><div class="rinfo"><div class="rtitle">${note}<span class="badge bg">${rpLabel}</span></div><div class="rsub">${date} · ${cur}${acct?` · ${acct}`:''} · ${tt('尚未收款','Not collected')}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount pos">+${sym}${escapeHtml(tx.amount.toLocaleString())}</span>${rpEditBtn}</div></div>`;
+  }
   const cat=getCat(tx.catId);
   return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${escapeHtml(cat.icon)}</div><div class="rinfo"><div class="rtitle">${note}${tx.oneOff?`<span class="badge ba">${t('oneoff')}</span>`:''}${tx.autoPayId?'<span class="badge bb">auto</span>':''}${tx.isGroupBill?`<span class="badge bp">${t('group')}</span>`:''}${exBadge}</div><div class="rsub">${date} · ${cur}${acct?` · ${acct}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${cls}">${sign}${sym}${escapeHtml(tx.amount.toLocaleString())}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
 }
-function toggleTxnExclude(id){const tx=S.txns.find(x=>String(x.id)===String(id));if(tx){tx.excluded=!tx.excluded;syncAutoPayFromTxn(tx);}saveS();refreshAllViews();}
+function toggleTxnExclude(id){const tx=S.txns.find(x=>String(x.id)===String(id));if(tx&&tx.rpAccrual)return;if(tx){tx.excluded=!tx.excluded;syncAutoPayFromTxn(tx);}saveS();refreshAllViews();}
 // Delete is now instant with a 5s Undo toast — faster than a confirm() popup and just as safe
 let _undoDelTxn=null,_undoDelTimer=null;
 function deleteTxn(id){
@@ -3010,6 +3041,7 @@ function confirmSettle(){
     p.settleAcctId=ac.id;
     if(pay>=due-0.005){p.settled=true;p.settleDate=today();p.payDays=dayDiff(p.date,p.settleDate);p.amount=0;p.amtHKD=0;}
     else{p.amount=parseFloat((p.amount-payOrig).toFixed(2));p.amtHKD=parseFloat((due-pay).toFixed(2));}
+    if(isIncomeReceivable(p))addRPIncomeTxn(p);
     payHKD=parseFloat((payHKD-pay).toFixed(2));
   });
   saveS();closeM('m-settle');setWalletPane('ar');refreshAllViews();
@@ -3029,6 +3061,7 @@ function recallAR(id){
   p.settleTxnId=(p.settleTxnIds&&p.settleTxnIds.length)?p.settleTxnIds[p.settleTxnIds.length-1]:null;
   if(!p.settleTxnId)p.settleAcctId=null;
   p.settled=false;p.settleDate=null;p.payDays=null;p.dead=false;p.deadDate=null;
+  if(isIncomeReceivable(p))addRPIncomeTxn(p);
   saveS();setWalletPane('ar');refreshAllViews();
 }
 function markDeadGroup(ids){
@@ -3369,8 +3402,9 @@ function renderHome(){
   const nwLbl=document.querySelector('.hero-label[data-i="networth"]');
   if(nwLbl)nwLbl.textContent=t('networth')+' ('+(S.dispCur||'HKD')+')';
   const periTxns=getPeriodTxns().filter(txReportable);
-  const incomeCash=periTxns.filter(tx=>tx.type==='income').reduce((a,tx)=>a+tx.amtHKD,0);
-  const income=incomeCash+pnlIncomeTotal(S.period||'week');
+  const incomeTotal=periTxns.filter(tx=>tx.type==='income').reduce((a,tx)=>a+tx.amtHKD,0);
+  const incomeCash=periTxns.filter(tx=>tx.type==='income'&&!tx.nonCash).reduce((a,tx)=>a+tx.amtHKD,0);
+  const income=incomeTotal+pnlIncomeTotal(S.period||'week');
   const expAll=periTxns.filter(tx=>tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
   const cf=incomeCash-expAll;
   const bs=balanceSheetBreakdown();
