@@ -314,6 +314,12 @@ body.dark #s-settings .glass-card{background:rgba(36,36,40,0.9);border-color:rgb
 .tax-cat-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:.5px solid var(--bdr)}
 .tax-cat-row:last-child{border-bottom:none}
 .tax-cat-row.off{opacity:.48}
+.budget-cat-details{margin-bottom:12px;border:1px solid var(--bdr2);border-radius:14px;background:var(--surf2);overflow:hidden}
+.budget-cat-details summary{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:11px 12px;cursor:pointer;list-style:none;color:var(--ink2);font-size:13px;font-weight:800}
+.budget-cat-details summary::-webkit-details-marker{display:none}
+.budget-cat-details summary::after{content:'›';font-size:18px;color:var(--ink3);transform:rotate(90deg);transition:transform .2s ease}
+.budget-cat-details[open] summary::after{transform:rotate(-90deg)}
+.budget-cat-list{padding:0 12px 4px;border-top:.5px solid var(--bdr)}
 .mlabel{font-size:10px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
 .mval{font-size:20px;font-weight:700;letter-spacing:-0.5px}
 .msub{font-size:11px;color:var(--ink3);margin-top:2px}
@@ -1115,6 +1121,11 @@ img,canvas,svg{max-width:100%;}
         <span style="font-size:13px;color:var(--ink3);flex:1" id="budget-cutoff-lbl"></span>
         <input id="budget-cutoff" type="number" inputmode="decimal" min="1" max="31" placeholder="31" style="width:88px;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
       </div>
+      <div class="msub" id="budget-cat-hint" style="margin-bottom:7px;line-height:1.55"></div>
+      <details class="budget-cat-details" id="budget-cat-details">
+        <summary id="budget-cat-summary"></summary>
+        <div class="budget-cat-list" id="budget-cat-list"></div>
+      </details>
       <button onclick="saveBudgetSettings()" style="width:100%;padding:13px;background:var(--hero-grad);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer" data-i="save"></button>
       <div id="budget-settings-preview" class="msub" style="margin-top:10px;line-height:1.55"></div>
     </div>
@@ -1721,7 +1732,7 @@ function createAppState(){return {
   txns:[],people:[],gamble:[],autopay:[],autoincome:[],portfolio:[],debts:[],privateLoans:[],friends:[],tuScores:[],customSections:[],changelog:[],priceHist:[],
   cats:DEF_CATS.map(c=>({...c,aliases:[...(c.aliases||[])]})),accounts:DEF_ACCTS.map(a=>({...a})),
   lang:'zh',theme:'auto',motionMode:'dance',dispCur:'HKD',period:'month',privacy:false,numFmt:'full',
-  budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},
+  budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31,excludedCats:[]},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},
   notify:{on:false,budgetLow:true,budgetPct:20,budgetOver:true,autopayDue:true,autopayDays:3,rpOverdue:true,rpDays:14,negCash:true,customRules:[]},
   pnlOrder:['poker','stock','crypto','pe','loan','debt'],pnlHidden:{},pnlNetHidden:{},pnlPieNoCash:false,setCollapsed:{},
   ai:{provider:'gemini',key:'',model:''},tdKey:'',fx:null,cloud:{url:'',key:'',pass:'',salt:'',on:false,ver:0,last:0,pending:false,pendingAt:0,lastError:'',_dirty:false},
@@ -1769,8 +1780,9 @@ function clearStorageError(action){const el=document.getElementById('storage-err
 function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d);Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
 if(!S.debts)S.debts=[];
 if(!S.privateLoans)S.privateLoans=[];
-if(!S.budget)S.budget={amount:0,cur:'HKD',startDay:1,cutoffDay:31};
+if(!S.budget)S.budget={amount:0,cur:'HKD',startDay:1,cutoffDay:31,excludedCats:[]};
 if(S.budget.startDay==null)S.budget.startDay=((parseInt(S.budget.cutoffDay||31)||31)%31)+1; // preserve old cutoff-only cycles
+if(!Array.isArray(S.budget.excludedCats))S.budget.excludedCats=[];
 if(!S.tax)S.tax={year:0,allowance:145000,deductions:0,excludedCats:[]};
 if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
 S.notify=notifyCfg();
@@ -3207,12 +3219,15 @@ function currentTaxStartYear(){
   const d=new Date();return d.getMonth()>=3?d.getFullYear():d.getFullYear()-1;
 }
 function budgetCfg(){
-  S.budget=S.budget||{amount:0,cur:'HKD',startDay:1,cutoffDay:31};
+  S.budget=S.budget||{amount:0,cur:'HKD',startDay:1,cutoffDay:31,excludedCats:[]};
+  if(!Array.isArray(S.budget.excludedCats))S.budget.excludedCats=[];
+  const excludedCats=[...new Set(S.budget.excludedCats.map(String).filter(Boolean))];
+  S.budget.excludedCats=excludedCats;
   const amount=Math.max(0,parseFloat(S.budget.amount||0)||0);
   const cur=['HKD','USD','RMB','JPY'].includes(S.budget.cur)?S.budget.cur:'HKD';
   const startDay=Math.max(1,Math.min(31,parseInt(S.budget.startDay||1)||1));
   const cutoffDay=Math.max(1,Math.min(31,parseInt(S.budget.cutoffDay||31)||31));
-  return {amount,cur,startDay,cutoffDay};
+  return {amount,cur,startDay,cutoffDay,excludedCats};
 }
 function budgetWindow(base){
   base=dateOnly(base||new Date());
@@ -3237,14 +3252,17 @@ function budgetWindow(base){
 function budgetInfo(){
   const cfg=budgetCfg(),win=budgetWindow(new Date());
   const targetHKD=toHKD(cfg.amount,cfg.cur);
-  const spent=(S.txns||[]).filter(tx=>txReportable(tx)&&tx.type==='expense').filter(tx=>{
+  const expenseRows=(S.txns||[]).filter(tx=>txReportable(tx)&&tx.type==='expense').filter(tx=>{
     const d=parseDateOnly(tx.date);return d>=win.start&&d<=win.end;
-  }).reduce((a,tx)=>a+(tx.amtHKD||0),0);
+  });
+  const allSpent=expenseRows.reduce((a,tx)=>a+(tx.amtHKD||0),0);
+  const spent=expenseRows.filter(tx=>!cfg.excludedCats.includes(String(tx.catId||'other'))).reduce((a,tx)=>a+(tx.amtHKD||0),0);
+  const excludedSpent=allSpent-spent;
   const remain=targetHKD-spent;
   const daysLeft=Math.max(1,Math.ceil((win.end-dateOnly(new Date()))/86400000)+1);
   const bs=balanceSheetBreakdown();
   const pct=targetHKD>0?Math.max(0,Math.min(100,spent/targetHKD*100)):0;
-  return {cfg,win,targetHKD,spent,remain,daysLeft,daily:remain/daysLeft,quickAsset:bs.quickAsset,pct};
+  return {cfg,win,targetHKD,spent,allSpent,excludedSpent,remain,daysLeft,daily:remain/daysLeft,quickAsset:bs.quickAsset,pct};
 }
 function renderBudgetCard(){
   const el=document.getElementById('h-budget-card');if(!el)return;
@@ -3255,7 +3273,19 @@ function renderBudgetCard(){
     return;
   }
   const remainCol=b.remain>=0?'var(--g3)':'var(--r3)';
-  el.innerHTML=`<div class="budget-top"><div><div class="mlabel">${title} · ${ymd(b.win.start)} → ${ymd(b.win.end)}</div><div class="budget-val" style="color:${remainCol}">${fmtSigned(b.remain)}</div><div class="msub">${tt('本月剩餘額度','Remaining this cycle')}</div></div><div style="text-align:right"><div class="mlabel">${tt('每日平均','Daily avg')}</div><div style="font-size:18px;font-weight:800;color:${remainCol}">${fmtSigned(b.daily)}</div><div class="msub">${b.daysLeft} ${tt('日','days')}</div></div></div><div class="budget-subgrid"><div class="budget-mini"><div class="mlabel">${tt('已用','Spent')}</div><strong>${fmt(b.spent)}</strong></div><div class="budget-mini"><div class="mlabel">${tt('流動資金 / 現金','Liquid cash')}</div><strong>${fmt(b.quickAsset)}</strong></div></div><div class="budget-bar"><div class="budget-fill" style="width:${b.pct}%"></div></div>`;
+  el.innerHTML=`<div class="budget-top"><div><div class="mlabel">${title} · ${ymd(b.win.start)} → ${ymd(b.win.end)}</div><div class="budget-val" style="color:${remainCol}">${fmtSigned(b.remain)}</div><div class="msub">${tt('本月剩餘額度','Remaining this cycle')}</div></div><div style="text-align:right"><div class="mlabel">${tt('每日平均','Daily avg')}</div><div style="font-size:18px;font-weight:800;color:${remainCol}">${fmtSigned(b.daily)}</div><div class="msub">${b.daysLeft} ${tt('日','days')}</div></div></div><div class="budget-subgrid"><div class="budget-mini"><div class="mlabel">${tt('已用預算','Budget used')}</div><strong>${fmt(b.spent)}</strong></div><div class="budget-mini"><div class="mlabel">${tt('流動資金 / 現金','Liquid cash')}</div><strong>${fmt(b.quickAsset)}</strong></div></div>${b.excludedSpent>0?`<div class="msub" style="margin-top:8px">${tt('另有','Plus')} ${fmt(b.excludedSpent)} ${tt('類別支出不扣預算','in category spending excluded from budget')}</div>`:''}<div class="budget-bar"><div class="budget-fill" style="width:${b.pct}%"></div></div>`;
+}
+function renderBudgetCategoryFilter(){
+  const el=document.getElementById('budget-cat-list'),summary=document.getElementById('budget-cat-summary');if(!el||!summary)return;
+  const cfg=budgetCfg(),cats=billExpenseCats(),excluded=new Set(cfg.excludedCats);
+  summary.textContent=`${tt('不扣預算類別','Budget exclusions')} · ${excluded.size}`;
+  el.innerHTML=cats.map(c=>{const off=excluded.has(String(c.id));return `<div class="tax-cat-row"><div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="font-size:20px">${escapeHtml(c.icon||'📌')}</span><span style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(catLabel(c))}</span></div><button type="button" aria-pressed="${off}" onclick="toggleBudgetCat(${inlineJsString(c.id)})" style="padding:6px 10px;border:1.5px solid ${off?'var(--a)':'var(--bdr2)'};border-radius:20px;background:${off?'var(--a2)':'transparent'};color:${off?'var(--a3)':'var(--ink3)'};font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">${off?tt('不扣預算','Excluded'):tt('扣預算','Counts')}</button></div>`;}).join('');
+}
+function toggleBudgetCat(id){
+  const cfg=budgetCfg(),key=String(id),i=cfg.excludedCats.indexOf(key);
+  i>=0?cfg.excludedCats.splice(i,1):cfg.excludedCats.push(key);
+  S.budget={...S.budget,excludedCats:cfg.excludedCats};
+  saveS();renderBudgetSettings();renderHome();
 }
 function renderBudgetSettings(){
   const cfg=budgetCfg(),b=budgetInfo();
@@ -3265,10 +3295,13 @@ function renderBudgetSettings(){
   document.getElementById('budget-hint').textContent=tt('設定每個預算週期可用金額。可以自訂開始日同截止日；例如 25 → 24 代表每月 25 號開始、下月 24 號截止。','Set the spend budget for each cycle. You can choose both start and cutoff day; e.g. 25 → 24 means it starts on the 25th and ends on the 24th next month.');
   document.getElementById('budget-start-lbl').textContent=tt('開始 / 重置日（1–31）','Start / reset day (1–31)');
   document.getElementById('budget-cutoff-lbl').textContent=tt('截止日（1–31，可跨月）','Cutoff day (1–31, can cross month)');
-  document.getElementById('budget-settings-preview').innerHTML=cfg.amount?`${tt('目前週期','Current cycle')}: ${ymd(b.win.start)} → ${ymd(b.win.end)} · ${tt('剩餘','Remaining')} <strong style="color:${b.remain>=0?'var(--g3)':'var(--r3)'}">${fmtSigned(b.remain)}</strong>`:tt('未設定預算金額。','No budget amount set yet.');
+  document.getElementById('budget-cat-hint').textContent=tt('選中的類別仍會計入支出、現金流及淨資產，但永遠不會扣減預算。','Selected categories still count toward spending, cash flow and net worth, but never reduce your budget.');
+  renderBudgetCategoryFilter();
+  document.getElementById('budget-settings-preview').innerHTML=cfg.amount?`${tt('目前週期','Current cycle')}: ${ymd(b.win.start)} → ${ymd(b.win.end)} · ${tt('剩餘','Remaining')} <strong style="color:${b.remain>=0?'var(--g3)':'var(--r3)'}">${fmtSigned(b.remain)}</strong>${b.excludedSpent>0?` · ${tt('不扣預算','Excluded')} ${fmt(b.excludedSpent)}`:''}`:tt('未設定預算金額。','No budget amount set yet.');
 }
 function saveBudgetSettings(){
-  S.budget={amount:parseFloat(document.getElementById('budget-amount').value)||0,cur:document.getElementById('budget-cur').value||'HKD',startDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-start').value)||1)),cutoffDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-cutoff').value)||31))};
+  const excludedCats=budgetCfg().excludedCats;
+  S.budget={amount:parseFloat(document.getElementById('budget-amount').value)||0,cur:document.getElementById('budget-cur').value||'HKD',startDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-start').value)||1)),cutoffDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-cutoff').value)||31)),excludedCats};
   saveS();renderBudgetSettings();renderHome();showToast(tt('已更新預算','Budget updated'));
 }
 function taxCfg(){
@@ -4428,7 +4461,19 @@ function deleteAcct(id){if((S.accounts||[]).length<=1)return;S.accounts=S.accoun
 function renderMergeChips(){document.getElementById('merge-chips').innerHTML=S.cats.map(c=>`<div class="cat-chip${S.mergeSelected.includes(c.id)?' merge-sel':''}" onclick="toggleMergeSel(${inlineJsString(c.id)})"><span style="font-size:20px">${escapeHtml(c.icon)}</span><span>${escapeHtml(catLabel(c))}</span></div>`).join('');updateMergePreview();}
 function toggleMergeSel(id){const i=S.mergeSelected.indexOf(id);i>=0?S.mergeSelected.splice(i,1):S.mergeSelected.push(id);renderMergeChips();}
 function updateMergePreview(){const sel=S.mergeSelected.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean);const prev=document.getElementById('merge-preview');if(sel.length<2){prev.innerHTML=`<div style="font-size:12px;color:var(--ink3)">${t('mergehint')}</div>`;return;}const newName=document.getElementById('merge-name')?.value||'...';prev.innerHTML=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px">${sel.map(c=>`<span style="background:var(--g2);color:var(--g3);padding:3px 10px;border-radius:20px">${escapeHtml(c.icon)} ${escapeHtml(catLabel(c))}</span>`).join('<span style="color:var(--ink3)">+</span>')}<span style="color:var(--ink3)">→</span><span style="background:var(--p2);color:var(--p3);padding:3px 10px;border-radius:20px">${escapeHtml(newName)}</span></div>`;}
-function mergeCats(){if(S.mergeSelected.length<2)return;const newName=document.getElementById('merge-name').value.trim();const newIcon=document.getElementById('merge-icon').value.trim()||'📌';if(!newName)return;const newId=newName.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');const merged=S.mergeSelected.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean);const allAliases=[...new Set(merged.flatMap(c=>[c.label,...(c.aliases||[])]))];S.cats.push({id:newId,label:newName,labelEn:newName,icon:newIcon,aliases:allAliases});S.txns.forEach(tx=>{if(S.mergeSelected.includes(tx.catId)){tx.catId=newId;tx.catLabel=newName;tx.catIcon=newIcon;}});S.cats=S.cats.filter(c=>!S.mergeSelected.includes(c.id));S.mergeSelected=[];document.getElementById('merge-name').value='';document.getElementById('merge-icon').value='';saveS();renderSettings();}
+function mergeCats(){
+  if(S.mergeSelected.length<2)return;
+  const newName=document.getElementById('merge-name').value.trim(),newIcon=document.getElementById('merge-icon').value.trim()||'📌';if(!newName)return;
+  const selected=S.mergeSelected.map(String),newId=newName.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');
+  const merged=S.mergeSelected.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean),allAliases=[...new Set(merged.flatMap(c=>[c.label,...(c.aliases||[])]))];
+  const excluded=budgetCfg().excludedCats,mergedWasExcluded=selected.some(id=>excluded.includes(id));
+  const excludedCats=excluded.filter(id=>!selected.includes(String(id)));if(mergedWasExcluded)excludedCats.push(newId);
+  S.budget={...S.budget,excludedCats:[...new Set(excludedCats)]};
+  S.cats.push({id:newId,label:newName,labelEn:newName,icon:newIcon,aliases:allAliases});
+  S.txns.forEach(tx=>{if(S.mergeSelected.includes(tx.catId)){tx.catId=newId;tx.catLabel=newName;tx.catIcon=newIcon;}});
+  S.cats=S.cats.filter(c=>!S.mergeSelected.includes(c.id));S.mergeSelected=[];
+  document.getElementById('merge-name').value='';document.getElementById('merge-icon').value='';saveS();renderSettings();
+}
 function addAlias(){const alias=document.getElementById('alias-name').value.trim();const tId=document.getElementById('alias-target').value;if(!alias)return;const cat=S.cats.find(c=>c.id===tId);if(cat&&!(cat.aliases||[]).includes(alias))cat.aliases.push(alias);document.getElementById('alias-name').value='';saveS();renderSettings();}
 function addCat(){const icon=document.getElementById('new-cat-icon').value.trim()||'📌';const name=document.getElementById('new-cat-name').value.trim();if(!name)return;const id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!S.cats.find(c=>c.id===id))S.cats.push({id,label:name,labelEn:name,icon,aliases:[]});['new-cat-icon','new-cat-name'].forEach(x=>document.getElementById(x).value='');saveS();renderSettings();}
 
