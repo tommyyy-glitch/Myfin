@@ -1113,13 +1113,25 @@ img,canvas,svg{max-width:100%;}
         <input id="budget-amount" type="number" inputmode="decimal" placeholder="0" style="flex:1;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
         <select id="budget-cur" style="width:84px;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px;-webkit-appearance:none"><option>HKD</option><option>USD</option><option>RMB</option><option>JPY</option></select>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
-        <span style="font-size:13px;color:var(--ink3);flex:1" id="budget-start-lbl"></span>
-        <input id="budget-start" type="number" inputmode="decimal" min="1" max="31" placeholder="1" style="width:88px;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
+      <div class="seg-ctrl" id="budget-mode" style="margin-bottom:12px">
+        <button type="button" class="seg-btn" id="budget-mode-cycle" onclick="setBudgetMode('cycle')"></button>
+        <button type="button" class="seg-btn" id="budget-mode-custom" onclick="setBudgetMode('custom')"></button>
       </div>
-      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
-        <span style="font-size:13px;color:var(--ink3);flex:1" id="budget-cutoff-lbl"></span>
-        <input id="budget-cutoff" type="number" inputmode="decimal" min="1" max="31" placeholder="31" style="width:88px;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
+      <div id="budget-cycle-fields">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+          <span style="font-size:13px;color:var(--ink3);flex:1" id="budget-start-lbl"></span>
+          <input id="budget-start" type="number" inputmode="decimal" min="1" max="31" placeholder="1" style="width:88px;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+          <span style="font-size:13px;color:var(--ink3);flex:1" id="budget-cutoff-lbl"></span>
+          <input id="budget-cutoff" type="number" inputmode="decimal" min="1" max="31" placeholder="31" style="width:88px;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:14px;text-align:right">
+        </div>
+      </div>
+      <div id="budget-custom-fields" style="display:none">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;margin-bottom:12px">
+          <label style="display:block;min-width:0"><span class="msub" id="budget-custom-start-lbl" style="display:block;margin:0 0 6px"></span><input id="budget-custom-start" type="date" style="width:100%;min-width:0;border:1px solid var(--bdr2);border-radius:12px;padding:11px 8px;background:var(--bg2);color:var(--ink);font-size:13px"></label>
+          <label style="display:block;min-width:0"><span class="msub" id="budget-custom-end-lbl" style="display:block;margin:0 0 6px"></span><input id="budget-custom-end" type="date" style="width:100%;min-width:0;border:1px solid var(--bdr2);border-radius:12px;padding:11px 8px;background:var(--bg2);color:var(--ink);font-size:13px"></label>
+        </div>
       </div>
       <div class="msub" id="budget-cat-hint" style="margin-bottom:7px;line-height:1.55"></div>
       <details class="budget-cat-details" id="budget-cat-details">
@@ -1732,7 +1744,7 @@ function createAppState(){return {
   txns:[],people:[],gamble:[],autopay:[],autoincome:[],portfolio:[],debts:[],privateLoans:[],friends:[],tuScores:[],customSections:[],changelog:[],priceHist:[],
   cats:DEF_CATS.map(c=>({...c,aliases:[...(c.aliases||[])]})),accounts:DEF_ACCTS.map(a=>({...a})),
   lang:'zh',theme:'auto',motionMode:'dance',dispCur:'HKD',period:'month',privacy:false,numFmt:'full',
-  budget:{amount:0,cur:'HKD',startDay:1,cutoffDay:31,excludedCats:[]},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},
+  budget:{amount:0,cur:'HKD',mode:'cycle',startDay:1,cutoffDay:31,customStart:'',customEnd:'',excludedCats:[]},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},
   notify:{on:false,budgetLow:true,budgetPct:20,budgetOver:true,autopayDue:true,autopayDays:3,rpOverdue:true,rpDays:14,negCash:true,customRules:[]},
   pnlOrder:['poker','stock','crypto','pe','loan','debt'],pnlHidden:{},pnlNetHidden:{},pnlPieNoCash:false,setCollapsed:{},
   ai:{provider:'gemini',key:'',model:''},tdKey:'',fx:null,cloud:{url:'',key:'',pass:'',salt:'',on:false,ver:0,last:0,pending:false,pendingAt:0,lastError:'',_dirty:false},
@@ -1780,8 +1792,11 @@ function clearStorageError(action){const el=document.getElementById('storage-err
 function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d);Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
 if(!S.debts)S.debts=[];
 if(!S.privateLoans)S.privateLoans=[];
-if(!S.budget)S.budget={amount:0,cur:'HKD',startDay:1,cutoffDay:31,excludedCats:[]};
+if(!S.budget)S.budget={amount:0,cur:'HKD',mode:'cycle',startDay:1,cutoffDay:31,customStart:'',customEnd:'',excludedCats:[]};
 if(S.budget.startDay==null)S.budget.startDay=((parseInt(S.budget.cutoffDay||31)||31)%31)+1; // preserve old cutoff-only cycles
+if(S.budget.mode!=='custom')S.budget.mode='cycle';
+if(typeof S.budget.customStart!=='string')S.budget.customStart='';
+if(typeof S.budget.customEnd!=='string')S.budget.customEnd='';
 if(!Array.isArray(S.budget.excludedCats))S.budget.excludedCats=[];
 if(!S.tax)S.tax={year:0,allowance:145000,deductions:0,excludedCats:[]};
 if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
@@ -3218,26 +3233,34 @@ function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'
 function currentTaxStartYear(){
   const d=new Date();return d.getMonth()>=3?d.getFullYear():d.getFullYear()-1;
 }
+function validBudgetDate(s){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(s||'')))return false;
+  const d=parseDateOnly(s);return !Number.isNaN(d.getTime())&&ymd(d)===s;
+}
 function budgetCfg(){
-  S.budget=S.budget||{amount:0,cur:'HKD',startDay:1,cutoffDay:31,excludedCats:[]};
+  S.budget=S.budget||{amount:0,cur:'HKD',mode:'cycle',startDay:1,cutoffDay:31,customStart:'',customEnd:'',excludedCats:[]};
   if(!Array.isArray(S.budget.excludedCats))S.budget.excludedCats=[];
   const excludedCats=[...new Set(S.budget.excludedCats.map(String).filter(Boolean))];
   S.budget.excludedCats=excludedCats;
   const amount=Math.max(0,parseFloat(S.budget.amount||0)||0);
   const cur=['HKD','USD','RMB','JPY'].includes(S.budget.cur)?S.budget.cur:'HKD';
+  const mode=S.budget.mode==='custom'?'custom':'cycle';
   const startDay=Math.max(1,Math.min(31,parseInt(S.budget.startDay||1)||1));
   const cutoffDay=Math.max(1,Math.min(31,parseInt(S.budget.cutoffDay||31)||31));
-  return {amount,cur,startDay,cutoffDay,excludedCats};
+  const customStart=validBudgetDate(S.budget.customStart)?S.budget.customStart:'';
+  const customEnd=validBudgetDate(S.budget.customEnd)?S.budget.customEnd:'';
+  S.budget.mode=mode;S.budget.customStart=customStart;S.budget.customEnd=customEnd;
+  return {amount,cur,mode,startDay,cutoffDay,customStart,customEnd,excludedCats};
 }
-function budgetWindow(base){
+function budgetCycleWindow(base,cfg){
   base=dateOnly(base||new Date());
-  const cfg=budgetCfg(),s=cfg.startDay,c=cfg.cutoffDay;
+  cfg=cfg||budgetCfg();const s=cfg.startDay,c=cfg.cutoffDay;
   const dim=(y,m)=>dimM(y,m);
   const makeDay=(y,m,d)=>new Date(y,m,Math.min(d,dim(y,m)));
   const mk=(y,m)=>{
     const start=makeDay(y,m,s);
     const end=s<=c?makeDay(y,m,c):makeDay(y,m+1,c);
-    return {start,end};
+    return {start,end,mode:'cycle'};
   };
   const y=base.getFullYear(),m=base.getMonth();
   for(let off=-2;off<=2;off++){
@@ -3249,8 +3272,16 @@ function budgetWindow(base){
   const candidates=[-1,0,1,2].map(off=>mk(y,m+off)).sort((a,b)=>a.start-b.start);
   return candidates.find(w=>base<w.start)||candidates[candidates.length-1];
 }
-function budgetInfo(){
-  const cfg=budgetCfg(),win=budgetWindow(new Date());
+function budgetWindow(base){
+  const cfg=budgetCfg();
+  if(cfg.mode==='custom'&&cfg.customStart&&cfg.customEnd){
+    const start=parseDateOnly(cfg.customStart),end=parseDateOnly(cfg.customEnd);
+    if(start<=end)return {start,end,mode:'custom'};
+  }
+  return budgetCycleWindow(base||new Date(),cfg);
+}
+function budgetInfo(base){
+  const now=dateOnly(base||new Date()),cfg=budgetCfg(),win=budgetWindow(now);
   const targetHKD=toHKD(cfg.amount,cfg.cur);
   const expenseRows=(S.txns||[]).filter(tx=>txReportable(tx)&&tx.type==='expense').filter(tx=>{
     const d=parseDateOnly(tx.date);return d>=win.start&&d<=win.end;
@@ -3259,21 +3290,29 @@ function budgetInfo(){
   const spent=expenseRows.filter(tx=>!cfg.excludedCats.includes(String(tx.catId||'other'))).reduce((a,tx)=>a+(tx.amtHKD||0),0);
   const excludedSpent=allSpent-spent;
   const remain=targetHKD-spent;
-  const daysLeft=Math.max(1,Math.ceil((win.end-dateOnly(new Date()))/86400000)+1);
+  const phase=now<win.start?'upcoming':now>win.end?'ended':'active';
+  const daysUntilStart=phase==='upcoming'?Math.ceil((win.start-now)/86400000):0;
+  const dailyStart=now<win.start?win.start:now;
+  const daysLeft=phase==='ended'?0:Math.max(1,Math.ceil((win.end-dailyStart)/86400000)+1);
   const bs=balanceSheetBreakdown();
   const pct=targetHKD>0?Math.max(0,Math.min(100,spent/targetHKD*100)):0;
-  return {cfg,win,targetHKD,spent,allSpent,excludedSpent,remain,daysLeft,daily:remain/daysLeft,quickAsset:bs.quickAsset,pct};
+  return {cfg,win,targetHKD,spent,allSpent,excludedSpent,remain,phase,daysUntilStart,daysLeft,daily:daysLeft?remain/daysLeft:0,quickAsset:bs.quickAsset,pct};
 }
 function renderBudgetCard(){
   const el=document.getElementById('h-budget-card');if(!el)return;
   const b=budgetInfo();
   const title=tt('本期預算','Budget');
   if(!b.targetHKD){
-    el.innerHTML=`<div class="budget-top"><div><div class="mlabel">${title}</div><div class="budget-val">${tt('未設定','Not set')}</div><div class="msub">${tt('去設定輸入每月預算；系統會用流動資金 / 現金作參考。','Set a monthly budget in Settings; liquidity is shown as context.')}</div></div><button onclick="goTabIndex(3)" style="padding:9px 12px;border:1.5px solid var(--bdr2);border-radius:14px;background:var(--surf2);color:var(--ink2);font-size:12px;font-weight:800">${t('settings')}</button></div>`;
+    el.innerHTML=`<div class="budget-top"><div><div class="mlabel">${title}</div><div class="budget-val">${tt('未設定','Not set')}</div><div class="msub">${tt('去設定輸入預算及選擇每月循環或自訂日期。','Set a budget and choose a monthly cycle or custom dates in Settings.')}</div></div><button onclick="goTabIndex(3)" style="padding:9px 12px;border:1.5px solid var(--bdr2);border-radius:14px;background:var(--surf2);color:var(--ink2);font-size:12px;font-weight:800">${t('settings')}</button></div>`;
     return;
   }
   const remainCol=b.remain>=0?'var(--g3)':'var(--r3)';
-  el.innerHTML=`<div class="budget-top"><div><div class="mlabel">${title} · ${ymd(b.win.start)} → ${ymd(b.win.end)}</div><div class="budget-val" style="color:${remainCol}">${fmtSigned(b.remain)}</div><div class="msub">${tt('本月剩餘額度','Remaining this cycle')}</div></div><div style="text-align:right"><div class="mlabel">${tt('每日平均','Daily avg')}</div><div style="font-size:18px;font-weight:800;color:${remainCol}">${fmtSigned(b.daily)}</div><div class="msub">${b.daysLeft} ${tt('日','days')}</div></div></div><div class="budget-subgrid"><div class="budget-mini"><div class="mlabel">${tt('已用預算','Budget used')}</div><strong>${fmt(b.spent)}</strong></div><div class="budget-mini"><div class="mlabel">${tt('流動資金 / 現金','Liquid cash')}</div><strong>${fmt(b.quickAsset)}</strong></div></div>${b.excludedSpent>0?`<div class="msub" style="margin-top:8px">${tt('另有','Plus')} ${fmt(b.excludedSpent)} ${tt('類別支出不扣預算','in category spending excluded from budget')}</div>`:''}<div class="budget-bar"><div class="budget-fill" style="width:${b.pct}%"></div></div>`;
+  const modeLabel=b.win.mode==='custom'?tt('自訂日期','Custom dates'):tt('每月循環','Monthly cycle');
+  const phaseLabel=b.phase==='upcoming'?tt('預算尚未開始','Budget has not started'):b.phase==='ended'?tt('預算期已結束','Budget period ended'):tt('本期剩餘額度','Remaining this period');
+  const dailyLabel=b.phase==='ended'?tt('已結束','Ended'):b.phase==='upcoming'?tt('期間每日平均','Daily avg for period'):tt('每日平均','Daily avg');
+  const dailyValue=b.phase==='ended'?'—':fmtSigned(b.daily);
+  const dayText=b.phase==='ended'?tt('已完成','Complete'):b.phase==='upcoming'?`${b.daysUntilStart} ${tt('日後開始','days until start')}`:`${b.daysLeft} ${tt('日','days')}`;
+  el.innerHTML=`<div class="budget-top"><div><div class="mlabel">${title} · ${modeLabel} · ${ymd(b.win.start)} → ${ymd(b.win.end)}</div><div class="budget-val" style="color:${remainCol}">${fmtSigned(b.remain)}</div><div class="msub">${phaseLabel}</div></div><div style="text-align:right"><div class="mlabel">${dailyLabel}</div><div style="font-size:18px;font-weight:800;color:${remainCol}">${dailyValue}</div><div class="msub">${dayText}</div></div></div><div class="budget-subgrid"><div class="budget-mini"><div class="mlabel">${tt('已用預算','Budget used')}</div><strong>${fmt(b.spent)}</strong></div><div class="budget-mini"><div class="mlabel">${tt('流動資金 / 現金','Liquid cash')}</div><strong>${fmt(b.quickAsset)}</strong></div></div>${b.excludedSpent>0?`<div class="msub" style="margin-top:8px">${tt('另有','Plus')} ${fmt(b.excludedSpent)} ${tt('類別支出不扣預算','in category spending excluded from budget')}</div>`:''}<div class="budget-bar"><div class="budget-fill" style="width:${b.pct}%"></div></div>`;
 }
 function renderBudgetCategoryFilter(){
   const el=document.getElementById('budget-cat-list'),summary=document.getElementById('budget-cat-summary');if(!el||!summary)return;
@@ -3287,21 +3326,52 @@ function toggleBudgetCat(id){
   S.budget={...S.budget,excludedCats:cfg.excludedCats};
   saveS();renderBudgetSettings();renderHome();
 }
-function renderBudgetSettings(){
+function renderBudgetPeriodMode(){
+  const cfg=budgetCfg(),cycle=document.getElementById('budget-mode-cycle'),custom=document.getElementById('budget-mode-custom');
+  const cycleFields=document.getElementById('budget-cycle-fields'),customFields=document.getElementById('budget-custom-fields'),hint=document.getElementById('budget-hint');
+  if(!cycle||!custom)return;
+  cycle.textContent=tt('每月循環','Monthly cycle');custom.textContent=tt('自訂日期','Custom dates');
+  cycle.classList.toggle('active',cfg.mode==='cycle');custom.classList.toggle('active',cfg.mode==='custom');
+  cycle.setAttribute('aria-pressed',String(cfg.mode==='cycle'));custom.setAttribute('aria-pressed',String(cfg.mode==='custom'));
+  if(cycleFields)cycleFields.style.display=cfg.mode==='cycle'?'block':'none';
+  if(customFields)customFields.style.display=cfg.mode==='custom'?'block':'none';
+  if(hint)hint.textContent=cfg.mode==='custom'?tt('設定一次性的完整開始及結束日期，可跨月份或年份；首尾兩日都會計入。','Set exact one-off start and end dates across months or years; both dates are included.'):tt('按每月同一組開始日及截止日自動循環；例如 25 → 24 代表每月 25 號至下月 24 號。','Repeat the same start and cutoff days monthly; e.g. 25 → 24 runs from the 25th to the 24th next month.');
+}
+function renderBudgetSettingsPreview(){
+  const el=document.getElementById('budget-settings-preview');if(!el)return;
   const cfg=budgetCfg(),b=budgetInfo();
-  const a=document.getElementById('budget-amount'),c=document.getElementById('budget-cur'),s=document.getElementById('budget-start'),d=document.getElementById('budget-cutoff');
+  if(!cfg.amount){el.textContent=tt('未設定預算金額。','No budget amount set yet.');return;}
+  const phase=b.phase==='upcoming'?tt('尚未開始','Upcoming'):b.phase==='ended'?tt('已結束','Ended'):tt('進行中','Active');
+  el.innerHTML=`${b.win.mode==='custom'?tt('自訂期間','Custom period'):tt('目前週期','Current cycle')}: ${ymd(b.win.start)} → ${ymd(b.win.end)} · ${phase} · ${tt('剩餘','Remaining')} <strong style="color:${b.remain>=0?'var(--g3)':'var(--r3)'}">${fmtSigned(b.remain)}</strong>${b.excludedSpent>0?` · ${tt('不扣預算','Excluded')} ${fmt(b.excludedSpent)}`:''}`;
+}
+function setBudgetMode(mode){
+  mode=mode==='custom'?'custom':'cycle';const cfg=budgetCfg();
+  if(mode==='custom'&&(!cfg.customStart||!cfg.customEnd)){
+    const w=budgetCycleWindow(new Date(),cfg);S.budget.customStart=ymd(w.start);S.budget.customEnd=ymd(w.end);
+    const s=document.getElementById('budget-custom-start'),e=document.getElementById('budget-custom-end');if(s)s.value=S.budget.customStart;if(e)e.value=S.budget.customEnd;
+  }
+  S.budget.mode=mode;saveS();renderBudgetPeriodMode();renderBudgetSettingsPreview();renderHome();
+}
+function renderBudgetSettings(){
+  const cfg=budgetCfg(),cycleDefault=budgetCycleWindow(new Date(),cfg);
+  const a=document.getElementById('budget-amount'),c=document.getElementById('budget-cur'),s=document.getElementById('budget-start'),d=document.getElementById('budget-cutoff'),cs=document.getElementById('budget-custom-start'),ce=document.getElementById('budget-custom-end');
   if(!a)return;
   a.value=cfg.amount||'';c.value=cfg.cur;s.value=cfg.startDay;d.value=cfg.cutoffDay;
-  document.getElementById('budget-hint').textContent=tt('設定每個預算週期可用金額。可以自訂開始日同截止日；例如 25 → 24 代表每月 25 號開始、下月 24 號截止。','Set the spend budget for each cycle. You can choose both start and cutoff day; e.g. 25 → 24 means it starts on the 25th and ends on the 24th next month.');
+  if(cs)cs.value=cfg.customStart||ymd(cycleDefault.start);if(ce)ce.value=cfg.customEnd||ymd(cycleDefault.end);
+  renderBudgetPeriodMode();
   document.getElementById('budget-start-lbl').textContent=tt('開始 / 重置日（1–31）','Start / reset day (1–31)');
   document.getElementById('budget-cutoff-lbl').textContent=tt('截止日（1–31，可跨月）','Cutoff day (1–31, can cross month)');
+  document.getElementById('budget-custom-start-lbl').textContent=tt('開始日期','Start date');
+  document.getElementById('budget-custom-end-lbl').textContent=tt('結束日期','End date');
   document.getElementById('budget-cat-hint').textContent=tt('選中的類別仍會計入支出、現金流及淨資產，但永遠不會扣減預算。','Selected categories still count toward spending, cash flow and net worth, but never reduce your budget.');
   renderBudgetCategoryFilter();
-  document.getElementById('budget-settings-preview').innerHTML=cfg.amount?`${tt('目前週期','Current cycle')}: ${ymd(b.win.start)} → ${ymd(b.win.end)} · ${tt('剩餘','Remaining')} <strong style="color:${b.remain>=0?'var(--g3)':'var(--r3)'}">${fmtSigned(b.remain)}</strong>${b.excludedSpent>0?` · ${tt('不扣預算','Excluded')} ${fmt(b.excludedSpent)}`:''}`:tt('未設定預算金額。','No budget amount set yet.');
+  renderBudgetSettingsPreview();
 }
 function saveBudgetSettings(){
-  const excludedCats=budgetCfg().excludedCats;
-  S.budget={amount:parseFloat(document.getElementById('budget-amount').value)||0,cur:document.getElementById('budget-cur').value||'HKD',startDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-start').value)||1)),cutoffDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-cutoff').value)||31)),excludedCats};
+  const cfg=budgetCfg(),mode=cfg.mode,customStart=document.getElementById('budget-custom-start').value,customEnd=document.getElementById('budget-custom-end').value;
+  if(mode==='custom'&&(!validBudgetDate(customStart)||!validBudgetDate(customEnd))){showToast(tt('請選擇完整開始及結束日期','Choose both a valid start and end date'),1);return;}
+  if(mode==='custom'&&parseDateOnly(customStart)>parseDateOnly(customEnd)){showToast(tt('結束日期不可早於開始日期','End date cannot be before start date'),1);return;}
+  S.budget={amount:parseFloat(document.getElementById('budget-amount').value)||0,cur:document.getElementById('budget-cur').value||'HKD',mode,startDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-start').value)||1)),cutoffDay:Math.max(1,Math.min(31,parseInt(document.getElementById('budget-cutoff').value)||31)),customStart,customEnd,excludedCats:cfg.excludedCats};
   saveS();renderBudgetSettings();renderHome();showToast(tt('已更新預算','Budget updated'));
 }
 function taxCfg(){
@@ -3407,7 +3477,7 @@ function notifyCustomMetric(r){if(r.type==='account_balance'){const a=(S.account
   if(r.type==='position_pnl_pct'){const p=(S.portfolio||[]).find(x=>String(x.id)===String(r.target));if(!p||!(Number(p.costHKD)>0))return null;const pct=((Number(p.valueHKD||0)-Number(p.costHKD||0))/Number(p.costHKD))*100;return {current:pct,threshold:Number(r.value)||0,name:p.name||t('position'),shown:(pct>=0?'+':'')+pct.toFixed(2)+'%',thresholdShown:(Number(r.value)||0)+'%'};}return null;}
 function notifyCustomEvent(r){if(!r||!r.on)return null;const key='custom_'+r.id,m=notifyCustomMetric(r);if(!m){notifyClear(key);return null;}const hit=r.op==='lt'?m.current<m.threshold:r.op==='abs_gt'?Math.abs(m.current)>Math.abs(m.threshold):m.current>m.threshold;if(!hit){notifyClear(key);return null;}const auto=notifyCustomTypeLabel(r.type)+' · '+m.name+' · '+m.shown;const body=(r.message||auto).replace(/\{value\}/gi,m.shown).replace(/\{threshold\}/gi,m.thresholdShown).replace(/\{name\}/gi,m.name);return {key,stamp:'hit',title:tt('自訂財務提示','Custom finance alert'),body,ruleId:r.id,resetBaseline:m.resetBaseline};}
 function notifyEvents(){const c=notifyCfg(),ev=[];const now=new Date(),todayKey=today();
-  try{const b=budgetInfo();if(b.targetHKD>0){const cycle=ymd(b.win.start)+'_'+ymd(b.win.end);if(c.budgetOver&&b.remain<0)ev.push({key:'budget_over_'+cycle,stamp:'1',title:tt('預算已超支','Budget overspent'),body:tt('本期已超支 ','This cycle is over budget by ')+fmt(Math.abs(b.remain))});else if(c.budgetLow&&b.remain>=0&&b.remain<=b.targetHKD*(c.budgetPct/100))ev.push({key:'budget_low_'+cycle,stamp:'1',title:tt('預算快用完','Budget running low'),body:tt('本期剩餘 ','Remaining this cycle: ')+fmt(b.remain)+' · '+c.budgetPct+'%'});}}catch(e){}
+  try{const b=budgetInfo();if(b.targetHKD>0&&b.phase==='active'){const cycle=ymd(b.win.start)+'_'+ymd(b.win.end);if(c.budgetOver&&b.remain<0)ev.push({key:'budget_over_'+cycle,stamp:'1',title:tt('預算已超支','Budget overspent'),body:tt('本期已超支 ','This cycle is over budget by ')+fmt(Math.abs(b.remain))});else if(c.budgetLow&&b.remain>=0&&b.remain<=b.targetHKD*(c.budgetPct/100))ev.push({key:'budget_low_'+cycle,stamp:'1',title:tt('預算快用完','Budget running low'),body:tt('本期剩餘 ','Remaining this cycle: ')+fmt(b.remain)+' · '+c.budgetPct+'%'});}}catch(e){}
   if(c.autopayDue){(S.autopay||[]).filter(ap=>ap.active).forEach(ap=>{const pd=ap.day===31?dimM(now.getFullYear(),now.getMonth()):Math.min(ap.day,dimM(now.getFullYear(),now.getMonth()));if(localStorage.getItem('ap_'+ap.id+'_'+now.getFullYear()+'_'+now.getMonth()))return;const due=new Date(now.getFullYear(),now.getMonth(),pd);const days=Math.ceil((dateOnly(due)-dateOnly(now))/86400000);if(days>=0&&days<=c.autopayDays){ev.push({key:'autopay_'+ap.id+'_'+now.getFullYear()+'_'+now.getMonth(),stamp:'1',title:tt('自動繳費即將到期','Auto-pay due soon'),body:(ap.name||t('autopay'))+' · '+(days===0?tt('今日','today'):days+tt(' 日後',' days later'))+' · '+(ap.cur||'HKD')+' '+(ap.amount||0)});}});}
   if(c.rpOverdue){(S.people||[]).filter(p=>rpIsActive(p)&&p.dir!=='p').forEach(p=>{const d=parseDateOnly(p.date);const age=Math.floor((dateOnly(now)-dateOnly(d))/86400000);if(age>=c.rpDays){ev.push({key:'rp_'+p.id,stamp:String(c.rpDays),title:tt('應收款未收回','Receivable overdue'),body:(p.name||t('person'))+' · '+fmt(Math.abs(p.amtHKD||0))+' · '+age+tt(' 日',' days')+(p.desc?' · '+p.desc:'')});}});}
   if(c.negCash){(S.accounts||[]).filter(a=>!a.excluded).forEach(a=>{const bal=acctCash(a.id);if(bal<0){ev.push({key:'negcash_'+a.id,stamp:todayKey,title:tt('戶口現金為負','Account cash is negative'),body:(acctLabel(a)||a.id)+' · '+fmt(bal)});}});}
