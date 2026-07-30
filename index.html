@@ -455,6 +455,19 @@ input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
 input[type=date]{-webkit-appearance:none}
 .add-ar-dashed{width:100%;padding:14px;background:none;border:1.5px dashed var(--bdr2);border-radius:16px;color:var(--ink3);font-size:14px;font-weight:500;cursor:pointer;margin-bottom:12px;transition:all 0.15s}
 .add-ar-dashed:active{background:var(--bg2)}
+.split-bill-cta{
+  min-height:76px;padding:13px 14px;display:flex;align-items:center;gap:12px;text-align:left;
+  border-style:solid;border-color:rgba(29,158,117,.42);
+  background:linear-gradient(135deg,rgba(29,158,117,.16),rgba(29,158,117,.05));
+  color:var(--ink);box-shadow:0 8px 22px rgba(29,158,117,.10);
+}
+.split-bill-cta:active{background:linear-gradient(135deg,rgba(29,158,117,.24),rgba(29,158,117,.09))}
+.split-bill-ico{width:46px;height:46px;border-radius:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--g);color:#fff;font-size:21px;box-shadow:0 7px 16px rgba(29,158,117,.25)}
+.split-bill-copy{flex:1;min-width:0}
+.split-bill-title{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:800;color:var(--ink)}
+.split-bill-aa{padding:2px 7px;border-radius:999px;background:var(--g);color:#fff;font-size:10px;font-weight:900;letter-spacing:.05em}
+.split-bill-hint{margin-top:4px;color:var(--ink3);font-size:12px;line-height:1.4}
+.split-bill-go{color:var(--g3);font-size:21px;flex-shrink:0}
 @keyframes fos-spin{to{transform:rotate(360deg)}}
 .refresh-prices-btn.spin i{display:inline-block;animation:fos-spin 0.8s linear infinite}
 .refresh-prices-btn:active{transform:scale(0.96)}
@@ -703,6 +716,14 @@ img,canvas,svg{max-width:100%;}
         <div class="metric-card"><div class="mlabel" data-i="arowed"></div><div class="mval pos" id="ar-total">HK$0</div><div class="msub" id="ar-ct"></div></div>
         <div class="metric-card"><div class="mlabel" data-i="payable"></div><div class="mval neg" id="ar-pay-total">HK$0</div><div class="msub" id="ar-urgent-ct" style="color:var(--r)"></div></div>
       </div>
+      <button class="add-ar-dashed split-bill-cta" id="split-bill-cta" onclick="openGroupModal()">
+        <span class="split-bill-ico"><i class="ti ti-receipt"></i></span>
+        <span class="split-bill-copy">
+          <span class="split-bill-title"><span class="split-bill-aa">AA</span><span data-i="splitbill"></span></span>
+          <span class="split-bill-hint" data-i="splitbillhint"></span>
+        </span>
+        <i class="ti ti-chevron-right split-bill-go"></i>
+      </button>
       <div class="seg-ctrl">
         <button class="seg-btn active" onclick="filterAR('all',this)" data-i="all"></button>
         <button class="seg-btn" onclick="filterAR('pending',this)" data-i="pending"></button>
@@ -2646,7 +2667,7 @@ function setWalletPane(pane){
   });
   const btn=document.getElementById('wallet-action-btn');
   // header action button: split-bill on A/R pane, otherwise hidden
-  if(pane==='ar'){btn.style.display='';btn.textContent=t('splitbill');btn.onclick=openGroupModal;}
+  if(pane==='ar'){btn.style.display='';btn.textContent='AA · '+t('splitbill');btn.onclick=openGroupModal;}
   else{btn.style.display='none';}
   // price refresh only matters where live prices show (account balances pane)
   const wrb=document.getElementById('wallet-refresh-bar');if(wrb)wrb.style.display=pane==='acct'?'flex':'none';
