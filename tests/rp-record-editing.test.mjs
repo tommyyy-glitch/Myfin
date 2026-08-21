@@ -19,6 +19,9 @@ const code=[
   declaration('inlineJsString'),
   declaration('isIncomeReceivable'),
   declaration('rpIsActive'),
+  declaration('rpSettlementTxns'),
+  declaration('rpPaidTotals'),
+  declaration('rpOriginalTotals'),
   declaration('rpIncomeReceiptTxns'),
   declaration('rpIncomeAccruedTotals'),
   declaration('addRPIncomeTxn'),
@@ -29,6 +32,7 @@ const code=[
     const S={txns:[]};
     function fmt(v){return 'HK$'+Number(v).toFixed(2);}
     function tt(zh,en){return en;}
+    function t(k){return k;}
     function getCat(){return {id:'freelance',label:'Freelance',icon:'🧾'};}
     function catLabel(c){return c.label;}
     function getAcct(){return {id:'bank',label:'Bank',icon:'🏦'};}
@@ -38,7 +42,7 @@ const code=[
     const legacyButton={removed:false,remove(){this.removed=true;}};
     const detail={classList:{added:[],add(v){this.added.push(v);}},innerHTML:''};
     const row={
-      querySelectorAll(selector){return selector==='button[onclick^="editAR("]'?[legacyButton]:[];},
+      querySelectorAll(selector){return selector.includes('button[onclick^="editAR("]')?[legacyButton]:[];},
       querySelector(selector){return selector==='.rsub'?detail:null;}
     };
     const document={querySelectorAll(selector){return selector==='#ar-list .crow'?[row]:[];}};
@@ -61,10 +65,14 @@ assert.equal(context.result.legacyRemoved,true);
 assert.deepEqual([...context.result.detailClasses],['rp-detail-list']);
 assert.match(context.result.detailHtml,/editAR\(&quot;older&quot;\)/);
 assert.match(context.result.detailHtml,/editAR\(&quot;latest&quot;\)/);
+assert.match(context.result.detailHtml,/openSettleGroup\(&quot;older&quot;\)/);
+assert.match(context.result.detailHtml,/deleteAR\(&quot;older&quot;\)/);
 assert.match(context.result.detailHtml,/2026-06-30/);
 assert.match(context.result.detailHtml,/2026-07-15/);
 assert.match(context.result.detailHtml,/Bank/);
-assert.doesNotMatch(context.result.settledHtml,/editAR\(/);
+assert.match(context.result.settledHtml,/editAR\(&quot;settled&quot;\)/);
+assert.match(context.result.settledHtml,/deleteAR\(&quot;settled&quot;\)/);
+assert.doesNotMatch(context.result.settledHtml,/openSettleGroup\(/);
 
 assert.equal(context.result.incomeTxn.type,'income');
 assert.equal(context.result.incomeTxn.rpIncome,true);

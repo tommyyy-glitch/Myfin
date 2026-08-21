@@ -16,6 +16,9 @@ function declaration(name){
 
 const code=[
   declaration('isIncomeReceivable'),
+  declaration('rpSettlementTxns'),
+  declaration('rpPaidTotals'),
+  declaration('rpOriginalTotals'),
   declaration('rpIncomeReceiptTxns'),
   declaration('rpIncomeAccruedTotals'),
   declaration('addRPIncomeTxn'),

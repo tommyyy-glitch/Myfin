@@ -356,11 +356,25 @@ body.dark #s-settings .glass-card{background:rgba(36,36,40,0.9);border-color:rgb
 .rinfo{flex:1;min-width:0}
 .rtitle{font-size:15px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .rsub{font-size:12px;color:var(--ink3);margin-top:2px}
-.rp-detail-list{display:flex;flex-direction:column;gap:3px;margin-top:5px}
-.rp-detail-row{display:flex;align-items:flex-start;gap:5px;min-width:0}
-.rp-detail-text{flex:1;min-width:0;line-height:1.45;overflow-wrap:anywhere}
-.rp-detail-edit{width:30px;height:30px;display:inline-flex;align-items:center;justify-content:center;flex:0 0 30px;margin-top:-6px;border:none;border-radius:9px;background:transparent;color:var(--ink3);font-size:14px;cursor:pointer}
-.rp-detail-edit:active{background:var(--bdr)}
+.rp-detail-list{display:flex;flex-direction:column;gap:8px;margin-top:7px}
+.rp-detail-row{display:block;min-width:0;padding:8px 9px;border:1px solid var(--bdr);border-radius:10px;background:var(--bg2)}
+.rp-detail-text{display:block;min-width:0;line-height:1.48;overflow-wrap:anywhere;color:var(--ink2)}
+.rp-detail-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.rp-detail-action{min-height:30px;display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:5px 9px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf);color:var(--ink3);font-size:11px;font-weight:700;cursor:pointer}
+.rp-detail-action.collect{border-color:rgba(29,158,117,.35);background:var(--g2);color:var(--g3)}
+.rp-detail-action.delete{border-color:rgba(216,90,48,.25);color:var(--r3)}
+.rp-detail-action:active{transform:scale(.96)}
+.rp-payment-list{display:flex;flex-direction:column;gap:5px;margin-top:7px;padding-top:7px;border-top:1px dashed var(--bdr)}
+.rp-payment-row{display:flex;align-items:center;gap:6px;color:var(--ink3);font-size:11px}
+.rp-payment-row span{flex:1;min-width:0;overflow-wrap:anywhere}
+.rp-payment-row button{width:28px;height:28px;display:inline-flex;align-items:center;justify-content:center;border:none;border-radius:8px;background:transparent;color:var(--ink3);cursor:pointer}
+.rp-payment-row button.rp-payment-delete{color:var(--r3)}
+.settle-record-list{display:flex;flex-direction:column;gap:7px;margin:6px 0 12px}
+.settle-record-choice{width:100%;display:flex;align-items:center;gap:9px;padding:10px 11px;border:1.5px solid var(--bdr2);border-radius:11px;background:var(--bg2);color:var(--ink);text-align:left;cursor:pointer}
+.settle-record-choice.sel{border-color:var(--g);background:var(--g2)}
+.settle-record-choice-main{flex:1;min-width:0;font-size:13px;font-weight:700;overflow-wrap:anywhere}
+.settle-record-choice-sub{display:block;margin-top:2px;color:var(--ink3);font-size:11px;font-weight:500}
+.settle-record-choice-amt{flex-shrink:0;color:var(--g3);font-size:13px;font-weight:800}
 .ramount{font-size:15px;font-weight:700;text-align:right;flex-shrink:0;letter-spacing:-0.3px}
 .badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:11px;font-weight:600;margin-left:5px}
 .bg{background:var(--g2);color:var(--g3)}.br{background:var(--r2);color:var(--r3)}
@@ -1507,8 +1521,14 @@ img,canvas,svg{max-width:100%;}
   <button class="mclose" onclick="closeM('m-settle')" aria-label="Close">&times;</button>
   <div class="mhandle"></div><div class="mtitle" id="settle-title">Settle</div>
   <div id="settle-sub" style="font-size:13px;color:var(--ink3);margin-bottom:12px"></div>
+  <div id="settle-record-wrap">
+    <div class="flbl" data-i="applytorecord"></div>
+    <div class="settle-record-list" id="settle-record-list"></div>
+    <div id="settle-record-hint" style="font-size:11px;color:var(--ink3);margin:-5px 0 12px" data-i="selectrecordhint"></div>
+  </div>
   <div class="frow"><span class="flbl" data-i="settleamt"></span><input class="fval" type="number" inputmode="decimal" id="settle-amt" placeholder="0.00" style="text-align:right"></div>
   <div style="font-size:11px;color:var(--ink3);margin:-4px 0 10px" data-i="settleamthint"></div>
+  <div class="frow"><span class="flbl" data-i="date"></span><input class="fval" type="date" id="settle-date"></div>
   <div class="flbl" data-i="account" style="margin-bottom:8px"></div>
   <div class="cat-scroll" id="settle-acct-chips" style="padding:2px 0 14px"></div>
   <button class="sbtn" onclick="confirmSettle()" data-i="save"></button>
@@ -1742,6 +1762,18 @@ Object.assign(LANGS.en,{
   apyconverthelp:'If the platform quotes APY, enter that annual rate first, then tap the matching button. The app uses a 365-day year and the compound formula, then sets the frequency. Auto-income uses the current holding value and does not assume reinvestment.',
   yieldrateerr:'Enter an annual yield greater than 0 first'
 });
+Object.assign(LANGS.zh,{
+  applytorecord:'套用到哪一筆明細',selectrecordhint:'多筆欠款時必須先選擇明細，系統不會再自動分配。',selectrecordfirst:'請先選擇要收回／還款的明細',
+  rpcollect:'收回',rppay:'還款',editrecord:'編輯',deleterecord:'刪除',editpayment:'更改收款',deletepayment:'撤銷收款',
+  rporiginal:'原額',rppaid:'已收',rppaidout:'已付',rpoutstanding:'餘額',rppayment:'收款',rppaymentout:'還款',
+  rpamountbelowpaid:'新總額不可低於已收／已付金額',rppaymentlock:'已有收款／還款後不可更改方向、類型或幣種',settleoverdue:'金額不可超過所選明細的餘額'
+});
+Object.assign(LANGS.en,{
+  applytorecord:'Apply to which record',selectrecordhint:'When several records exist, choose one first. The app will not auto-allocate the payment.',selectrecordfirst:'Choose the record this payment applies to first',
+  rpcollect:'Collect',rppay:'Pay',editrecord:'Edit',deleterecord:'Delete',editpayment:'Edit payment',deletepayment:'Undo payment',
+  rporiginal:'Original',rppaid:'Collected',rppaidout:'Paid',rpoutstanding:'Outstanding',rppayment:'Payment',rppaymentout:'Repayment',
+  rpamountbelowpaid:'The new total cannot be below the amount already paid',rppaymentlock:'Direction, type, and currency cannot change after a payment',settleoverdue:'Amount cannot exceed the selected record balance'
+});
 
 const DEF_CATS=[
   {id:'food',label:'飲食',labelEn:'Food',icon:'🍜',aliases:['食飯','食嘢']},
@@ -1791,7 +1823,7 @@ function createAppState(){return {
   creditLimit:0,wealthGran:'month',trendGran:'month',catMRU:[],acctMRU:[],acctFilter:'all',billMe:true,
   curType:'expense',amtStr:'0',amtExpr:'',selCat:'food',selAcct:'cash',selAcctTo:'debit',apSelCat:'fitness',apSelAcct:'debit',
   mergeSelected:[],memberCount:2,activeTab:'home',walletPane:'txn',trendView:'total',catPeriodSpend:'week',catPeriodIncome:'week',arDir:'r',
-  _billInc:[],_billAmt:{},_billMe:true,_billCat:'food',_txnFilter:'all',_txnSearch:'',_acctTxnId:null,_editArId:null,_editTxnId:null,_openingAcct:null,_sellId:null,_settleAcct:null,_settleId:null,_settleIds:null
+  _billInc:[],_billAmt:{},_billMe:true,_billCat:'food',_txnFilter:'all',_txnSearch:'',_acctTxnId:null,_editArId:null,_editTxnId:null,_openingAcct:null,_sellId:null,_settleAcct:null,_settleId:null,_settleIds:null,_editSettleTxnId:null
 };}
 let S=createAppState();
 
@@ -1934,12 +1966,37 @@ function deleteLoanPayment(loanId,payId){if(!confirm(t('deltxnq')))return;const 
 function deletePrivateLoan(id){if(!confirm(t('deltxnq')))return;S.privateLoans=(S.privateLoans||[]).filter(x=>String(x.id)!==String(id));S.txns=(S.txns||[]).filter(tx=>String(tx.loanId)!==String(id));saveS();renderGamble();renderHome();refreshWallet();}
 function rpIncomeCats(){const incIds=['income','freelance','invest','cashback','other_inc'];const defIds=new Set(DEF_CATS.map(c=>c.id));const customIds=(S.cats||[]).filter(c=>!defIds.has(c.id)).map(c=>c.id);let cats=[...incIds,...customIds].map(id=>(S.cats||[]).find(c=>c.id===id)).filter(Boolean);return mruSort(cats,'catMRU',c=>c.id);}
 function renderARIncomeCats(selectedId){const el=document.getElementById('ar-cat');if(!el)return;const cats=rpIncomeCats();const sel=selectedId||(cats.find(c=>c.id===S.selCat)?.id)||'income';el.innerHTML=cats.map(c=>`<option value="${escapeHtml(c.id)}"${c.id===sel?' selected':''}>${escapeHtml(c.icon)} ${escapeHtml(catLabel(c))}</option>`).join('');}
+function rpSettlementTxns(p){
+  if(!p)return [];
+  return (S.txns||[]).filter(tx=>String(tx.fromRP)===String(p.id)&&((tx.type==='ar_move'&&tx.rpPhase==='settle')||(tx.rpIncome&&tx.rpPhase==='settle_income')));
+}
+function rpOrderedSettlementTxns(p){
+  return rpSettlementTxns(p).slice().reverse().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+}
+function syncRPSettlementState(p){
+  if(!p)return;
+  const payments=rpOrderedSettlementTxns(p),latest=payments.length?payments[payments.length-1]:null;
+  p.settleTxnIds=payments.map(tx=>tx.id);p.settleTxnId=latest?latest.id:null;p.settleAcctId=latest?(latest.acctId||null):null;
+  p.settled=Math.abs(Number(p.amtHKD)||0)<=0.004;
+  if(p.settled&&latest){p.settleDate=latest.date||today();p.payDays=dayDiff(p.date,p.settleDate);}
+  else{p.settleDate=null;p.payDays=null;if(!p.settled){p.dead=false;p.deadDate=null;}}
+}
+function rpPaidTotals(p){
+  return rpSettlementTxns(p).reduce((a,tx)=>({amount:a.amount+Math.abs(Number(tx.amount)||0),amtHKD:a.amtHKD+Math.abs(Number(tx.amtHKD)||0)}),{amount:0,amtHKD:0});
+}
+function rpOriginalTotals(p){
+  const paid=rpPaidTotals(p);
+  const storedAmount=Number(p&&p.originalAmount),storedHKD=Number(p&&p.originalAmtHKD);
+  return {
+    amount:parseFloat((Number.isFinite(storedAmount)&&storedAmount>0?Math.abs(storedAmount):Math.abs(Number(p&&p.amount)||0)+paid.amount).toFixed(2)),
+    amtHKD:parseFloat((Number.isFinite(storedHKD)&&storedHKD>0?Math.abs(storedHKD):Math.abs(Number(p&&p.amtHKD)||0)+paid.amtHKD).toFixed(2))
+  };
+}
 function rpIncomeReceiptTxns(p){
-  return (S.txns||[]).filter(tx=>String(tx.fromRP)===String(p.id)&&((tx.type==='ar_move'&&tx.direction==='in'&&tx.rpPhase==='settle')||(tx.rpIncome&&tx.rpPhase==='settle_income')));
+  return rpSettlementTxns(p).filter(tx=>tx.direction==='in'||(tx.rpIncome&&tx.rpPhase==='settle_income'));
 }
 function rpIncomeAccruedTotals(p){
-  const paid=rpIncomeReceiptTxns(p).reduce((a,tx)=>({amount:a.amount+Math.abs(Number(tx.amount)||0),amtHKD:a.amtHKD+Math.abs(Number(tx.amtHKD)||0)}),{amount:0,amtHKD:0});
-  return {amount:parseFloat((Math.abs(Number(p.amount)||0)+paid.amount).toFixed(2)),amtHKD:parseFloat((Math.abs(Number(p.amtHKD)||0)+paid.amtHKD).toFixed(2))};
+  return rpOriginalTotals(p);
 }
 // Income receivables use accrual accounting: recognise income on the R/P date,
 // but keep it out of account cash until the receivable is actually collected.
@@ -1966,9 +2023,12 @@ function addRPMove(p,phase,amtOverride,amtHKDOverride){
     if(phase==='settle')return addRPIncomeReceiptTxn(p,amtOverride,amtHKDOverride);
     return null;
   }
-  const amount=amtOverride!=null?Math.abs(amtOverride):Math.abs(p.amount||0);const amtHKD=amtHKDOverride!=null?Math.abs(amtHKDOverride):Math.abs(parseFloat(p.amtHKD||0));if(!amtHKD||!p.acctId)return null;const ac=getAcct(p.acctId);const receivable=p.dir!=='p';const direction=(phase==='open')?(receivable?'out':'in'):(receivable?'in':'out');const tx={id:Date.now()+Math.random(),type:'ar_move',direction,amount,amtHKD,cur:p.cur||'HKD',acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(phase==='open'?t('aropen'):t('arsettle'))+' · '+p.name+(p.desc?' · '+p.desc:''),date:p.date||today(),fromRP:p.id,rpPhase:phase,oneOff:true};S.txns.unshift(tx);return tx;
+  const original=phase==='open'?rpOriginalTotals(p):null;const amount=amtOverride!=null?Math.abs(amtOverride):(original?original.amount:Math.abs(p.amount||0));const amtHKD=amtHKDOverride!=null?Math.abs(amtHKDOverride):(original?original.amtHKD:Math.abs(parseFloat(p.amtHKD||0)));if(!amtHKD||!p.acctId)return null;const ac=getAcct(p.acctId);const receivable=p.dir!=='p';const direction=(phase==='open')?(receivable?'out':'in'):(receivable?'in':'out');const tx={id:Date.now()+Math.random(),type:'ar_move',direction,amount,amtHKD,cur:p.cur||'HKD',acctId:p.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:(phase==='open'?t('aropen'):t('arsettle'))+' · '+p.name+(p.desc?' · '+p.desc:''),date:p.date||today(),fromRP:p.id,rpPhase:phase,oneOff:true};S.txns.unshift(tx);return tx;
 }
 function removeRPMovesFor(ids,phase){const set=new Set([].concat(ids).filter(x=>x!=null).map(x=>String(x)));S.txns=S.txns.filter(tx=>{if(!set.has(String(tx&&tx.fromRP)))return true;if(!phase)return false;if(phase==='open')return tx.rpPhase!=='open'&&tx.rpPhase!=='accrual';if(phase==='settle')return tx.rpPhase!=='settle'&&tx.rpPhase!=='settle_income';return tx.rpPhase!==phase;});}
+function syncRPSettlementLabels(p){
+  rpSettlementTxns(p).forEach(tx=>{tx.note=t('arsettle')+' · '+p.name+(p.desc?' · '+p.desc:'');});
+}
 function ensureRPIncomeAccruals(){
   S.txns=S.txns||[];S.people=S.people||[];let changed=false;
   S.txns.forEach(tx=>{if(tx.rpIncome&&tx.rpPhase==='settle_income'){tx.type='ar_move';tx.direction='in';tx.rpIncomeReceipt=true;tx.rpPhase='settle';delete tx.rpIncome;delete tx.rpAccrual;delete tx.nonCash;changed=true;}});
@@ -2767,9 +2827,10 @@ function toggleRecur(){const tg=document.getElementById('recur-toggle');tg.class
 function openARModal(){S._editArId=null;['ar-name','ar-amt','ar-desc'].forEach(id=>document.getElementById(id).value='');const nm=document.getElementById('ar-name'),ds=document.getElementById('ar-desc');if(nm)nm.placeholder=t('nameph');if(ds)ds.placeholder=t('forph');document.getElementById('ar-cur').value=S.dispCur||'HKD';fillAcctSelect('ar-acct',S.selAcct);renderARIncomeCats(S.selCat);document.getElementById('ar-date').value=today();setArDir('r');const ttl=document.querySelector('#m-ar .mtitle');if(ttl){ttl.setAttribute('data-i','addar');ttl.textContent=t('addar');}document.getElementById('m-ar').classList.add('open');}
 function editAR(id){
   const p=S.people.find(x=>String(x.id)===String(id));if(!p)return;
+  const original=rpOriginalTotals(p);
   S._editArId=p.id;
   document.getElementById('ar-name').value=p.name||'';
-  document.getElementById('ar-amt').value=p.amount||'';
+  document.getElementById('ar-amt').value=original.amount||'';
   document.getElementById('ar-cur').value=p.cur||'HKD';
   fillAcctSelect('ar-acct',p.acctId||S.selAcct);
   renderARIncomeCats(p.catId||S.selCat);
@@ -2951,7 +3012,10 @@ function txnRow(tx){
   const editBtn=`<button onclick="editTxn(${id})" title="${t('editpos')}" aria-label="${t('editpos')}" style="padding:10px 9px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0"><i class="ti ti-pencil"></i></button>`;
   if(tx.type==='ar_move'){
     const incoming=tx.direction==='in';
-    return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--p2)">${incoming?'↙':'↗'}</div><div class="rinfo"><div class="rtitle">${note}${exBadge}<span class="badge bp">R/P</span></div><div class="rsub">${date} · ${cur}${acct?` · ${acct}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${incoming?'pos':'neg'}">${incoming?'+':'-'}${sym}${escapeHtml(tx.amount.toLocaleString())}</span>${exBtn}${delBtn}</div></div>`;
+    const linked=tx.fromRP!=null,settlement=linked&&tx.rpPhase==='settle';
+    const rpEdit=settlement?`<button onclick="editRPSettlement(${id})" title="${t('editpayment')}" aria-label="${t('editpayment')}" style="padding:10px 9px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0"><i class="ti ti-pencil"></i></button>`:(linked?`<button onclick="editAR(${inlineJsString(tx.fromRP)})" title="${t('editrecord')}" aria-label="${t('editrecord')}" style="padding:10px 9px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0"><i class="ti ti-pencil"></i></button>`:'');
+    const rpDelete=settlement?`<button onclick="deleteRPSettlement(${id})" title="${t('deletepayment')}" aria-label="${t('deletepayment')}" style="padding:10px 9px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`:(!linked?delBtn:'');
+    return `<div class="crow" style="${dim}"><div class="ibox" style="background:var(--p2)">${incoming?'↙':'↗'}</div><div class="rinfo"><div class="rtitle">${note}${exBadge}<span class="badge bp">R/P</span></div><div class="rsub">${date} · ${cur}${acct?` · ${acct}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${incoming?'pos':'neg'}">${incoming?'+':'-'}${sym}${escapeHtml(tx.amount.toLocaleString())}</span>${rpEdit}${exBtn}${rpDelete}</div></div>`;
   }
   if(tx.type==='debt_move'){
     const incoming=tx.direction!=='out';
@@ -3062,14 +3126,19 @@ function saveAR(){
   if(editId){
     const p=S.people.find(x=>String(x.id)===String(editId));
     if(p){
-      // Rebuild the opening wallet movement so edited amount/account/direction stays in sync.
+      const paid=rpPaidTotals(p),originalBefore=rpOriginalTotals(p);const hadPayments=paid.amtHKD>0.004;const oldIncome=isIncomeReceivable(p);const oldDir=p.dir==='p'?'p':'r';const oldCur=p.cur||'HKD';const editedAmtHKD=hadPayments&&Math.abs(amt-originalBefore.amount)<0.005?originalBefore.amtHKD:amtHKD;
+      if(hadPayments&&(cur!==oldCur||dir!==oldDir||incomeRec!==oldIncome)){showToast(t('rppaymentlock'),1);return;}
+      if(editedAmtHKD+0.005<paid.amtHKD){showToast(t('rpamountbelowpaid'),1);return;}
+      const remainAmount=Math.max(0,parseFloat((amt-paid.amount).toFixed(2)));const remainHKD=Math.max(0,parseFloat((editedAmtHKD-paid.amtHKD).toFixed(2)));
+      // Rebuild the original opening movement while keeping every linked payment intact.
       removeRPMovesFor([p.id],'open');
-      p.name=name;p.amount=amt;p.amtHKD=amtHKD;p.cur=cur;p.desc=desc;p.date=date;p.dir=dir;p.rpKind=incomeRec?'income':'cash';p.incomeReceivable=incomeRec;p.catId=catId;p.catLabel=cat?catLabel(cat):'';p.catIcon=cat?cat.icon:'';p.acctId=acctId;p.acctLabel=ac?acctLabel(ac):'';p.acctIcon=ac?ac.icon:'';
-      if(!p.settled){const openTx=addRPMove(p,'open');p.openTxnId=openTx?openTx.id:null;}
+      p.name=name;p.originalAmount=amt;p.originalAmtHKD=editedAmtHKD;p.amount=remainAmount;p.amtHKD=remainHKD;p.cur=cur;p.desc=desc;p.date=date;p.dir=dir;p.rpKind=incomeRec?'income':'cash';p.incomeReceivable=incomeRec;p.catId=catId;p.catLabel=cat?catLabel(cat):'';p.catIcon=cat?cat.icon:'';p.acctId=acctId;p.acctLabel=ac?acctLabel(ac):'';p.acctIcon=ac?ac.icon:'';
+      p.settled=remainHKD<=0.004;if(hadPayments)syncRPSettlementState(p);else if(!p.settled){p.settleDate=null;p.payDays=null;p.dead=false;p.deadDate=null;}
+      const openTx=addRPMove(p,'open');p.openTxnId=openTx?openTx.id:null;syncRPSettlementLabels(p);
     }
     S._editArId=null;
   } else {
-    const rec={id:Date.now(),name,amount:amt,amtHKD,cur,desc,date,settled:false,dir,rpKind:incomeRec?'income':'cash',incomeReceivable:incomeRec,catId,catLabel:cat?catLabel(cat):'',catIcon:cat?cat.icon:'',acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:''};
+    const rec={id:Date.now(),name,originalAmount:amt,originalAmtHKD:amtHKD,amount:amt,amtHKD,cur,desc,date,settled:false,dir,rpKind:incomeRec?'income':'cash',incomeReceivable:incomeRec,catId,catLabel:cat?catLabel(cat):'',catIcon:cat?cat.icon:'',acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:''};
     const openTx=addRPMove(rec,'open');rec.openTxnId=openTx?openTx.id:null;S.people.unshift(rec);
   }
   ['ar-name','ar-amt','ar-desc'].forEach(id=>document.getElementById(id).value='');
@@ -3078,19 +3147,35 @@ function saveAR(){
 // Settle now connects to a wallet account and posts the matching cash transaction.
 // The amount field defaults to the full outstanding total but can be lowered for a partial settle.
 function settle(id){openSettleGroup(id);}
-function openSettleGroup(ids){
+function rpSettleDueHKD(p){
+  let due=Math.abs(Number(p&&p.amtHKD)||0);const editTx=S._editSettleTxnId?(S.txns||[]).find(tx=>String(tx.id)===String(S._editSettleTxnId)&&String(tx.fromRP)===String(p&&p.id)):null;
+  if(editTx)due+=Math.abs(Number(editTx.amtHKD)||0);return parseFloat(due.toFixed(2));
+}
+function renderSettleRecordChoices(items){
+  const el=document.getElementById('settle-record-list');if(!el)return;
+  el.innerHTML=items.map(p=>{const selected=String(p.id)===String(S._settleId),label=p.desc||((isIncomeReceivable(p)?(p.catLabel||tt('收入應收','Income A/R')):tt('未註明用途','No description'))),meta=(p.date||'')+(p.cur?' · '+p.cur:'');return `<button type="button" class="settle-record-choice${selected?' sel':''}" aria-pressed="${selected}" onclick="selectSettleRecord(${inlineJsString(p.id)},this)"><span class="settle-record-choice-main">${escapeHtml(label)}<span class="settle-record-choice-sub">${escapeHtml(meta)}</span></span><span class="settle-record-choice-amt">${escapeHtml(fmt(rpSettleDueHKD(p)))}</span></button>`;}).join('');
+}
+function syncSettleRecordForm(p,amountOverride,dateOverride,acctOverride){
+  if(!p)return;const isPay=p.dir==='p',due=rpSettleDueHKD(p),editing=!!S._editSettleTxnId;
+  document.getElementById('settle-title').textContent=(editing?t('editpayment'):(isPay?t('settlepay'):tt('收回 ✓','Settle ✓')))+' · '+p.name;
+  document.getElementById('settle-sub').textContent=(p.desc?p.desc+' · ':'')+(p.date||'')+' · '+(isPay?'−':'+')+fmt(due);
+  document.getElementById('settle-amt').value=amountOverride!=null?Number(amountOverride).toFixed(2):(due?due.toFixed(2):'');
+  document.getElementById('settle-date').value=dateOverride||today();
+  S._settleAcct=acctOverride||p.settleAcctId||p.acctId||S._settleAcct||((S.accounts&&S.accounts[0])?S.accounts[0].id:'');renderSettleAcctChips();
+}
+function selectSettleRecord(id,el){
+  const allowed=new Set((S._settleIds||[]).map(String));const p=(S.people||[]).find(x=>String(x.id)===String(id)&&(allowed.size===0||allowed.has(String(x.id))));if(!p)return;
+  S._settleId=p.id;document.querySelectorAll('#settle-record-list .settle-record-choice').forEach(b=>{const on=b===el;b.classList.toggle('sel',on);b.setAttribute('aria-pressed',on?'true':'false');});syncSettleRecordForm(p);
+}
+function openSettleGroup(ids,editTxnId){
   const idArr=String(ids).split(',').filter(Boolean);
-  const items=idArr.map(id=>S.people.find(x=>String(x.id)===String(id))).filter(x=>x&&!x.settled);
+  const items=idArr.map(id=>S.people.find(x=>String(x.id)===String(id))).filter(x=>x&&(!x.settled||editTxnId));
   if(!items.length)return;
-  S._settleIds=idArr;
-  S._settleId=items[0].id;
-  S._settleAcct=items[0].acctId||items[0].settleAcctId||S._settleAcct||((S.accounts&&S.accounts[0])?S.accounts[0].id:'');
-  const isPay=items[0].dir==='p';
+  S._settleIds=items.map(p=>p.id);S._editSettleTxnId=editTxnId||null;S._settleId=items.length===1?items[0].id:null;
   const totalHKD=items.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0);
-  document.getElementById('settle-title').textContent=(isPay?t('settlepay'):tt('收回 ✓','Settle ✓'))+' · '+items[0].name;
-  document.getElementById('settle-sub').textContent=(isPay?'−':'+')+fmt(totalHKD)+' · '+(isPay?t('dirpay'):t('dirrecv'));
-  document.getElementById('settle-amt').value=totalHKD?totalHKD.toFixed(2):'';
-  renderSettleAcctChips();
+  renderSettleRecordChoices(items);
+  if(S._settleId)syncSettleRecordForm(items[0]);
+  else{document.getElementById('settle-title').textContent=tt('選擇收款明細','Choose payment record')+' · '+items[0].name;document.getElementById('settle-sub').textContent=tt('合計餘額 ','Combined outstanding ')+fmt(totalHKD);document.getElementById('settle-amt').value='';document.getElementById('settle-date').value=today();renderSettleAcctChips();}
   document.getElementById('m-settle').classList.add('open');
 }
 function renderSettleAcctChips(){
@@ -3098,32 +3183,35 @@ function renderSettleAcctChips(){
   el.innerHTML=(S.accounts||[]).map(a=>`<div class="cat-chip${a.id===S._settleAcct?' sel':''}" onclick="selSettleAcct(${inlineJsString(a.id)},this)"><span style="font-size:20px">${escapeHtml(a.icon)}</span><span>${escapeHtml(acctLabel(a))}</span></div>`).join('');
 }
 function selSettleAcct(id,el){S._settleAcct=id;document.querySelectorAll('#settle-acct-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
+function restoreRPSettlement(p,tx){
+  if(!p||!tx)return;const original=rpOriginalTotals(p);p.originalAmount=original.amount;p.originalAmtHKD=original.amtHKD;
+  p.amount=parseFloat((Math.abs(Number(p.amount)||0)+Math.abs(Number(tx.amount)||0)).toFixed(2));p.amtHKD=parseFloat((Math.abs(Number(p.amtHKD)||0)+Math.abs(Number(tx.amtHKD)||0)).toFixed(2));
+  S.txns=(S.txns||[]).filter(x=>String(x.id)!==String(tx.id));syncRPSettlementState(p);
+}
+function editRPSettlement(txId){
+  const tx=(S.txns||[]).find(x=>String(x.id)===String(txId)&&x.rpPhase==='settle'),p=tx&&(S.people||[]).find(x=>String(x.id)===String(tx.fromRP));if(!tx||!p)return;
+  openSettleGroup(p.id,tx.id);syncSettleRecordForm(p,Math.abs(Number(tx.amtHKD)||0),tx.date||today(),tx.acctId||p.acctId);renderSettleRecordChoices([p]);
+}
+function deleteRPSettlement(txId){
+  const tx=(S.txns||[]).find(x=>String(x.id)===String(txId)&&x.rpPhase==='settle'),p=tx&&(S.people||[]).find(x=>String(x.id)===String(tx.fromRP));if(!tx||!p)return;if(!confirm(t('deltxnq')))return;
+  restoreRPSettlement(p,tx);if(isIncomeReceivable(p))addRPIncomeTxn(p);saveS();setWalletPane('ar');refreshAllViews();
+}
 function confirmSettle(){
-  const ids=(S._settleIds&&S._settleIds.length?S._settleIds:[S._settleId]).filter(Boolean);
-  const items=ids.map(id=>S.people.find(x=>String(x.id)===String(id))).filter(x=>x&&!x.settled);
-  if(!items.length){closeM('m-settle');return;}
+  const p=(S.people||[]).find(x=>String(x.id)===String(S._settleId));if(!p){showToast(t('selectrecordfirst'),1);return;}
   const ac=getAcct(S._settleAcct);
-  const totalOutstanding=items.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0);
+  if(!ac){showToast(t('account'),1);return;}
+  const oldTx=S._editSettleTxnId?(S.txns||[]).find(tx=>String(tx.id)===String(S._editSettleTxnId)&&String(tx.fromRP)===String(p.id)):null;
+  const totalOutstanding=rpSettleDueHKD(p);
   const raw=parseFloat(document.getElementById('settle-amt').value);
-  // blank/invalid/zero or >= total = settle everything in full, same as before
-  let payHKD=(!isNaN(raw)&&raw>0)?Math.min(raw,totalOutstanding):totalOutstanding;
-  items.forEach(p=>{
-    if(payHKD<=0.004||!ac)return;
-    p.acctId=ac.id;p.acctLabel=acctLabel(ac);p.acctIcon=ac.icon;
-    const due=Math.abs(p.amtHKD||0);if(due<=0)return;
-    const pay=Math.min(payHKD,due);
-    const rate=(p.amount&&p.amtHKD)?p.amount/p.amtHKD:1;
-    const payOrig=parseFloat((pay*rate).toFixed(2));
-    const stx=addRPMove(p,'settle',payOrig,pay);
-    if(!p.settleTxnIds)p.settleTxnIds=[];
-    if(stx){p.settleTxnIds.push(stx.id);p.settleTxnId=stx.id;}
-    p.settleAcctId=ac.id;
-    if(pay>=due-0.005){p.settled=true;p.settleDate=today();p.payDays=dayDiff(p.date,p.settleDate);p.amount=0;p.amtHKD=0;}
-    else{p.amount=parseFloat((p.amount-payOrig).toFixed(2));p.amtHKD=parseFloat((due-pay).toFixed(2));}
-    if(isIncomeReceivable(p))addRPIncomeTxn(p);
-    payHKD=parseFloat((payHKD-pay).toFixed(2));
-  });
-  saveS();closeM('m-settle');setWalletPane('ar');refreshAllViews();
+  if(isNaN(raw)||raw<=0){showToast(t('sellerr'),1);return;}if(raw>totalOutstanding+0.005){showToast(t('settleoverdue'),1);return;}
+  const original=rpOriginalTotals(p);p.originalAmount=original.amount;p.originalAmtHKD=original.amtHKD;if(oldTx)restoreRPSettlement(p,oldTx);
+  p.acctId=p.acctId||ac.id;p.acctLabel=p.acctLabel||(acctLabel(ac));p.acctIcon=p.acctIcon||ac.icon;
+  const due=Math.abs(Number(p.amtHKD)||0),pay=Math.min(raw,due),rate=(p.amount&&p.amtHKD)?p.amount/p.amtHKD:1,payOrig=parseFloat((pay*rate).toFixed(2));
+  const stx=addRPMove(p,'settle',payOrig,pay);const payDate=document.getElementById('settle-date').value||today();if(stx){stx.date=payDate;stx.acctId=ac.id;stx.acctLabel=acctLabel(ac);stx.acctIcon=ac.icon;}
+  if(pay>=due-0.005){p.amount=0;p.amtHKD=0;}
+  else{p.settled=false;p.settleDate=null;p.payDays=null;p.amount=parseFloat((p.amount-payOrig).toFixed(2));p.amtHKD=parseFloat((due-pay).toFixed(2));}
+  syncRPSettlementState(p);
+  if(isIncomeReceivable(p))addRPIncomeTxn(p);S._editSettleTxnId=null;saveS();closeM('m-settle');setWalletPane('ar');refreshAllViews();
 }
 // Undoes the most recent settle payment (full or partial), restoring exactly what that
 // payment covered rather than resetting to the original amount — so undoing after a string
@@ -3137,9 +3225,7 @@ function recallAR(id){
     S.txns=S.txns.filter(x=>String(x.id)!==String(lastTxnId));
     if(p.settleTxnIds)p.settleTxnIds=p.settleTxnIds.filter(x=>String(x)!==String(lastTxnId));
   } else removeRPMovesFor([p.id],'settle');
-  p.settleTxnId=(p.settleTxnIds&&p.settleTxnIds.length)?p.settleTxnIds[p.settleTxnIds.length-1]:null;
-  if(!p.settleTxnId)p.settleAcctId=null;
-  p.settled=false;p.settleDate=null;p.payDays=null;p.dead=false;p.deadDate=null;
+  syncRPSettlementState(p);
   if(isIncomeReceivable(p))addRPIncomeTxn(p);
   saveS();setWalletPane('ar');refreshAllViews();
 }
@@ -3637,7 +3723,10 @@ function filterTxn(type,btn){
   document.getElementById('txn-list').innerHTML=dayGroupedTxnHTML(list,`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('notxn')}</div>`,'txn');
 }
 function rpDetailText(p){
-  const parts=[(p.dead?'☠ ':p.dir==='p'?'−':'+')+fmt(p.amtHKD)];
+  const paid=rpPaidTotals(p),original=rpOriginalTotals(p),due=Math.abs(Number(p.amtHKD)||0),isPay=p.dir==='p';
+  const parts=[];
+  if(paid.amtHKD>0.004)parts.push((p.dead?'☠ ':'')+t('rporiginal')+' '+fmt(original.amtHKD)+' · '+t(isPay?'rppaidout':'rppaid')+' '+fmt(paid.amtHKD)+' · '+t('rpoutstanding')+' '+fmt(due));
+  else parts.push((p.dead?'☠ ':isPay?'−':'+')+fmt(due));
   if(isIncomeReceivable(p))parts.push((p.catIcon||'💼')+' '+(p.catLabel||tt('收入應收','Income A/R')));
   if(p.desc)parts.push(p.desc);
   if(p.date)parts.push(p.date);
@@ -3647,14 +3736,15 @@ function rpDetailText(p){
   return parts.join(' · ');
 }
 function rpDetailHTML(p){
-  const canEdit=rpIsActive(p)&&!p.isGroupSplit;
-  const label=tt('編輯此記錄','Edit this record');
-  return `<div class="rp-detail-row"><span class="rp-detail-text">${escapeHtml(rpDetailText(p))}</span>${canEdit?`<button class="rp-detail-edit" type="button" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}" onclick="editAR(${inlineJsString(p.id)})"><i class="ti ti-pencil"></i></button>`:''}</div>`;
+  const canManage=!p.isGroupSplit,active=rpIsActive(p),isPay=p.dir==='p',payments=rpSettlementTxns(p).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  const actions=canManage?`${active?`<button class="rp-detail-action collect" type="button" onclick="openSettleGroup(${inlineJsString(p.id)})"><i class="ti ti-cash"></i>${t(isPay?'rppay':'rpcollect')}</button>`:''}${!p.dead?`<button class="rp-detail-action" type="button" onclick="editAR(${inlineJsString(p.id)})"><i class="ti ti-pencil"></i>${t('editrecord')}</button>`:''}<button class="rp-detail-action delete" type="button" onclick="deleteAR(${inlineJsString(p.id)})"><i class="ti ti-trash"></i>${t('deleterecord')}</button>`:'';
+  const history=payments.length?`<div class="rp-payment-list">${payments.map(tx=>`<div class="rp-payment-row"><span>${escapeHtml(t(isPay?'rppaymentout':'rppayment'))} · ${escapeHtml(tx.date||'')} · ${escapeHtml(tx.cur||p.cur||'HKD')} ${escapeHtml(Math.abs(Number(tx.amount)||0).toLocaleString())}${tx.acctLabel?' · '+escapeHtml(tx.acctLabel):''}</span><button type="button" onclick="editRPSettlement(${inlineJsString(tx.id)})" aria-label="${escapeHtml(t('editpayment'))}" title="${escapeHtml(t('editpayment'))}"><i class="ti ti-pencil"></i></button><button class="rp-payment-delete" type="button" onclick="deleteRPSettlement(${inlineJsString(tx.id)})" aria-label="${escapeHtml(t('deletepayment'))}" title="${escapeHtml(t('deletepayment'))}"><i class="ti ti-trash"></i></button></div>`).join('')}</div>`:'';
+  return `<div class="rp-detail-row"><span class="rp-detail-text">${escapeHtml(rpDetailText(p))}</span>${actions?`<div class="rp-detail-actions">${actions}</div>`:''}${history}</div>`;
 }
 function enhanceARRecordEditing(groups){
   document.querySelectorAll('#ar-list .crow').forEach((row,i)=>{
     const g=groups[i];if(!g)return;
-    row.querySelectorAll('button[onclick^="editAR("]').forEach(btn=>btn.remove());
+    row.querySelectorAll('button[onclick^="editAR("],button[onclick^="deleteARGroup("],button[onclick^="recallGroup("]').forEach(btn=>btn.remove());
     const detail=row.querySelector('.rsub');if(!detail)return;
     detail.classList.add('rp-detail-list');
     detail.innerHTML=g.items.map(rpDetailHTML).join('')||'—';
