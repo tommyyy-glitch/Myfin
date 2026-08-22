@@ -23,6 +23,8 @@ function constantArray(name){
 const appCode=[
   constantArray('DEF_CATS'),
   constantArray('DEF_ACCTS'),
+  declaration('defaultQuoteApis'),
+  declaration('ensureQuoteApis'),
   declaration('createAppState'),
   declaration('profilesMeta'),
   declaration('ensureProfiles'),
@@ -74,11 +76,16 @@ loadS();
 assert.equal(S.ai.key,'AI-A');
 assert.equal(S.cloud.pass,'PASS-A');
 assert.equal(FX.USD,9);
+assert.deepEqual(S.quoteApis.stock.keys,['TD-A']);
+assert.deepEqual(S.quoteApis.physical.keys,['TD-A']);
 
 switchProfile('b');
 assert.equal(activeProfileId(),'b');
 assert.equal(S.ai.key,'');
 assert.equal(S.tdKey,'');
+assert.deepEqual(S.quoteApis.stock.keys,[]);
+assert.deepEqual(S.quoteApis.crypto.keys,[]);
+assert.deepEqual(S.quoteApis.physical.keys,[]);
 assert.equal(S.cloud.pass,'');
 assert.equal(S.cloud.key,'');
 assert.equal(S.theme,'auto');

@@ -43,6 +43,7 @@ const contextCode=[
       {id:'closed',type:'stock',name:'CLOSED',acctLabel:'Broker',cur:'HKD',costHKD:700,valueHKD:800,exitPrice:8}
     ],
     gamble:[],
+    physicalAssets:[{id:'fa1',name:'Laptop',category:'equipment',purchaseDate:'2026-01-01',costHKD:900,cost:900,cur:'HKD',marketValue:850,valuationDate:'2026-07-01',valuationHistory:[{date:'2026-01-01',value:900,source:'purchase'},{date:'2026-07-01',value:850,source:'manual'}]}],
     privateLoans:[],
     debts:[{name:'Loan',balance:300,apr:2,monthly:50}],
     budget:{amount:0},
@@ -51,7 +52,7 @@ const contextCode=[
       {id:2,date:'2026-07-02',type:'expense',amount:40,amtHKD:40,cur:'HKD',catLabel:'Food',acctLabel:'Broker'}
     ]
   };
-  function balanceSheetBreakdown(){return {quickAsset:600,fixedAsset:1200,receivable:500,assets:2300,payable:200,shortDebt:0,longDebt:300,debt:500,netWorth:1800};}
+  function balanceSheetBreakdown(){return {quickAsset:600,investmentAsset:1200,fixedAsset:800,receivable:500,assets:3100,payable:200,shortDebt:0,longDebt:300,debt:500,netWorth:2600};}
   function acctLabel(a){return a.label;}
   function acctCash(id){return id==='inv'?600:-100;}
   function acctOpenValue(id){return id==='inv'?1200:0;}
@@ -65,6 +66,12 @@ const contextCode=[
   function loanAccruedOutstanding(){return 0;}
   function loanInterestReceived(){return 0;}
   function pnlNetExcluded(){return false;}
+  function physicalCategoryLabel(){return 'Computer / equipment';}
+  function assetLabel(k){return k;}
+  function physicalAssetValue(a){return a.soldAt?0:850;}
+  function ensurePhysicalAssetHistory(a){return a.valuationHistory||[];}
+  function physicalMetalLabel(){return '';}
+  function toHKD(v){return Number(v)||0;}
   function periodMatchDate(){return true;}
   function txReportable(tx){return !tx.excluded;}
   function pnlIncomeTotal(){return 0;}
@@ -81,8 +88,10 @@ vm.createContext(context);
 vm.runInContext(contextCode,context);
 
 const snap=context.snapshot;
-assert.equal(snap.schemaVersion,2);
-assert.equal(snap.balanceSheetHKD.netWorth,1800);
+assert.equal(snap.schemaVersion,3);
+assert.equal(snap.balanceSheetHKD.netWorth,2600);
+assert.equal(snap.balanceSheetHKD.liquidInvestmentAssets,1200);
+assert.equal(snap.balanceSheetHKD.physicalFixedAssets,800);
 assert.equal(snap.accounts[0].cashHKD,600);
 assert.equal(snap.accounts[0].openPositionValueHKD,1200);
 assert.equal(snap.receivables.length,1);
@@ -92,6 +101,10 @@ assert.equal(snap.payables[0].name,'Vendor');
 assert.equal(snap.investments.openPositions.length,1);
 assert.equal(snap.investments.openPositions[0].name,'OPEN');
 assert.equal(snap.investments.closedHistorySummary.positionCount,1);
+assert.equal(snap.physicalFixedAssets.length,1);
+assert.equal(snap.physicalFixedAssets[0].currentMarketValueHKD,850);
+assert.equal(snap.physicalFixedAssets[0].valuationHistory.length,2);
+assert.equal(snap.physicalFixedAssets[0].status,'active');
 assert.equal(snap.periodSummaries.month.expenseHKD,40);
 assert.match(context.serialized,/AUTHORITATIVE_APP_SNAPSHOT_JSON/);
 

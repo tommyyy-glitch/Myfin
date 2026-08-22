@@ -24,6 +24,9 @@ function constantArray(name){
 const appCode=[
   constantArray('DEF_CATS'),
   constantArray('DEF_ACCTS'),
+  declaration('defaultQuoteApis'),
+  declaration('ensureQuoteApis'),
+  declaration('quoteApiCloudSafe'),
   declaration('createAppState'),
   declaration('profileSnapshot'),
   declaration('saveS'),
@@ -48,7 +51,7 @@ async function cloudApi(path,opt){requests.push({path,opt:opt||{}});const next=r
 function response(ok,status,data){return {ok,status,async json(){return data;}};}
 function seed(ver){
   S=createAppState();
-  S.ai={provider:'gemini',key:'AI-DEVICE',model:''};S.tdKey='TD-DEVICE';
+  S.ai={provider:'gemini',key:'AI-DEVICE',model:''};S.quoteApis.stock.keys=['TD-DEVICE'];S.quoteApis.physical.keys=['TD-DEVICE'];S.tdKey='TD-DEVICE';
   S.cloud={url:'https://sync.test',key:'ANON',pass:'PASS',salt:'SALT',on:true,ver,pending:true,pendingAt:123,lastError:'',_dirty:true};
   statuses=[];requests=[];responses=[];encryptedPayload=null;lastStorageError='';window._storageReadOnly=false;window._cloudMute=false;
   saveS({skipCloud:true});
@@ -66,6 +69,8 @@ function persisted(){return JSON.parse(localStorage.getItem('fos8'));}
   assert.equal(encryptedPayload.cloud.pending,false);
   assert.equal(encryptedPayload.ai.key,'');
   assert.equal(encryptedPayload.tdKey,'');
+  assert.equal(encryptedPayload.quoteApis.stock.keys.length,0);
+  assert.equal(encryptedPayload.quoteApis.physical.keys.length,0);
   assert.equal(S.cloud.ver,4);
   assert.equal(S.cloud.pending,false);
   assert.equal(persisted().cloud.pending,false);
