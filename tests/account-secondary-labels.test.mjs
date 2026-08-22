@@ -1,0 +1,76 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import {fileURLToPath} from 'node:url';
+
+const here=path.dirname(fileURLToPath(import.meta.url));
+const html=fs.readFileSync(path.join(here,'..','index.html'),'utf8');
+
+function declaration(name){
+  const start=html.indexOf(`function ${name}(`);
+  assert.notEqual(start,-1,`missing function ${name}`);
+  const next=html.indexOf('\nfunction ',start+10);
+  return html.slice(start,next<0?html.length:next);
+}
+
+assert.match(html,/id="new-acct-secondary"/);
+assert.match(html,/id="inline-acct-secondary"/);
+assert.match(html,/id="h-fixed-toggle"[^>]*onclick="toggleHomeFixedAssets\(\)"/);
+assert.match(declaration('renderAcctBalances'),/startsWith\('secondary:'\)/);
+assert.match(declaration('renderHome'),/fixedRecorded/);
+assert.match(declaration('renderHome'),/eye-off/);
+
+const code=`
+const ACCT_SECONDARY_KINDS=['none','retirement','locked','physical','emergency','business'];
+let calls={save:0,home:0,wallet:0,gamble:0,settings:0};
+const S={activeTab:'home',accounts:[{id:'mpf',kind:'invest',secondaryKind:'retirement'}],pnlNetHidden:{},physicalAssets:[]};
+function saveS(){calls.save++;}
+function renderSettings(){calls.settings++;}
+function renderHome(){calls.home++;}
+function refreshWallet(){calls.wallet++;}
+function renderGamble(){calls.gamble++;}
+function renderPnlSecMgr(){calls.settings++;}
+function acctCash(){return 100;}
+function acctLiquidAssetValue(){return 200;}
+function acctInvestmentAssetValue(){return 0;}
+function privateLoanAssetTotal(){return 0;}
+function physicalAssetsStats(){return {value:300};}
+function rpAssetTotal(){return 0;}
+function rpDebtTotal(){return 0;}
+function acctMarginDebt(){return 0;}
+function longDebtCountsInNet(){return false;}
+function debtsOutstanding(){return 0;}
+function pnlNetExcluded(kind){return !!S.pnlNetHidden[kind];}
+${declaration('balanceSheetBreakdown')}
+${declaration('setAcctSecondaryKind')}
+${declaration('toggleHomeFixedAssets')}
+setAcctSecondaryKind('mpf','locked');
+globalThis.afterValid=S.accounts[0].secondaryKind;
+setAcctSecondaryKind('mpf','not-valid');
+globalThis.afterInvalid=S.accounts[0].secondaryKind;
+globalThis.beforeHideBalance=balanceSheetBreakdown();
+toggleHomeFixedAssets();
+globalThis.afterHide=S.pnlNetHidden.physical;
+globalThis.hiddenBalance=balanceSheetBreakdown();
+toggleHomeFixedAssets();
+globalThis.afterShow=S.pnlNetHidden.physical;
+globalThis.shownBalance=balanceSheetBreakdown();
+globalThis.calls=calls;
+`;
+const context={};
+vm.createContext(context);
+vm.runInContext(code,context);
+
+assert.equal(context.afterValid,'locked');
+assert.equal(context.afterInvalid,'none');
+assert.equal(context.afterHide,true);
+assert.equal(context.afterShow,false);
+assert.equal(context.beforeHideBalance.fixedAsset,300);
+assert.equal(context.beforeHideBalance.assets,600);
+assert.equal(context.hiddenBalance.fixedAsset,0);
+assert.equal(context.hiddenBalance.assets,300);
+assert.equal(context.shownBalance.assets,600);
+assert.equal(context.calls.save,4);
+assert.equal(context.calls.home,4);
+assert.equal(context.calls.wallet,4);

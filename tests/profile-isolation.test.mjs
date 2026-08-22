@@ -23,6 +23,7 @@ function constantArray(name){
 const appCode=[
   constantArray('DEF_CATS'),
   constantArray('DEF_ACCTS'),
+  "const ACCT_SECONDARY_KINDS=['none','retirement','locked','physical','emergency','business'];",
   declaration('defaultQuoteApis'),
   declaration('ensureQuoteApis'),
   declaration('createAppState'),

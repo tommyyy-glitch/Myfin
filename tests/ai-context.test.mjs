@@ -30,7 +30,7 @@ const contextCode=[
     fx:{updated:Date.now()-7200000},
     cloud:{last:Date.now()-1000,pending:false},
     accounts:[
-      {id:'inv',label:'Broker',kind:'invest',cur:'HKD'},
+      {id:'inv',label:'MPF',kind:'invest',secondaryKind:'retirement',cur:'HKD'},
       {id:'card',label:'Card',kind:'credit',cur:'HKD'}
     ],
     people:[
@@ -54,6 +54,7 @@ const contextCode=[
   };
   function balanceSheetBreakdown(){return {quickAsset:600,investmentAsset:1200,fixedAsset:800,receivable:500,assets:3100,payable:200,shortDebt:0,longDebt:300,debt:500,netWorth:2600};}
   function acctLabel(a){return a.label;}
+  function secondaryKindLabel(k){return k==='retirement'?'Retirement / MPF (locked)':'';}
   function acctCash(id){return id==='inv'?600:-100;}
   function acctOpenValue(id){return id==='inv'?1200:0;}
   function acctMarginDebt(){return 0;}
@@ -94,6 +95,8 @@ assert.equal(snap.balanceSheetHKD.liquidInvestmentAssets,1200);
 assert.equal(snap.balanceSheetHKD.physicalFixedAssets,800);
 assert.equal(snap.accounts[0].cashHKD,600);
 assert.equal(snap.accounts[0].openPositionValueHKD,1200);
+assert.equal(snap.accounts[0].secondaryKind,'retirement');
+assert.equal(snap.accounts[0].secondaryLabel,'Retirement / MPF (locked)');
 assert.equal(snap.receivables.length,1);
 assert.equal(snap.receivables[0].name,'Client');
 assert.equal(snap.payables.length,1);

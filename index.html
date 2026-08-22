@@ -615,7 +615,7 @@ img,canvas,svg{max-width:100%;}
           </div>
         </div>
         <div class="hero-detail" id="h-asset-detail">
-          <div class="hero-detail-row"><span class="hero-detail-lbl" id="h-fixed-label"></span><span class="hero-detail-val" id="h-fixed">HK$0</span></div>
+          <div class="hero-detail-row" id="h-fixed-row"><span style="display:flex;align-items:center;gap:5px;min-width:0"><span class="hero-detail-lbl" id="h-fixed-label"></span><button id="h-fixed-toggle" onclick="toggleHomeFixedAssets()" aria-pressed="true" style="width:25px;height:25px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.28);border-radius:50%;background:rgba(255,255,255,.12);color:#fff;cursor:pointer;flex-shrink:0"><i class="ti ti-eye" style="font-size:13px"></i></button></span><span class="hero-detail-val" id="h-fixed">HK$0</span></div>
           <div class="hero-detail-row"><span class="hero-detail-lbl" id="h-recv-label"></span><span class="hero-detail-val" id="h-recv">HK$0</span></div>
           <div class="hero-detail-row"><span class="hero-detail-lbl" id="h-invest-label"></span><span class="hero-detail-val" id="h-invest">HK$0</span></div>
           <div class="hero-detail-row"><span class="hero-detail-lbl" id="h-quick-label"></span><span class="hero-detail-val" id="h-quick">HK$0</span></div>
@@ -1129,6 +1129,12 @@ img,canvas,svg{max-width:100%;}
         </select>
       </div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-size:13px;color:var(--ink2)" data-i="acctsecondary"></span>
+        <select id="new-acct-secondary" style="flex:1;border:1px solid var(--bdr2);border-radius:10px;padding:9px;background:var(--bg2);color:var(--ink);font-size:14px;-webkit-appearance:none">
+          <option value="none" data-i="kind2none"></option><option value="retirement" data-i="kind2retirement"></option><option value="locked" data-i="kind2locked"></option><option value="physical" data-i="kind2physical"></option><option value="emergency" data-i="kind2emergency"></option><option value="business" data-i="kind2business"></option>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
         <span style="font-size:13px;color:var(--ink2)" data-i="currency"></span>
         <select id="new-acct-cur" style="flex:1;border:1px solid var(--bdr2);border-radius:10px;padding:9px;background:var(--bg2);color:var(--ink);font-size:14px;-webkit-appearance:none">
           <option value="HKD">HKD · HK$</option><option value="RMB">RMB · CN¥</option><option value="USD">USD · US$</option><option value="JPY">JPY · JP¥</option>
@@ -1370,6 +1376,12 @@ img,canvas,svg{max-width:100%;}
       <span style="font-size:13px;color:var(--ink2)" data-i="accttype"></span>
       <select id="inline-acct-kind" style="flex:1;border:1px solid var(--bdr2);border-radius:10px;padding:9px;background:var(--bg2);color:var(--ink);font-size:14px;-webkit-appearance:none">
         <option value="cash" data-i="kindcash"></option><option value="debit" data-i="kinddebit"></option><option value="credit" data-i="kindcredit"></option><option value="bank" data-i="kindbank"></option><option value="ewallet" data-i="kindewallet"></option><option value="invest" data-i="kindinvest"></option><option value="other" data-i="kindother"></option>
+      </select>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin-top:10px">
+      <span style="font-size:13px;color:var(--ink2)" data-i="acctsecondary"></span>
+      <select id="inline-acct-secondary" style="flex:1;border:1px solid var(--bdr2);border-radius:10px;padding:9px;background:var(--bg2);color:var(--ink);font-size:14px;-webkit-appearance:none">
+        <option value="none" data-i="kind2none"></option><option value="retirement" data-i="kind2retirement"></option><option value="locked" data-i="kind2locked"></option><option value="physical" data-i="kind2physical"></option><option value="emergency" data-i="kind2emergency"></option><option value="business" data-i="kind2business"></option>
       </select>
     </div>
   </div>
@@ -1867,6 +1879,14 @@ Object.assign(LANGS.en,{
   rporiginal:'Original',rppaid:'Collected',rppaidout:'Paid',rpoutstanding:'Outstanding',rppayment:'Payment',rppaymentout:'Repayment',
   rpamountbelowpaid:'The new total cannot be below the amount already paid',rppaymentlock:'Direction, type, and currency cannot change after a payment',settleoverdue:'Amount cannot exceed the selected record balance'
 });
+Object.assign(LANGS.zh,{
+  acctsecondary:'第二標籤',kind2none:'無第二標籤',kind2retirement:'退休／MPF（鎖定）',kind2locked:'固定／鎖定資產',kind2physical:'實體固定資產相關',kind2emergency:'緊急備用金',kind2business:'公司／業務',
+  fixedshowhome:'計入實體固定資產',fixedhidehome:'從總資產及淨資產排除實體固定資產'
+});
+Object.assign(LANGS.en,{
+  acctsecondary:'Second label',kind2none:'No second label',kind2retirement:'Retirement / MPF (locked)',kind2locked:'Fixed / locked asset',kind2physical:'Physical-asset related',kind2emergency:'Emergency fund',kind2business:'Business',
+  fixedshowhome:'Include physical fixed assets',fixedhidehome:'Exclude physical fixed assets from total assets and net worth'
+});
 
 const DEF_CATS=[
   {id:'food',label:'飲食',labelEn:'Food',icon:'🍜',aliases:['食飯','食嘢']},
@@ -1903,7 +1923,9 @@ const DEF_ACCTS=[
   {id:'invest_acct',label:'投資戶口',labelEn:'Investment',icon:'📈',isInvest:true,kind:'invest'},
 ];
 const ACCT_KINDS=['cash','debit','credit','bank','ewallet','invest','other'];
+const ACCT_SECONDARY_KINDS=['none','retirement','locked','physical','emergency','business'];
 function kindLabel(k){return t('kind'+(k||'other'))||'';}
+function secondaryKindLabel(k){k=ACCT_SECONDARY_KINDS.includes(k)?k:'none';return t('kind2'+k)||'';}
 function defaultQuoteApis(){return {stock:{provider:'twelvedata',keys:[],cursor:0,cooldowns:{}},crypto:{provider:'coingecko_demo',keys:[],cursor:0,cooldowns:{}},physical:{provider:'twelvedata',keys:[],cursor:0,cooldowns:{}}};}
 function ensureQuoteApis(){
   const defs=defaultQuoteApis();
@@ -1975,7 +1997,7 @@ function showStorageError(action,e){
   console.error('Myfin storage '+action+' failed',e);
 }
 function clearStorageError(action){const el=document.getElementById('storage-error-banner');if(el&&el.dataset.action===action)el.remove();}
-function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d),legacyQuoteKey=!p.quoteApis?String(p.tdKey||'').trim():'';Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
+function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d),legacyQuoteKey=!p.quoteApis?String(p.tdKey||'').trim():'';Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));S.accounts.forEach(a=>{if(!ACCT_SECONDARY_KINDS.includes(a.secondaryKind))a.secondaryKind='none';});const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
 if(!S.debts)S.debts=[];
 if(!S.privateLoans)S.privateLoans=[];
 if(!S.physicalAssets)S.physicalAssets=[];
@@ -2479,7 +2501,7 @@ function renderAcctBalances(){
   const tdEl=document.getElementById('acct-total-debt');if(tdEl)tdEl.textContent=fmt(totalDebt());
   // filter / sort the list (the totals above stay overall)
   const fsel=S.acctFilter||'all';
-  const fopts=[['all',S.lang==='en'?'All accounts':'全部戶口'],['included',S.lang==='en'?'Included only':'只顯示計入'],['excluded',S.lang==='en'?'Excluded only':'只顯示已排除'],['asset',S.lang==='en'?'Asset / positive only':'只顯示資產 / 正數'],['debt',S.lang==='en'?'Debt / negative only':'只顯示負債 / 負數'],['hkd',S.lang==='en'?'HKD only':'只顯示 HKD 戶口'],['foreign',S.lang==='en'?'Foreign currency':'只顯示外幣戶口'],...ACCT_KINDS.map(k=>['kind:'+k,(S.lang==='en'?'Show ':'只顯示 ')+kindLabel(k)]),['az',S.lang==='en'?'Name A → Z':'名稱 A → Z'],['amount',S.lang==='en'?'By balance ↓':'按結餘 高→低']];
+  const fopts=[['all',S.lang==='en'?'All accounts':'全部戶口'],['included',S.lang==='en'?'Included only':'只顯示計入'],['excluded',S.lang==='en'?'Excluded only':'只顯示已排除'],['asset',S.lang==='en'?'Asset / positive only':'只顯示資產 / 正數'],['debt',S.lang==='en'?'Debt / negative only':'只顯示負債 / 負數'],['hkd',S.lang==='en'?'HKD only':'只顯示 HKD 戶口'],['foreign',S.lang==='en'?'Foreign currency':'只顯示外幣戶口'],...ACCT_KINDS.map(k=>['kind:'+k,(S.lang==='en'?'Show ':'只顯示 ')+kindLabel(k)]),...ACCT_SECONDARY_KINDS.filter(k=>k!=='none').map(k=>['secondary:'+k,(S.lang==='en'?'Second label: ':'第二標籤：')+secondaryKindLabel(k)]),['az',S.lang==='en'?'Name A → Z':'名稱 A → Z'],['amount',S.lang==='en'?'By balance ↓':'按結餘 高→低']];
   const fel=document.getElementById('acct-filter');if(fel)fel.innerHTML=fopts.map(o=>`<option value="${escapeHtml(o[0])}"${o[0]===fsel?' selected':''}>${escapeHtml(o[1])}</option>`).join('');
   let viewAccts=accts.slice();
   if(fsel==='included')viewAccts=viewAccts.filter(a=>!a.excluded);
@@ -2489,6 +2511,7 @@ function renderAcctBalances(){
   else if(fsel==='hkd')viewAccts=viewAccts.filter(a=>(a.cur||'HKD')==='HKD');
   else if(fsel==='foreign')viewAccts=viewAccts.filter(a=>(a.cur||'HKD')!=='HKD');
   else if(fsel&&fsel.startsWith('kind:'))viewAccts=viewAccts.filter(a=>(a.kind||'other')===fsel.slice(5));
+  else if(fsel&&fsel.startsWith('secondary:'))viewAccts=viewAccts.filter(a=>(a.secondaryKind||'none')===fsel.slice(10));
   else if(fsel==='az')viewAccts.sort((a,b)=>acctLabel(a).localeCompare(acctLabel(b)));
   else if(fsel==='amount')viewAccts.sort((a,b)=>acctBalance(b.id)-acctBalance(a.id));
   const listEl=document.getElementById('acct-bal-list');
@@ -2497,6 +2520,7 @@ function renderAcctBalances(){
     const debt=acctDebt(ac.id);
     const balColor=bal<0?'var(--r)':'var(--ink)';
     const invBadge=ac.isInvest?`<span class="badge bp" style="margin-left:6px">${t('investacct')}</span>`:(ac.kind&&ac.kind!=='other'?`<span class="badge bgr" style="margin-left:6px">${kindLabel(ac.kind)}</span>`:'');
+    const secondBadge=ac.secondaryKind&&ac.secondaryKind!=='none'?`<span class="badge ba" style="margin-left:6px">${escapeHtml(secondaryKindLabel(ac.secondaryKind))}</span>`:'';
     const exAcctBadge=ac.excluded?`<span class="badge bgr" style="margin-left:6px">${t('excluded')}</span>`:'';
     const debtBadge=debt>0?`<span class="badge ba" style="margin-left:6px;background:var(--r2);color:var(--r3)">${t('debtbadge')} ${fmtCur(debt,ac.cur)}</span>`:'';
     let sub;
@@ -2508,7 +2532,7 @@ function renderAcctBalances(){
     }
     return `<div class="crow" onclick="openAcctTxns(${inlineJsString(ac.id)})" style="cursor:pointer;${ac.excluded?'opacity:0.5;':''}">
       <div class="ibox" style="background:var(--bg2);font-size:22px">${escapeHtml(ac.icon)}</div>
-      <div class="rinfo"><div class="rtitle">${escapeHtml(acctLabel(ac))}${invBadge}${debtBadge}${exAcctBadge}</div>
+      <div class="rinfo"><div class="rtitle">${escapeHtml(acctLabel(ac))}${invBadge}${secondBadge}${debtBadge}${exAcctBadge}</div>
         <div class="rsub">${sub}</div></div>
       <div style="text-align:right"><div style="font-size:17px;font-weight:700;color:${balColor}">${fmtCur(bal,ac.cur)}</div>
         <div style="font-size:11px;color:var(--ink3);margin-top:2px">${(ac.cur&&ac.cur!=='HKD')?'≈ '+fmtCur(bal,'HKD'):t('acctbalance')}</div></div>
@@ -3259,10 +3283,12 @@ function addInlineAcct(){
   if(!id)id='acct_'+Date.now();
   if(!S.accounts)S.accounts=[];
   const kind=document.getElementById('inline-acct-kind').value;const isInvest=kind==='invest';
-  if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,cur:S.dispCur||'HKD'});
+  const secondaryKind=document.getElementById('inline-acct-secondary').value||'none';
+  if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,secondaryKind,cur:S.dispCur||'HKD'});
   S.selAcct=id;
   document.getElementById('inline-acct-icon').value='';
   document.getElementById('inline-acct-name').value='';
+  document.getElementById('inline-acct-secondary').value='none';
   document.getElementById('inline-newacct').style.display='none';
   saveS();renderAcctChips();renderAcctToChips();
 }
@@ -3919,6 +3945,13 @@ function toggleHeroDetail(kind){
   if(otherCard){otherCard.classList.remove('open');otherCard.setAttribute('aria-expanded','false');}
   detail.classList.toggle('open',open);card.classList.toggle('open',open);card.setAttribute('aria-expanded',open?'true':'false');
 }
+function toggleHomeFixedAssets(){
+  S.pnlNetHidden=S.pnlNetHidden||{};
+  S.pnlNetHidden.physical=!S.pnlNetHidden.physical;
+  saveS();renderHome();refreshWallet();
+  if(S.activeTab==='gamble')renderGamble();
+  if(S.activeTab==='settings')renderPnlSecMgr();
+}
 function renderHome(){
   syncPeriodUI();
   const nwLbl=document.querySelector('.hero-label[data-i="networth"]');
@@ -3930,6 +3963,7 @@ function renderHome(){
   const expAll=periTxns.filter(tx=>tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
   const cf=incomeCash-expAll;
   const bs=balanceSheetBreakdown();
+  const fixedOn=!pnlNetExcluded('physical'),fixedRecorded=physicalAssetsStats().value;
   // hero accounting board: Net worth = Total assets − Total debt
   document.getElementById('h-nw').textContent=fmt(bs.netWorth);
   document.getElementById('h-asset').textContent=fmt(bs.assets);
@@ -3939,7 +3973,10 @@ function renderHome(){
   document.getElementById('h-fixed-label').textContent=assetLabel('fixed');
   document.getElementById('h-quick-label').textContent=assetLabel('quick');
   document.getElementById('h-recv-label').textContent=assetLabel('receivable');
-  document.getElementById('h-fixed').textContent=fmt(bs.fixedAsset)+hpc(bs.fixedAsset,bs.assets);
+  const fixedToggle=document.getElementById('h-fixed-toggle');
+  if(fixedToggle){const label=t(fixedOn?'fixedhidehome':'fixedshowhome');fixedToggle.title=label;fixedToggle.setAttribute('aria-label',label);fixedToggle.setAttribute('aria-pressed',fixedOn?'true':'false');fixedToggle.innerHTML=`<i class="ti ti-${fixedOn?'eye':'eye-off'}" style="font-size:13px"></i>`;fixedToggle.style.opacity=fixedOn?'1':'.6';}
+  const fixedRow=document.getElementById('h-fixed-row');if(fixedRow)fixedRow.style.opacity=fixedOn?'1':'.62';
+  document.getElementById('h-fixed').textContent=fmt(fixedRecorded)+(fixedOn?hpc(fixedRecorded,bs.assets):' · '+t('excluded'));
   document.getElementById('h-recv').textContent=fmt(bs.receivable)+hpc(bs.receivable,bs.assets);
   document.getElementById('h-invest').textContent=fmt(bs.investmentAsset)+hpc(bs.investmentAsset,bs.assets);
   document.getElementById('h-quick').textContent=fmt(bs.quickAsset)+hpc(bs.quickAsset,bs.assets);
@@ -4972,17 +5009,19 @@ function renderAcctMgr(){
   const el=document.getElementById('acct-mgr');if(!el)return;
   el.innerHTML=(S.accounts||[]).map(a=>{
     const opts=ACCT_KINDS.map(k=>`<option value="${k}"${(a.kind||'other')===k?' selected':''}>${kindLabel(k)}</option>`).join('');
+    const secondOpts=ACCT_SECONDARY_KINDS.map(k=>`<option value="${k}"${(a.secondaryKind||'none')===k?' selected':''}>${secondaryKindLabel(k)}</option>`).join('');
     const curOpts=['HKD','RMB','USD','JPY'].map(c=>`<option value="${c}"${(a.cur||'HKD')===c?' selected':''}>${c}</option>`).join('');
-    return `<div style="display:flex;align-items:center;padding:12px 15px;gap:8px;border-bottom:0.5px solid var(--bdr);${a.excluded?'opacity:0.55;':''}"><div style="font-size:20px;width:26px;flex-shrink:0">${escapeHtml(a.icon)}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(acctLabel(a))}${a.excluded?`<span class="badge bgr" style="margin-left:6px">${t('excluded')}</span>`:''}</div><div style="display:flex;gap:6px;margin-top:5px"><select onchange="setAcctKind(${inlineJsString(a.id)},this.value)" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${opts}</select><select onchange="setAcctCur(${inlineJsString(a.id)},this.value)" style="width:74px;flex-shrink:0;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${curOpts}</select></div></div><button onclick="toggleAcctExclude(${inlineJsString(a.id)})" title="${escapeHtml(t('excludetip'))}" style="padding:6px 9px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:${a.excluded?'var(--a3)':'var(--ink3)'};font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0">${a.excluded?t('included'):t('exclude')}</button><button onclick="deleteAcct(${inlineJsString(a.id)})" style="padding:6px 8px;border:none;background:none;color:var(--r3);font-size:19px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button></div>`;
+    return `<div style="display:flex;align-items:center;padding:12px 15px;gap:8px;border-bottom:0.5px solid var(--bdr);${a.excluded?'opacity:0.55;':''}"><div style="font-size:20px;width:26px;flex-shrink:0">${escapeHtml(a.icon)}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(acctLabel(a))}${a.excluded?`<span class="badge bgr" style="margin-left:6px">${t('excluded')}</span>`:''}</div><div style="display:flex;gap:6px;margin-top:5px"><select onchange="setAcctKind(${inlineJsString(a.id)},this.value)" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${opts}</select><select onchange="setAcctCur(${inlineJsString(a.id)},this.value)" style="width:74px;flex-shrink:0;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${curOpts}</select></div><div style="margin-top:5px"><select onchange="setAcctSecondaryKind(${inlineJsString(a.id)},this.value)" title="${escapeHtml(t('acctsecondary'))}" aria-label="${escapeHtml(t('acctsecondary'))}" style="width:100%;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${secondOpts}</select></div></div><button onclick="toggleAcctExclude(${inlineJsString(a.id)})" title="${escapeHtml(t('excludetip'))}" style="padding:6px 9px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:${a.excluded?'var(--a3)':'var(--ink3)'};font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0">${a.excluded?t('included'):t('exclude')}</button><button onclick="deleteAcct(${inlineJsString(a.id)})" style="padding:6px 8px;border:none;background:none;color:var(--r3);font-size:19px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button></div>`;
   }).join('');
 }
 function toggleAcctExclude(id){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.excluded=!a.excluded;saveS();renderSettings();renderHome();refreshWallet();}
 function pickAcctEmoji(btn){document.getElementById('new-acct-icon').value=btn.textContent.trim();}
-function addAcct(){const icon=document.getElementById('new-acct-icon').value.trim()||'💳';const name=document.getElementById('new-acct-name').value.trim();if(!name)return;let id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!id)id='acct_'+Date.now();if(!S.accounts)S.accounts=[];const kind=document.getElementById('new-acct-kind').value;const isInvest=kind==='invest';const cur=document.getElementById('new-acct-cur').value||'HKD';if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,cur});['new-acct-icon','new-acct-name'].forEach(x=>document.getElementById(x).value='');document.getElementById('new-acct-cur').value=S.dispCur||'HKD';saveS();renderSettings();renderHome();refreshWallet();}
+function addAcct(){const icon=document.getElementById('new-acct-icon').value.trim()||'💳';const name=document.getElementById('new-acct-name').value.trim();if(!name)return;let id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!id)id='acct_'+Date.now();if(!S.accounts)S.accounts=[];const kind=document.getElementById('new-acct-kind').value;const isInvest=kind==='invest';const secondaryKind=document.getElementById('new-acct-secondary').value||'none';const cur=document.getElementById('new-acct-cur').value||'HKD';if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,secondaryKind,cur});['new-acct-icon','new-acct-name'].forEach(x=>document.getElementById(x).value='');document.getElementById('new-acct-secondary').value='none';document.getElementById('new-acct-cur').value=S.dispCur||'HKD';saveS();renderSettings();renderHome();refreshWallet();}
 function setAcctCur(id,cur){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.cur=cur;saveS();renderSettings();renderHome();refreshWallet();}
 function fmtCur(n,cur){if(S.privacy)return '••••';cur=cur||'HKD';const v=cur==='HKD'?n:n/(FX[cur]||1);const neg=v<0&&Math.round(Math.abs(v))!==0;return (neg?'−':'')+(CUR_SYM[cur]||(cur+' '))+numStr(Math.abs(v));}
 function setAcctFilter(v){S.acctFilter=v;saveS();renderAcctBalances();}
 function setAcctKind(id,kind){const a=(S.accounts||[]).find(x=>x.id===id);if(a){a.kind=kind;a.isInvest=(kind==='invest');}saveS();renderSettings();renderHome();}
+function setAcctSecondaryKind(id,secondaryKind){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.secondaryKind=ACCT_SECONDARY_KINDS.includes(secondaryKind)?secondaryKind:'none';saveS();renderSettings();renderHome();refreshWallet();}
 function deleteAcct(id){if((S.accounts||[]).length<=1)return;S.accounts=S.accounts.filter(a=>a.id!==id);if(S.selAcct===id)S.selAcct=S.accounts[0]?.id;saveS();renderSettings();renderHome();refreshWallet();}
 function renderMergeChips(){document.getElementById('merge-chips').innerHTML=S.cats.map(c=>`<div class="cat-chip${S.mergeSelected.includes(c.id)?' merge-sel':''}" onclick="toggleMergeSel(${inlineJsString(c.id)})"><span style="font-size:20px">${escapeHtml(c.icon)}</span><span>${escapeHtml(catLabel(c))}</span></div>`).join('');updateMergePreview();}
 function toggleMergeSel(id){const i=S.mergeSelected.indexOf(id);i>=0?S.mergeSelected.splice(i,1):S.mergeSelected.push(id);renderMergeChips();}
@@ -5158,7 +5197,7 @@ function exportExcel(){
   const aiRows=(S.autoincome||[]).map(a=>({Name:a.name||'',Amount:a.amount||0,Currency:a.cur||'HKD','Freq (months)':a.freq||'',Day:a.day||'',Account:a.acct||'',Position:a.posName||'',Active:a.active?'Y':''}));
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(aiRows.length?aiRows:[{Name:''}]),'Auto-income');
   // Accounts & Categories reference
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((S.accounts||[]).map(a=>({Account:acctLabel(a),Icon:a.icon}))),'Accounts');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet((S.accounts||[]).map(a=>({Account:acctLabel(a),Icon:a.icon,'Primary type':kindLabel(a.kind||'other'),'Second label':a.secondaryKind&&a.secondaryKind!=='none'?secondaryKindLabel(a.secondaryKind):''}))),'Accounts');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(S.cats.map(c=>({Category:catLabel(c),Icon:c.icon,Aliases:(c.aliases||[]).join(', ')}))),'Categories');
   const fn='FinanceOS_'+today()+'.xlsx';
   XLSX.writeFile(wb,fn);
@@ -5329,7 +5368,7 @@ function buildAiContextData(){
       payables:aiNum(bs.payable),shortDebt:aiNum(bs.shortDebt),longDebt:aiNum(bs.longDebt),totalDebt:aiNum(bs.debt),netWorth:aiNum(bs.netWorth)
     },
     accounts:(S.accounts||[]).map(a=>({
-      id:String(a.id),name:acctLabel(a),kind:a.kind||'other',currency:a.cur||'HKD',excluded:!!a.excluded,
+      id:String(a.id),name:acctLabel(a),kind:a.kind||'other',secondaryKind:a.secondaryKind||'none',secondaryLabel:a.secondaryKind&&a.secondaryKind!=='none'?secondaryKindLabel(a.secondaryKind):null,currency:a.cur||'HKD',excluded:!!a.excluded,
       cashHKD:aiNum(acctCash(a.id)),openPositionValueHKD:aiNum(acctOpenValue(a.id)),marginDebtHKD:aiNum(acctMarginDebt(a.id)),netBalanceHKD:aiNum(acctBalance(a.id))
     })),
     receivables:active.filter(p=>p.dir!=='p').map(mapRP),
