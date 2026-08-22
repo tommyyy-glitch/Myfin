@@ -20,12 +20,13 @@ assert.match(html,/id="h-fixed-toggle"[^>]*onclick="toggleHomeFixedAssets\(\)"/)
 assert.match(html,/id="h-longdebt-toggle"[^>]*onclick="toggleHomeLongDebt\(\)"/);
 assert.match(declaration('renderAcctBalances'),/startsWith\('secondary:'\)/);
 assert.match(declaration('renderHome'),/fixedRecorded/);
+assert.match(declaration('renderHome'),/bs\.fixedAssetRecorded/);
 assert.match(declaration('renderHome'),/eye-off/);
 
 const code=`
 const ACCT_SECONDARY_KINDS=['none','retirement','locked','physical','emergency','business'];
 let calls={save:0,home:0,wallet:0,gamble:0,settings:0};
-const S={activeTab:'home',accounts:[{id:'mpf',kind:'invest',secondaryKind:'retirement'}],pnlNetHidden:{},physicalAssets:[]};
+const S={activeTab:'home',accounts:[{id:'mpf',kind:'invest',secondaryKind:'retirement'}],portfolio:[{acctId:'mpf',type:'stock',valueHKD:200,costHKD:150}],gamble:[],pnlNetHidden:{},physicalAssets:[]};
 function saveS(){calls.save++;}
 function renderSettings(){calls.settings++;}
 function renderHome(){calls.home++;}
@@ -44,8 +45,11 @@ function acctMarginDebt(){return 50;}
 function longDebtCountsInNet(){return !pnlNetExcluded('debt');}
 function debtsOutstanding(){return 400;}
 function pnlNetExcluded(kind){return !!S.pnlNetHidden[kind];}
+${declaration('pnlSecForPort')}
+${declaration('pnlSecForGamble')}
 ${declaration('acctIsPhysical')}
 ${declaration('acctCountsInNet')}
+${declaration('physicalAccountAssetRecorded')}
 ${declaration('balanceSheetBreakdown')}
 ${declaration('setAcctSecondaryKind')}
 ${declaration('toggleHomeFixedAssets')}
@@ -82,7 +86,8 @@ assert.equal(context.beforeHideBalance.fixedAsset,600);
 assert.equal(context.beforeHideBalance.physicalAccountAsset,300);
 assert.equal(context.beforeHideBalance.assets,600);
 assert.equal(context.hiddenBalance.fixedAsset,0);
-assert.equal(context.hiddenBalance.physicalAccountAsset,0);
+assert.equal(context.hiddenBalance.fixedAssetRecorded,600);
+assert.equal(context.hiddenBalance.physicalAccountAsset,300);
 assert.equal(context.hiddenBalance.assets,0);
 assert.equal(context.shownBalance.assets,600);
 assert.equal(context.afterDebtHide,true);

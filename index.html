@@ -828,7 +828,7 @@ img,canvas,svg{max-width:100%;}
       </div>
     </div>
     <div class="glass-card" id="pnl-calendar-card" style="padding:16px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px"><div><div class="mlabel" id="pnl-cal-label">每日損益</div><div class="msub" id="pnl-cal-hint" style="margin-top:3px">按已記錄嘅實現損益及估值變動顯示</div></div><div style="display:flex;align-items:center;gap:7px"><button onclick="shiftPnlCalendar(-1)" aria-label="Previous month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-left"></i></button><strong id="pnl-cal-title" style="font-size:13px;min-width:76px;text-align:center"></strong><button onclick="shiftPnlCalendar(1)" aria-label="Next month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-right"></i></button></div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px"><div><div class="mlabel" id="pnl-cal-label">每日損益</div><div class="msub" id="pnl-cal-hint" style="margin-top:3px">按已記錄嘅已實現、未實現損益及估值變動顯示</div></div><div style="display:flex;align-items:center;gap:7px"><button onclick="shiftPnlCalendar(-1)" aria-label="Previous month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-left"></i></button><strong id="pnl-cal-title" style="font-size:13px;min-width:76px;text-align:center"></strong><button onclick="shiftPnlCalendar(1)" aria-label="Next month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-right"></i></button></div></div>
       <div class="pnl-calendar-grid" id="pnl-cal-grid"></div>
       <div id="pnl-cal-summary" style="margin-top:11px;font-size:12px;color:var(--ink3)"></div>
       <div id="pnl-cal-detail" style="margin-top:6px"></div>
@@ -2489,6 +2489,16 @@ function acctAsset(acctId){
   if(hasInv)asset+=acctOpenValue(acctId);
   return asset;
 }
+// Recorded value for a physical-labelled account. This intentionally ignores only
+// the physical net-worth toggle so Home can still show the original amount beside
+// "Excluded", while respecting the account's own exclusion and section toggles.
+function physicalAccountAssetRecorded(acctId){
+  const cash=acctCash(acctId);
+  let asset=cash>0?cash:0;
+  (S.portfolio||[]).forEach(p=>{if(p.acctId===acctId&&!p.exitPrice&&!pnlNetExcluded(pnlSecForPort(p)))asset+=Number(p.valueHKD)||0;});
+  (S.gamble||[]).forEach(g=>{if(g.acctId===acctId&&g.open&&!pnlNetExcluded(pnlSecForGamble(g)))asset+=Number(g.buyinHKD)||0;});
+  return asset;
+}
 // Global totals across all accounts (excluded accounts are skipped)
 function totalAssets(){return (S.accounts||[]).filter(acctCountsInNet).reduce((a,ac)=>a+acctAsset(ac.id),0);}
 function totalDebt(){return (S.accounts||[]).filter(acctCountsInNet).reduce((a,ac)=>a+acctDebt(ac.id),0);}
@@ -3668,11 +3678,12 @@ function skipTransfer(txnId){const tx=S.txns.find(x=>x.id===txnId);if(tx)tx._res
 
 
 function balanceSheetBreakdown(){
-  const accts=(S.accounts||[]).filter(acctCountsInNet),regular=accts.filter(ac=>!acctIsPhysical(ac)),physicalAccts=accts.filter(acctIsPhysical);
+  const allAccts=(S.accounts||[]).filter(ac=>!ac.excluded),accts=allAccts.filter(acctCountsInNet),regular=accts.filter(ac=>!acctIsPhysical(ac)),physicalAccts=allAccts.filter(acctIsPhysical);
   const quickAsset=regular.reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
   const investmentAsset=regular.reduce((a,ac)=>a+acctLiquidAssetValue(ac.id)+acctInvestmentAssetValue(ac.id),0)+privateLoanAssetTotal();
-  const physicalAccountAsset=physicalAccts.reduce((a,ac)=>a+acctAsset(ac.id),0);
-  const fixedAsset=pnlNetExcluded('physical')?0:physicalAssetsStats().value+physicalAccountAsset;
+  const physicalAccountAsset=physicalAccts.reduce((a,ac)=>a+physicalAccountAssetRecorded(ac.id),0);
+  const fixedAssetRecorded=physicalAssetsStats().value+physicalAccountAsset;
+  const fixedAsset=pnlNetExcluded('physical')?0:fixedAssetRecorded;
   const receivable=rpAssetTotal();
   const payable=rpDebtTotal();
   const shortDebt=accts.reduce((a,ac)=>a+Math.max(-acctCash(ac.id),0),0);
@@ -3681,7 +3692,7 @@ function balanceSheetBreakdown(){
   const longDebt=marginDebt+(longDebtCountsInNet()?managedLongDebt:0);
   const assets=quickAsset+investmentAsset+fixedAsset+receivable;
   const debt=payable+shortDebt+longDebt;
-  return {quickAsset,investmentAsset,physicalAccountAsset,fixedAsset,receivable,payable,shortDebt,marginDebt,managedLongDebt,longDebt,assets,debt,netWorth:assets-debt};
+  return {quickAsset,investmentAsset,physicalAccountAsset,fixedAssetRecorded,fixedAsset,receivable,payable,shortDebt,marginDebt,managedLongDebt,longDebt,assets,debt,netWorth:assets-debt};
 }
 function dateOnly(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
 function parseDateOnly(s){const p=String(s||'').split('-').map(Number);return p.length>=3?new Date(p[0],p[1]-1,p[2]):new Date(s);}
@@ -3985,7 +3996,7 @@ function renderHome(){
   const expAll=periTxns.filter(tx=>tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
   const cf=incomeCash-expAll;
   const bs=balanceSheetBreakdown();
-  const fixedOn=!pnlNetExcluded('physical'),fixedRecorded=bs.fixedAsset,longDebtOn=longDebtCountsInNet();
+  const fixedOn=!pnlNetExcluded('physical'),fixedRecorded=bs.fixedAssetRecorded,longDebtOn=longDebtCountsInNet();
   // hero accounting board: Net worth = Total assets − Total debt
   document.getElementById('h-nw').textContent=fmt(bs.netWorth);
   document.getElementById('h-asset').textContent=fmt(bs.assets);
@@ -4249,7 +4260,7 @@ function savePortfolio(){
       S.portfolio.unshift(np);logChange('add',np,qty+' @ '+cur+(entryPrice||0));
     }
   }
-  saveS();closeM('m-port');refreshAllViews();
+  recordPriceSnapshot();saveS();closeM('m-port');refreshAllViews();
 }
 function deletePort(id){const p=(S.portfolio||[]).find(x=>String(x.id)===String(id));if(p&&!confirm(t('deltxnq')))return;if(p)logChange('delete',p,'');S.portfolio=(S.portfolio||[]).filter(x=>String(x.id)!==String(id));saveS();renderGamble();renderHome();refreshWallet();}
 function deleteGroupLots(name,acctId,secId,type){if(!confirm(t('deltxnq')))return;const k=(name||'')+'|'+(acctId||'')+'|'+(secId||'');S.portfolio=(S.portfolio||[]).filter(p=>!(p.type===type&&((p.name||'')+'|'+(p.acctId||'')+'|'+(p.secId||''))===k));logChange('delete',{type,name,acctId,secId},'');saveS();renderGamble();renderHome();refreshWallet();}
@@ -4278,7 +4289,7 @@ function endPosition(id){
   p.exitPrice=px;
   p.exitDate=today();
   p.valueHKD=parseFloat(toHKD(px*(p.qty||0),p.cur).toFixed(2));
-  saveS();renderGamble();renderHome();refreshWallet();
+  recordPriceSnapshot();saveS();renderGamble();renderHome();refreshWallet();
 }
 // ── PARTIAL SELL ──
 function openSell(id){
@@ -4315,7 +4326,7 @@ function confirmSell(){
     p.valueHKD=parseFloat(toHKD((p.currentPrice||p.entryPrice)*p.qty,p.cur).toFixed(2));
   }
   logChange('sell',p,sellQty+' @ '+p.cur+sellPx);
-  saveS();closeM('m-sell');renderGamble();renderHome();refreshWallet();
+  recordPriceSnapshot();saveS();closeM('m-sell');renderGamble();renderHome();refreshWallet();
 }
 // ── PRIVATE EQUITY ──
 function openPEModal(editId,defaultSecId){
@@ -4358,7 +4369,7 @@ function savePE(){
   const rec={type:'pe',name,pct:isNaN(pct)?null:pct,invested,valuation:val,cur,notes,costHKD,valueHKD,acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin:false,secId,divPct,divFreq};
   if(editId){const i=S.portfolio.findIndex(x=>String(x.id)===String(editId));if(i>=0)S.portfolio[i]={...S.portfolio[i],...rec};}
   else S.portfolio.unshift({id:Date.now(),date:today(),...rec});
-  saveS();closeM('m-pe');renderGamble();renderHome();refreshWallet();
+  recordPriceSnapshot();saveS();closeM('m-pe');renderGamble();renderHome();refreshWallet();
 }
 // ── P&L SECTION SHOW / HIDE / REORDER ──
 function pnlOrderSafe(){
@@ -4512,13 +4523,26 @@ function drawTrend(){
   labels.forEach((lb,i)=>{if(i%step===0||i===labels.length-1)ctx.fillText(lb,x(i),H-12);});
 }
 function setTrendGran(g,btn){S.trendGran=g;saveS();document.querySelectorAll('#trend-gran .fchip').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');drawTrend();}
-// Calendar replacement for the old aggregate line chart. It plots dated, recorded
-// P&L events only: closed positions/sessions, received loan interest, and changes
-// between successive physical-asset valuations. The allocation filters above are shared.
+// Calendar replacement for the old aggregate line chart. It combines realised
+// events with changes between recorded unrealised-P&L snapshots and physical valuations.
+// The allocation filters above are shared.
 let _pnlCalMonth=null,_pnlCalSelected=null;
+function pnlUnrealizedEvents(){
+  const snaps=(S.priceHist||[]).filter(x=>x&&Number.isFinite(Number(x.t))&&x.p&&typeof x.p==='object').slice().sort((a,b)=>Number(a.t)-Number(b.t));
+  const rows=[];let prev=null;
+  snaps.forEach(s=>{
+    const current=s.p||{};
+    if(prev){
+      const keys=new Set([...Object.keys(prev),...Object.keys(current)]),date=ymd(new Date(Number(s.t)));
+      keys.forEach(kind=>{const value=(Number(current[kind])||0)-(Number(prev[kind])||0);if(Math.abs(value)>0.004)rows.push({date,value,kind,label:tt('未實現損益變動','Unrealised P&L change')});});
+    }
+    prev=current;
+  });
+  return rows;
+}
 function pnlCalendarEvents(){
-  const rows=[];
-  (S.portfolio||[]).filter(p=>p.exitPrice).forEach(p=>rows.push({date:p.exitDate||p.date||today(),value:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),kind:acctIsPhysical(p.acctId)?'physical':(p.secId||p.type||'stock'),label:p.name||t('position')}));
+  const rows=pnlUnrealizedEvents();
+  (S.portfolio||[]).filter(p=>p.exitPrice).forEach(p=>rows.push({date:p.exitDate||p.date||today(),value:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),kind:acctIsPhysical(p.acctId)?'physical':(p.secId||p.type||'stock'),label:(p.name||t('position'))+' · '+t('realisedpnl')}));
   (S.gamble||[]).filter(g=>!g.open).forEach(g=>rows.push({date:g.date||today(),value:(Number(g.cashoutHKD)||0)-(Number(g.buyinHKD)||0),kind:acctIsPhysical(g.acctId)?'physical':(g.secId||'poker'),label:g.venue||t('poker')}));
   (S.privateLoans||[]).forEach(l=>loanPayments(l).forEach(p=>{const value=Number(p.interestHKD)||0;if(value)rows.push({date:p.date||today(),value,kind:'loan',label:l.borrower||t('privatedebt')});}));
   (S.physicalAssets||[]).filter(a=>!a.excluded).forEach(a=>{const hist=ensurePhysicalAssetHistory(a);for(let i=1;i<hist.length;i++){const value=toHKD((Number(hist[i].value)||0)-(Number(hist[i-1].value)||0),a.cur||'HKD');if(Math.abs(value)>0.004)rows.push({date:hist[i].date||today(),value,kind:'physical',label:a.name||assetLabel('fixed')});}});
@@ -4535,7 +4559,7 @@ function renderPnlCalendar(){
   const monthName=S.lang==='en'?['January','February','March','April','May','June','July','August','September','October','November','December'][m]:(m+1)+'月';
   const title=document.getElementById('pnl-cal-title');if(title)title.textContent=monthName+' '+y;
   const label=document.getElementById('pnl-cal-label');if(label)label.textContent=tt('每日損益日曆','Daily P&L calendar');
-  const hint=document.getElementById('pnl-cal-hint');if(hint)hint.textContent=tt('按已記錄嘅實現損益及估值變動顯示','Based on recorded realised P&L and valuation changes');
+  const hint=document.getElementById('pnl-cal-hint');if(hint)hint.textContent=tt('按已記錄嘅已實現、未實現損益及估值變動顯示','Based on recorded realised, unrealised and valuation P&L changes');
   const filterLabel=document.getElementById('pnl-filter-label');if(filterLabel)filterLabel.textContent=tt('篩選','Filter');
   const filterHint=document.getElementById('pnl-filter-hint');if(filterHint)filterHint.textContent=tt('同一組篩選會套用到資產圓形圖同每日損益日曆。','The same filters apply to both allocation and the daily P&L calendar.');
   const dow=S.lang==='en'?['S','M','T','W','T','F','S']:['日','一','二','三','四','五','六'];let html=dow.map(d=>`<div style="text-align:center;font-size:10px;color:var(--ink3);font-weight:800;padding:3px 0">${d}</div>`).join('');
@@ -4543,7 +4567,7 @@ function renderPnlCalendar(){
   for(let day=1;day<=dim;day++){const v=(daily[day]||[]).reduce((n,e)=>n+e.value,0),has=Math.abs(v)>0.004,cls=has?(v>=0?' pos':' neg'):'',sel=_pnlCalSelected===day?' sel':'';html+=`<button type="button" class="pnl-cal-day${cls}${sel}" onclick="togglePnlCalendarDay(${day})"><span style="font-size:11px;font-weight:700">${day}</span>${has?`<span class="amt">${v>=0?'+':'−'}${escapeHtml(numStr(Math.abs((S.dispCur||'HKD')==='HKD'?v:v/(FX[S.dispCur]||1))))}</span>`:''}</button>`;}
   grid.innerHTML=html;
   const profit=events.filter(e=>e.value>0).reduce((n,e)=>n+e.value,0),loss=events.filter(e=>e.value<0).reduce((n,e)=>n+Math.abs(e.value),0),net=profit-loss,summary=document.getElementById('pnl-cal-summary');if(summary)summary.innerHTML=`${tt('本月收入／盈利','Month gains')} <strong style="color:var(--g3)">+${fmt(profit)}</strong> · ${tt('損失','losses')} <strong style="color:var(--r3)">−${fmt(loss)}</strong> · ${tt('淨額','net')} <strong style="color:${net>=0?'var(--g3)':'var(--r3)'}">${net>=0?'+':'−'}${fmt(Math.abs(net))}</strong>`;
-  const detail=document.getElementById('pnl-cal-detail');if(!detail)return;if(!_pnlCalSelected){detail.innerHTML='';return;}const dayRows=daily[_pnlCalSelected]||[],ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(_pnlCalSelected).padStart(2,'0');detail.innerHTML=`<div style="font-size:12px;font-weight:800;margin:9px 2px 5px">${ds}</div>`+(dayRows.length?dayRows.map(e=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-top:.5px solid var(--bdr);font-size:12px"><span>${escapeHtml((pnlPieFilterMeta()[e.kind]||['',e.kind])[0])} ${escapeHtml(e.label)}</span><strong style="color:${e.value>=0?'var(--g3)':'var(--r3)'}">${e.value>=0?'+':'−'}${fmt(Math.abs(e.value))}</strong></div>`).join(''):`<div class="msub" style="padding:8px 2px">${tt('未有已記錄損益','No recorded P&L')}</div>`);
+  const detail=document.getElementById('pnl-cal-detail');if(!detail)return;if(!_pnlCalSelected){detail.innerHTML='';return;}const dayRows=daily[_pnlCalSelected]||[],ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(_pnlCalSelected).padStart(2,'0');detail.innerHTML=`<div style="font-size:12px;font-weight:800;margin:9px 2px 5px">${ds}</div>`+(dayRows.length?dayRows.map(e=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-top:.5px solid var(--bdr);font-size:12px"><span>${escapeHtml((pnlPieFilterMeta()[e.kind]||['',e.kind])[0])} ${escapeHtml(e.label)}</span><strong style="color:${e.value>=0?'var(--g3)':'var(--r3)'}">${e.value>=0?'+':'−'}${fmt(Math.abs(e.value))}</strong></div>`).join(''):`<div class="msub" style="padding:8px 2px">${tt('未有損益變動','No P&L changes')}</div>`);
 }
 function pokerRowHTML(g){
   const sp=g.open?0:((g.cashoutHKD||0)-(g.buyinHKD||0));
@@ -5294,15 +5318,23 @@ function fxUpdatedLabel(){const last=(S.fx&&S.fx.updated)||0;if(!last)return t('
 function renderFxRates(){const el=document.getElementById('fx-rate-list');if(!el)return;const rows=['USD','RMB','JPY'].map(c=>`<div class="fx-row"><div><div class="fx-code">1 ${c}</div><div style="font-size:12px;color:var(--ink3);margin-top:2px">${t('hkdperunit')}</div></div><div class="fx-val">HK$${(FX[c]||0).toFixed(c==='JPY'?4:3)}</div></div>`).join('');el.innerHTML=rows;const u=document.getElementById('fx-updated');if(u)u.textContent=fxUpdatedLabel();}
 function openFxRates(){renderFxRates();document.getElementById('m-fx').classList.add('open');}
 let _refreshing=false;
-// Snapshot stock & crypto open market value on each price refresh, building a real trend over time
-function recordPriceSnapshot(){
+// Snapshot open market value and unrealised P&L on each quote/manual valuation update.
+// The P&L map is section-aware, so calendar filters can show the correct asset class.
+function portfolioUnrealizedSnapshot(){
+  const out={};
+  (S.portfolio||[]).filter(p=>!p.exitPrice).forEach(p=>{const kind=acctIsPhysical(p.acctId)?'physical':pnlSecForPort(p);out[kind]=(out[kind]||0)+(Number(p.valueHKD)||0)-(Number(p.costHKD)||0);});
+  Object.keys(out).forEach(k=>out[k]=parseFloat(out[k].toFixed(2)));
+  return out;
+}
+function recordPriceSnapshot(at){
   const sVal=(S.portfolio||[]).filter(p=>p.type==='stock'&&!p.exitPrice).reduce((a,p)=>a+(p.valueHKD||0),0);
   const cVal=(S.portfolio||[]).filter(p=>p.type==='crypto'&&!p.exitPrice).reduce((a,p)=>a+(p.valueHKD||0),0);
-  if(sVal<=0&&cVal<=0)return;
+  const pnl=portfolioUnrealizedSnapshot();
+  if(sVal<=0&&cVal<=0&&!Object.keys(pnl).length)return;
   S.priceHist=S.priceHist||[];
-  const now=Date.now();const snap={t:now,s:parseFloat(sVal.toFixed(2)),c:parseFloat(cVal.toFixed(2))};
-  const last=S.priceHist[S.priceHist.length-1];
-  if(last&&(now-last.t)<60000)S.priceHist[S.priceHist.length-1]=snap; // collapse rapid repeats
+  const now=Number(at)||Date.now();const snap={t:now,s:parseFloat(sVal.toFixed(2)),c:parseFloat(cVal.toFixed(2)),p:pnl};
+  const last=S.priceHist[S.priceHist.length-1],sameP=last&&JSON.stringify(last.p||{})===JSON.stringify(snap.p||{});
+  if(last&&(now-last.t)<60000&&sameP)S.priceHist[S.priceHist.length-1]=snap; // collapse rapid repeats only when P&L did not change
   else S.priceHist.push(snap);
   if(S.priceHist.length>180)S.priceHist=S.priceHist.slice(-180);
 }
