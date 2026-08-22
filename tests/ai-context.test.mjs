@@ -67,7 +67,9 @@ const contextCode=[
   function loanAccruedOutstanding(){return 0;}
   function loanInterestReceived(){return 0;}
   function pnlNetExcluded(){return false;}
+  function longDebtCountsInNet(){return true;}
   function physicalCategoryLabel(){return 'Computer / equipment';}
+  function physicalAssetDeductsCash(a){return !a||a.fundingMode!=='existing';}
   function assetLabel(k){return k;}
   function physicalAssetValue(a){return a.soldAt?0:850;}
   function ensurePhysicalAssetHistory(a){return a.valuationHistory||[];}
@@ -108,6 +110,9 @@ assert.equal(snap.physicalFixedAssets.length,1);
 assert.equal(snap.physicalFixedAssets[0].currentMarketValueHKD,850);
 assert.equal(snap.physicalFixedAssets[0].valuationHistory.length,2);
 assert.equal(snap.physicalFixedAssets[0].status,'active');
+assert.equal(snap.physicalFixedAssets[0].fundingMode,'purchase_deducted');
+assert.equal(snap.physicalFixedAssets[0].cashDeducted,true);
+assert.equal(snap.longTermDebts[0].countsInNetWorth,true);
 assert.equal(snap.periodSummaries.month.expenseHKD,40);
 assert.match(context.serialized,/AUTHORITATIVE_APP_SNAPSHOT_JSON/);
 

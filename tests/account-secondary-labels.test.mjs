@@ -17,6 +17,7 @@ function declaration(name){
 assert.match(html,/id="new-acct-secondary"/);
 assert.match(html,/id="inline-acct-secondary"/);
 assert.match(html,/id="h-fixed-toggle"[^>]*onclick="toggleHomeFixedAssets\(\)"/);
+assert.match(html,/id="h-longdebt-toggle"[^>]*onclick="toggleHomeLongDebt\(\)"/);
 assert.match(declaration('renderAcctBalances'),/startsWith\('secondary:'\)/);
 assert.match(declaration('renderHome'),/fixedRecorded/);
 assert.match(declaration('renderHome'),/eye-off/);
@@ -38,13 +39,14 @@ function privateLoanAssetTotal(){return 0;}
 function physicalAssetsStats(){return {value:300};}
 function rpAssetTotal(){return 0;}
 function rpDebtTotal(){return 0;}
-function acctMarginDebt(){return 0;}
-function longDebtCountsInNet(){return false;}
-function debtsOutstanding(){return 0;}
+function acctMarginDebt(){return 50;}
+function longDebtCountsInNet(){return !pnlNetExcluded('debt');}
+function debtsOutstanding(){return 400;}
 function pnlNetExcluded(kind){return !!S.pnlNetHidden[kind];}
 ${declaration('balanceSheetBreakdown')}
 ${declaration('setAcctSecondaryKind')}
 ${declaration('toggleHomeFixedAssets')}
+${declaration('toggleHomeLongDebt')}
 setAcctSecondaryKind('mpf','locked');
 globalThis.afterValid=S.accounts[0].secondaryKind;
 setAcctSecondaryKind('mpf','not-valid');
@@ -56,6 +58,12 @@ globalThis.hiddenBalance=balanceSheetBreakdown();
 toggleHomeFixedAssets();
 globalThis.afterShow=S.pnlNetHidden.physical;
 globalThis.shownBalance=balanceSheetBreakdown();
+toggleHomeLongDebt();
+globalThis.afterDebtHide=S.pnlNetHidden.debt;
+globalThis.hiddenDebtBalance=balanceSheetBreakdown();
+toggleHomeLongDebt();
+globalThis.afterDebtShow=S.pnlNetHidden.debt;
+globalThis.shownDebtBalance=balanceSheetBreakdown();
 globalThis.calls=calls;
 `;
 const context={};
@@ -71,6 +79,14 @@ assert.equal(context.beforeHideBalance.assets,600);
 assert.equal(context.hiddenBalance.fixedAsset,0);
 assert.equal(context.hiddenBalance.assets,300);
 assert.equal(context.shownBalance.assets,600);
-assert.equal(context.calls.save,4);
-assert.equal(context.calls.home,4);
-assert.equal(context.calls.wallet,4);
+assert.equal(context.afterDebtHide,true);
+assert.equal(context.afterDebtShow,false);
+assert.equal(context.hiddenDebtBalance.marginDebt,50);
+assert.equal(context.hiddenDebtBalance.managedLongDebt,400);
+assert.equal(context.hiddenDebtBalance.longDebt,50);
+assert.equal(context.shownDebtBalance.longDebt,450);
+assert.equal(context.shownDebtBalance.netWorth,150);
+assert.equal(context.hiddenDebtBalance.netWorth,550);
+assert.equal(context.calls.save,6);
+assert.equal(context.calls.home,6);
+assert.equal(context.calls.wallet,6);

@@ -16,6 +16,7 @@ function declaration(name){
 
 const code=[
   declaration('physicalMetalValueRaw'),
+  declaration('physicalAssetDeductsCash'),
   declaration('ensurePhysicalAssetHistory'),
   declaration('recordPhysicalValuation'),
   declaration('physicalLatestMarketRaw'),
@@ -38,7 +39,8 @@ const code=[
   const laptop={id:'fa_laptop',name:'Laptop',category:'equipment',purchaseDate:'2026-01-01',cost:12000,costHKD:12000,cur:'HKD'};
   const gold={id:'fa_gold',name:'Gold',category:'metal',purchaseDate:'2026-01-01',cost:6000,costHKD:6000,cur:'HKD',weight:10,weightUnit:'g',purityPct:99.9,spotPricePerGram:700,priceTracking:'twelvedata'};
   const watch={id:'fa_watch',name:'Watch',category:'jewelry',purchaseDate:'2026-01-01',cost:8000,costHKD:8000,cur:'HKD',marketValue:7200,valuationDate:'2026-06-01'};
-  const S={portfolio:[],gamble:[],physicalAssets:[laptop,gold,watch]};
+  const legacyDevice={id:'fa_legacy',name:'Old device',category:'equipment',fundingMode:'existing',costBasis:'opening',purchaseDate:'',cost:3000,costHKD:3000,cur:'HKD',marketValue:3000,valuationDate:'2027-01-01'};
+  const S={portfolio:[],gamble:[],physicalAssets:[laptop,gold,watch,legacyDevice]};
   recordPhysicalValuation(watch,7600,'2026-12-01','manual');
   globalThis.results={
     goldMarket:physicalMetalValueRaw(gold),
@@ -46,6 +48,8 @@ const code=[
     watchMarket:physicalAssetValueRaw(watch),
     watchHistory:ensurePhysicalAssetHistory(watch).map(v=>v.value),
     stats:physicalAssetsStats(),
+    legacyDeducts:physicalAssetDeductsCash(legacyDevice),
+    oldRecordDeducts:physicalAssetDeductsCash(laptop),
     cashImpact:acctPositionsCash('cash'),
     goldUsdOzToHkdGram:metalQuoteToAssetPerGram(2400,'USD','oz','HKD')
   };
@@ -64,11 +68,13 @@ assert.ok(Math.abs(context.results.goldMarket-6993)<0.01);
 assert.equal(context.results.laptopMarket,12000);
 assert.equal(context.results.watchMarket,7600);
 assert.deepEqual([...context.results.watchHistory],[8000,7200,7600]);
-assert.equal(context.results.stats.count,3);
+assert.equal(context.results.stats.count,4);
+assert.equal(context.results.legacyDeducts,false);
+assert.equal(context.results.oldRecordDeducts,true);
 assert.equal(context.results.cashImpact,0);
 assert.equal(context.cashAfterLink,-26000);
 assert.equal(context.afterSale.value,0);
-assert.equal(context.afterSale.stats.count,2);
+assert.equal(context.afterSale.stats.count,3);
 assert.equal(context.afterSale.stats.soldCount,1);
 assert.equal(context.afterSale.stats.realizedCash,7000);
 assert.equal(context.afterSale.stats.realizedPnl,-1000);
@@ -89,5 +95,9 @@ assert.match(html,/Current market value \(HKD\)/);
 assert.match(html,/Confirm sale/);
 assert.match(html,/XAU\/USD/);
 assert.match(html,/AI valuation research \(never auto-fills\)/);
+assert.match(html,/id="fa-funding-mode"/);
+assert.match(html,/Existing asset \(link only, no deduction\)/);
+assert.match(declaration('savePhysicalAsset'),/fundingMode/);
+assert.match(declaration('savePhysicalAsset'),/if\(deducts\)/);
 
 console.log('Physical fixed-asset valuation, cash movement, and classification tests passed.');
