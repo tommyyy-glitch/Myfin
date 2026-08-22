@@ -59,7 +59,9 @@ body{
   position:fixed;top:0;left:0;right:0;bottom:0;overflow:hidden;overscroll-behavior:none;
   padding-left:var(--sl);padding-right:var(--sr);
   transition:background 0.6s ease;
+  -webkit-user-select:none;user-select:none;
 }
+input,textarea,select,[contenteditable="true"]{-webkit-user-select:text;user-select:text}
 .screen{display:none;flex:1;flex-direction:column;overflow:hidden;min-height:0}
 .screen.active{display:flex}
 .nav-bar{
@@ -129,7 +131,9 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
 .record-panel{display:none;margin-bottom:16px}
 .record-toggle{border:1px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:12px;font-weight:800;padding:8px 14px;cursor:pointer}
 .record-toggle.on{border-color:rgba(29,158,117,0.45);color:var(--g3);background:var(--g2)}
-.pnl-sec-body.collapsed{display:none}
+.pnl-sec-body.collapsed{display:block}
+.pnl-sec-body.collapsed>:not(:first-child){display:none!important}
+.pnl-sec-body.collapsed>:first-child{margin-bottom:16px!important}
 .sec-hide-btn{width:30px;height:30px;flex-shrink:0;border:1px solid var(--bdr2);border-radius:10px;background:var(--surf2);color:var(--ink2);cursor:pointer;display:flex;align-items:center;justify-content:center}
 .sec-hide-btn i{font-size:16px;transition:transform .16s}
 .sec-hide-btn.collapsed i{transform:rotate(-90deg)}
@@ -387,8 +391,6 @@ body.dark #s-settings .glass-card{background:rgba(36,36,40,0.9);border-color:rgb
 .settle-record-list{display:flex;flex-direction:column;gap:7px;margin:6px 0 12px}
 .settle-record-choice{width:100%;display:flex;align-items:center;gap:9px;padding:10px 11px;border:1.5px solid var(--bdr2);border-radius:11px;background:var(--bg2);color:var(--ink);text-align:left;cursor:pointer}
 .settle-record-choice.sel{border-color:var(--g);background:var(--g2)}
-.settle-record-choice::before{content:'';width:18px;height:18px;flex-shrink:0;border:1.5px solid var(--bdr2);border-radius:6px;background:var(--surf)}
-.settle-record-choice.sel::before{content:'✓';display:flex;align-items:center;justify-content:center;border-color:var(--g);background:var(--g);color:#fff;font-size:12px;font-weight:900}
 .settle-record-choice-main{flex:1;min-width:0;font-size:13px;font-weight:700;overflow-wrap:anywhere}
 .settle-record-choice-sub{display:block;margin-top:2px;color:var(--ink3);font-size:11px;font-weight:500}
 .settle-record-choice-amt{flex-shrink:0;color:var(--g3);font-size:13px;font-weight:800}
@@ -472,6 +474,23 @@ body.dark #s-settings .glass-card{background:rgba(36,36,40,0.9);border-color:rgb
 .settle-btn{padding:7px 14px;border-radius:20px;border:1.5px solid var(--g);background:none;color:var(--g3);font-size:12px;font-weight:700;cursor:pointer;transition:all 0.15s}
 .settle-btn:active{background:var(--g2)}
 .settle-btn.urgent{border-color:var(--r);color:var(--r3);background:var(--r2)}
+.pnl-filter-drawer{display:none;margin:10px 0 4px;padding:10px;border:1px solid var(--bdr);border-radius:14px;background:var(--bg2)}
+.pnl-filter-drawer.open{display:block}
+.pnl-filter-btn.on{border-color:var(--g)!important;color:var(--g3)!important;background:var(--g2)!important}
+.pnl-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.pnl-cal-day{border:0;background:var(--bg2);border-radius:9px;min-height:44px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink);cursor:pointer}
+.pnl-cal-day.pos{background:var(--g2)}.pnl-cal-day.neg{background:var(--r2)}
+.pnl-cal-day.sel{outline:2px solid var(--g)}
+.pnl-cal-day .amt{font-size:8px;font-weight:800;line-height:1;color:var(--ink3);max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pnl-cal-day.pos .amt{color:var(--g3)}.pnl-cal-day.neg .amt{color:var(--r3)}
+.rp-group{border-bottom:.5px solid var(--bdr)}.rp-group:last-child{border-bottom:none}
+.rp-group-head{width:100%;display:flex;align-items:center;gap:10px;padding:12px 13px;border:none;background:none;color:var(--ink);text-align:left;cursor:pointer}
+.rp-group-head .rp-chevron{font-size:16px;color:var(--ink3);transition:transform .16s}.rp-group.open .rp-chevron{transform:rotate(90deg)}
+.rp-group-body{display:none;padding:0 13px 13px 49px}.rp-group.open .rp-group-body{display:block}
+.rp-label-picker{display:flex;gap:6px;flex-wrap:wrap;margin:2px 0 10px}.rp-label-chip{border:1px solid var(--bdr2);border-radius:999px;background:var(--surf2);color:var(--ink3);font-size:11px;font-weight:700;padding:6px 9px;cursor:pointer}.rp-label-chip.on{border-color:var(--g);background:var(--g2);color:var(--g3)}
+.rp-group-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.physical-review-badge{display:none;align-items:center;gap:4px;border-radius:999px;background:var(--r);color:#fff;font-size:10px;font-weight:900;padding:5px 8px;box-shadow:0 3px 10px rgba(216,90,48,.28)}
+.physical-review-badge.show{display:inline-flex}
 .banner{border-radius:16px;padding:14px 16px;margin-bottom:10px;backdrop-filter:blur(12px)}
 .banner-title{font-size:13px;font-weight:700;margin-bottom:9px;display:flex;align-items:center;gap:7px}
 .bill-member-row{display:flex;align-items:center;gap:10px;padding:11px 18px;border-bottom:0.5px solid var(--bdr)}
@@ -767,7 +786,6 @@ img,canvas,svg{max-width:100%;}
         <button class="add-ar-dashed" onclick="openIncomeReceivableModal()" style="margin-bottom:0;flex:1;border-color:rgba(29,158,117,0.45);color:var(--g3)"><i class="ti ti-cash" style="vertical-align:-2px;margin-right:6px"></i><span data-i="income"></span></button>
       </div>
       <div class="glass-card" id="ar-list"></div>
-      <div class="glass-card" id="friends-mgr" style="margin-top:12px"></div>
     </div>
   </div>
 </div>
@@ -786,8 +804,8 @@ img,canvas,svg{max-width:100%;}
       <span class="price-status" style="font-size:12px;color:var(--ink3)"></span>
     </div>
     <div class="glass-card" style="padding:16px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div class="mlabel" data-i="portpnllabel"></div><button onclick="openCalc()" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 11px;cursor:pointer;flex-shrink:0"><i class="ti ti-calculator" style="font-size:13px;vertical-align:-2px"></i> <span data-i="calc"></span></button></div>
-      <div class="filter-chips" id="pnl-pie-filters" style="margin:10px 0 4px;gap:6px"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div class="mlabel" data-i="portpnllabel"></div><div style="display:flex;gap:6px"><button class="pnl-filter-btn" id="pnl-filter-btn" onclick="togglePnlFilterDrawer()" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 11px;cursor:pointer;flex-shrink:0"><i class="ti ti-adjustments-horizontal" style="font-size:13px;vertical-align:-2px"></i> <span id="pnl-filter-label">篩選</span></button><button onclick="openCalc()" style="border:1.5px solid var(--bdr2);border-radius:20px;background:var(--surf2);color:var(--ink2);font-size:11px;font-weight:700;padding:5px 11px;cursor:pointer;flex-shrink:0"><i class="ti ti-calculator" style="font-size:13px;vertical-align:-2px"></i> <span data-i="calc"></span></button></div></div>
+      <div class="pnl-filter-drawer" id="pnl-filter-drawer"><div class="filter-chips" id="pnl-pie-filters" style="gap:6px"></div><div class="msub" id="pnl-filter-hint" style="margin-top:8px"></div></div>
       <div class="mval" id="g-pnl" style="font-size:28px;margin:4px 0">HK$0</div>
       <div class="msub" id="g-roi"></div>
       <div style="display:flex;flex-wrap:wrap;gap:16px 22px;margin-top:12px">
@@ -809,19 +827,11 @@ img,canvas,svg{max-width:100%;}
         <div style="width:100%"><div class="mlabel" data-i="portfvalue" style="margin-bottom:8px"></div><div id="pnl-pie-legend" style="display:flex;flex-direction:column;gap:9px"></div></div>
       </div>
     </div>
-    <div class="glass-card" style="padding:16px;margin-bottom:12px">
-      <div class="filter-chips" id="trend-toggle" style="margin-bottom:10px">
-        <button class="fchip active" onclick="setTrend('total',this)" title="Total">全</button>
-        <button class="fchip" data-sec="stock" onclick="setTrend('stock',this)" title="Stocks">📈</button>
-        <button class="fchip" data-sec="crypto" onclick="setTrend('crypto',this)" title="Crypto">₿</button>
-        <button class="fchip" data-sec="poker" onclick="setTrend('poker',this)" title="Poker">🂡</button>
-      </div>
-      <div class="filter-chips" id="trend-gran" style="margin-bottom:12px">
-        <button class="fchip" onclick="setTrendGran('day',this)" data-i="granday"></button>
-        <button class="fchip" onclick="setTrendGran('week',this)" data-i="granweek"></button>
-        <button class="fchip active" onclick="setTrendGran('month',this)" data-i="granmonth"></button>
-      </div>
-      <canvas id="trend-chart" width="600" height="220" style="width:100%;height:170px"></canvas>
+    <div class="glass-card" id="pnl-calendar-card" style="padding:16px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px"><div><div class="mlabel" id="pnl-cal-label">每日損益</div><div class="msub" id="pnl-cal-hint" style="margin-top:3px">按已記錄嘅實現損益及估值變動顯示</div></div><div style="display:flex;align-items:center;gap:7px"><button onclick="shiftPnlCalendar(-1)" aria-label="Previous month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-left"></i></button><strong id="pnl-cal-title" style="font-size:13px;min-width:76px;text-align:center"></strong><button onclick="shiftPnlCalendar(1)" aria-label="Next month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-right"></i></button></div></div>
+      <div class="pnl-calendar-grid" id="pnl-cal-grid"></div>
+      <div id="pnl-cal-summary" style="margin-top:11px;font-size:12px;color:var(--ink3)"></div>
+      <div id="pnl-cal-detail" style="margin-top:6px"></div>
     </div>
     <div id="pnl-sections">
     <div class="pnl-sec" id="sec-poker">
@@ -898,7 +908,7 @@ img,canvas,svg{max-width:100%;}
     </div>
     </div>
     <div class="pnl-sec" id="sec-physical">
-      <div class="slbl" style="display:flex;align-items:center;justify-content:space-between"><span>🧰 <span id="physical-sec-label">固定資產</span></span><div style="display:flex;gap:6px;align-items:center"><button onclick="openPhysicalAssetModal()" style="border:1.5px solid var(--a);border-radius:20px;background:var(--a2);color:var(--a3);font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer">+ <span id="physical-add-label">新增資產</span></button><button class="sec-hide-btn" id="hide-btn-physical" onclick="toggleSecBody('physical')"><i class="ti ti-chevron-down"></i></button></div></div>
+      <div class="slbl" style="display:flex;align-items:center;justify-content:space-between"><span>🧰 <span id="physical-sec-label">固定資產</span></span><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end"><span class="physical-review-badge" id="physical-review-badge"><i class="ti ti-alert-circle"></i><span id="physical-review-text">年度檢視</span></span><button onclick="openPhysicalAssetModal()" style="border:1.5px solid var(--a);border-radius:20px;background:var(--a2);color:var(--a3);font-size:11px;font-weight:700;padding:5px 12px;cursor:pointer">+ <span id="physical-add-label">新增資產</span></button><button class="sec-hide-btn" id="hide-btn-physical" onclick="toggleSecBody('physical')"><i class="ti ti-chevron-down"></i></button></div></div>
       <div class="pnl-sec-body" id="body-physical">
         <div class="glass-card" style="padding:14px;margin-bottom:4px">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
@@ -1881,11 +1891,11 @@ Object.assign(LANGS.en,{
   rpamountbelowpaid:'The new total cannot be below the amount already paid',rppaymentlock:'Direction, type, and currency cannot change after a payment',settleoverdue:'Amount cannot exceed the selected record balance'
 });
 Object.assign(LANGS.zh,{
-  acctsecondary:'第二標籤',kind2none:'無第二標籤',kind2retirement:'退休／MPF（鎖定）',kind2locked:'固定／鎖定資產',kind2physical:'實體固定資產相關',kind2emergency:'緊急備用金',kind2business:'公司／業務',
+  acctsecondary:'第二標籤',kind2none:'無第二標籤',kind2retirement:'退休／MPF（鎖定）',kind2locked:'固定／鎖定資產',kind2physical:'實體固定資產相關（可排除）',kind2emergency:'緊急備用金',kind2business:'公司／業務',
   fixedshowhome:'計入實體固定資產',fixedhidehome:'從總資產及淨資產排除實體固定資產',debtshowhome:'計入已記錄的長期負債',debthidehome:'從總負債及淨資產排除已記錄的長期負債'
 });
 Object.assign(LANGS.en,{
-  acctsecondary:'Second label',kind2none:'No second label',kind2retirement:'Retirement / MPF (locked)',kind2locked:'Fixed / locked asset',kind2physical:'Physical-asset related',kind2emergency:'Emergency fund',kind2business:'Business',
+  acctsecondary:'Second label',kind2none:'No second label',kind2retirement:'Retirement / MPF (locked)',kind2locked:'Fixed / locked asset',kind2physical:'Physical-asset related (excludable)',kind2emergency:'Emergency fund',kind2business:'Business',
   fixedshowhome:'Include physical fixed assets',fixedhidehome:'Exclude physical fixed assets from total assets and net worth',debtshowhome:'Include recorded long-term liabilities',debthidehome:'Exclude recorded long-term liabilities from total debt and net worth'
 });
 
@@ -1949,7 +1959,7 @@ function hasQuoteKey(kind){return quoteKeys(kind).length>0;}
 function quoteApiCloudSafe(){const q=defaultQuoteApis();Object.keys(q).forEach(k=>{const src=ensureQuoteApis()[k];q[k].provider=src.provider;q[k].cursor=0;});return q;}
 
 function createAppState(){return {
-  txns:[],people:[],gamble:[],autopay:[],autoincome:[],portfolio:[],physicalAssets:[],debts:[],privateLoans:[],friends:[],tuScores:[],customSections:[],changelog:[],priceHist:[],
+  txns:[],people:[],gamble:[],autopay:[],autoincome:[],portfolio:[],physicalAssets:[],debts:[],privateLoans:[],friends:[],rpLabels:{},tuScores:[],customSections:[],changelog:[],priceHist:[],
   cats:DEF_CATS.map(c=>({...c,aliases:[...(c.aliases||[])]})),accounts:DEF_ACCTS.map(a=>({...a})),
   lang:'zh',theme:'auto',motionMode:'dance',dispCur:'HKD',period:'month',privacy:false,numFmt:'full',
   budget:{amount:0,cur:'HKD',mode:'cycle',startDay:1,cutoffDay:31,customStart:'',customEnd:'',excludedCats:[]},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},
@@ -1957,7 +1967,7 @@ function createAppState(){return {
   pnlOrder:['poker','stock','crypto','pe','physical','loan','debt'],pnlHidden:{},pnlNetHidden:{},pnlPieNoCash:false,pnlPieFilters:[],setCollapsed:{},
   assetLabels:{quick:{zh:'現金／速動資產',en:'Cash / quick assets'},investment:{zh:'流動／投資資產',en:'Liquid / investment assets'},fixed:{zh:'實體固定資產',en:'Physical fixed assets'},receivable:{zh:'應收',en:'Receivables'}},
   ai:{provider:'gemini',key:'',model:''},quoteApis:defaultQuoteApis(),tdKey:'',fx:null,cloud:{url:'',key:'',pass:'',salt:'',on:false,ver:0,last:0,pending:false,pendingAt:0,lastError:'',_dirty:false},
-  creditLimit:0,wealthGran:'month',trendGran:'month',catMRU:[],acctMRU:[],acctFilter:'all',billMe:true,
+  creditLimit:0,wealthGran:'month',trendGran:'month',catMRU:[],acctMRU:[],acctFilter:'all',billMe:true,fixedAssetReviewedYear:0,
   curType:'expense',amtStr:'0',amtExpr:'',selCat:'food',selAcct:'cash',selAcctTo:'debit',apSelCat:'fitness',apSelAcct:'debit',
   mergeSelected:[],memberCount:2,activeTab:'home',walletPane:'txn',trendView:'total',catPeriodSpend:'week',catPeriodIncome:'week',arDir:'r',
   _billInc:[],_billAmt:{},_billMe:true,_billCat:'food',_txnFilter:'all',_txnSearch:'',_acctTxnId:null,_editArId:null,_editTxnId:null,_openingAcct:null,_sellId:null,_settleAcct:null,_settleId:null,_settleIds:null,_settleSelectedIds:[],_editSettleTxnId:null
@@ -2003,6 +2013,8 @@ if(!S.debts)S.debts=[];
 if(!S.privateLoans)S.privateLoans=[];
 if(!S.physicalAssets)S.physicalAssets=[];
 if(!Array.isArray(S.pnlPieFilters))S.pnlPieFilters=[];
+if(!S.rpLabels||typeof S.rpLabels!=='object')S.rpLabels={};
+if(!Number.isFinite(Number(S.fixedAssetReviewedYear)))S.fixedAssetReviewedYear=0;
 if(!S.assetLabels)S.assetLabels=createAppState().assetLabels;
 ensureQuoteApis();if(legacyQuoteKey){['stock','physical'].forEach(kind=>{if(!S.quoteApis[kind].keys.includes(legacyQuoteKey))S.quoteApis[kind].keys.push(legacyQuoteKey);});S.tdKey=S.quoteApis.stock.keys[0]||'';}
 (S.physicalAssets||[]).forEach(a=>ensurePhysicalAssetHistory(a));
@@ -2017,7 +2029,7 @@ if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
 S.notify=notifyCfg();
 if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return c.id===dc.id;});if(!ex){S.cats.push({...dc,aliases:[...dc.aliases]});}else{dc.aliases.forEach(function(a){if((ex.aliases||[]).indexOf(a)<0)ex.aliases=(ex.aliases||[]).concat(a);});}});
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(typeof ensureRPIncomeAccruals==='function'&&ensureRPIncomeAccruals())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));showStorageError('load',e);}}
-function profileSnapshot(){const cloud=S.cloud||{};return {txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
+function profileSnapshot(){const cloud=S.cloud||{};return {txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],rpLabels:S.rpLabels||{},customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],fixedAssetReviewedYear:Number(S.fixedAssetReviewedYear)||0,setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
 function saveS(opt){
   opt=opt||{};
   if(window._storageReadOnly&&!opt.force){showStorageError('load',new Error('storage is read-only after load failure'));return false;}
@@ -2049,6 +2061,8 @@ function setNumFmt(m){S.numFmt=m;saveS();document.querySelectorAll('.numfmt-btn'
 function getCat(id){return S.cats.find(c=>c.id===id)||S.cats[S.cats.length-1];}
 function getAcct(id){return (S.accounts||[]).find(a=>a.id===id)||(S.accounts||[])[0];}
 function acctLabel(a){return a?(S.lang==='en'?(a.labelEn||a.label):a.label):'';}
+function acctIsPhysical(acctOrId){const ac=typeof acctOrId==='object'?acctOrId:(S.accounts||[]).find(a=>String(a.id)===String(acctOrId));return !!ac&&ac.secondaryKind==='physical';}
+function acctCountsInNet(ac){return !!ac&&!ac.excluded&&(!acctIsPhysical(ac)||!pnlNetExcluded('physical'));}
 function investAccts(){return (S.accounts||[]).filter(a=>a.isInvest);}
 function fillInvestSelect(selId,selectedId){
   const accts=investAccts();
@@ -2071,17 +2085,11 @@ function rpGroups(list){const m={};(list||[]).forEach(p=>{const k=personKey(p);i
 function rpAssetTotal(){return rpGroups((S.people||[]).filter(rpIsActive)).reduce((a,g)=>a+Math.max(g.net,0),0);}
 function rpDebtTotal(){return rpGroups((S.people||[]).filter(rpIsActive)).reduce((a,g)=>a+Math.max(-g.net,0),0);}
 function dayDiff(a,b){const A=new Date(a||today()),B=new Date(b||today());if(isNaN(A)||isNaN(B))return 0;return Math.max(0,Math.round((B-A)/86400000));}
-function friendCredit(key){
-  key=String(key||'').toLowerCase();const rows=(S.people||[]).filter(p=>personKey(p)===key);
-  const paid=rows.filter(p=>p.settled&&!p.dead&&p.dir!=='p');const dead=rows.filter(p=>p.dead&&p.dir!=='p');const open=rows.filter(p=>rpIsActive(p)&&p.dir!=='p');
-  const days=paid.map(p=>p.payDays!=null?p.payDays:dayDiff(p.date,p.settleDate||today()));
-  const avg=days.length?Math.round(days.reduce((a,x)=>a+x,0)/days.length):null;
-  let score=80;if(avg!=null){if(avg<=2)score+=15;else if(avg<=7)score+=8;else if(avg<=14)score+=0;else if(avg<=30)score-=10;else score-=25;}
-  score-=dead.length*30;open.forEach(p=>{const age=dayDiff(p.date,today());if(age>60)score-=20;else if(age>30)score-=10;});
-  score=Math.max(0,Math.min(100,score));const grade=score>=85?'A':score>=70?'B':score>=50?'C':'D';
-  return {score,grade,avg,paid:paid.length,dead:dead.length,open:open.length,openHKD:open.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0),deadHKD:dead.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0)};
-}
-function friendCreditBadge(key){const c=friendCredit(key);const col=c.score>=85?'bg':c.score>=70?'bb':c.score>=50?'ba':'br';return `<span class="badge ${col}">${tt('信用','Credit')} ${c.grade} · ${c.score}</span>`;}
+function rpLabelDefs(){return [{id:'reliable',zh:'可靠',en:'Reliable',cls:'bg'},{id:'ontime',zh:'通常準時',en:'Usually on time',cls:'bb'},{id:'late',zh:'經常延遲',en:'Often late',cls:'ba'},{id:'concern',zh:'信用不太好',en:'Credit concern',cls:'br'},{id:'baddebt',zh:'曾有壞帳',en:'Had bad debt',cls:'br'},{id:'followup',zh:'需要跟進',en:'Follow-up needed',cls:'bp'}];}
+function rpLabelsFor(key){S.rpLabels=S.rpLabels&&typeof S.rpLabels==='object'?S.rpLabels:{};const valid=new Set(rpLabelDefs().map(x=>x.id));return Array.isArray(S.rpLabels[String(key||'').toLowerCase()])?S.rpLabels[String(key||'').toLowerCase()].filter(x=>valid.has(x)):[];}
+function rpLabelBadges(key){const selected=new Set(rpLabelsFor(key));return rpLabelDefs().filter(x=>selected.has(x.id)).map(x=>`<span class="badge ${x.cls}">${escapeHtml(S.lang==='en'?x.en:x.zh)}</span>`).join('');}
+function rpLabelPicker(key){const selected=new Set(rpLabelsFor(key));return `<div class="rp-label-picker">${rpLabelDefs().map(x=>`<button type="button" class="rp-label-chip${selected.has(x.id)?' on':''}" onclick="toggleRPLabel(${inlineJsString(key)},${inlineJsString(x.id)})">${escapeHtml(S.lang==='en'?x.en:x.zh)}</button>`).join('')}</div>`;}
+function toggleRPLabel(key,id){key=String(key||'').toLowerCase();S.rpLabels=S.rpLabels||{};const rows=rpLabelsFor(key),i=rows.indexOf(id);if(i>=0)rows.splice(i,1);else rows.push(id);if(rows.length)S.rpLabels[key]=rows;else delete S.rpLabels[key];saveS();filterAR(S._arFilter||'all',null);if(S.activeTab==='gamble')renderPrivateLoans();}
 // ── PRIVATE DEBT INVESTMENTS ──
 // A loan moves cash out of a normal account and replaces it with a financial asset.
 // Annual-rate loans accrue daily on outstanding principal. Fixed-interest loans
@@ -2157,6 +2165,8 @@ function physicalAssetValueRaw(a){return physicalMarketValueRaw(a);}
 function physicalAssetValue(a,asOf){return toHKD(physicalAssetValueRaw(a,asOf),a&&a.cur||'HKD');}
 function physicalAssetBookValue(a,asOf){return toHKD(physicalBookValueRaw(a,asOf),a&&a.cur||'HKD');}
 function physicalAssetsStats(){const rows=(S.physicalAssets||[]).filter(a=>!a.excluded),active=rows.filter(a=>!a.soldAt),sold=rows.filter(a=>!!a.soldAt),cost=active.reduce((n,a)=>n+(Number(a.costHKD)||toHKD(Number(a.cost)||0,a.cur||'HKD')),0),totalCost=rows.reduce((n,a)=>n+(Number(a.costHKD)||toHKD(Number(a.cost)||0,a.cur||'HKD')),0),value=active.reduce((n,a)=>n+physicalAssetValue(a),0),realizedCash=sold.reduce((n,a)=>n+(Number(a.saleValueHKD)||toHKD(Number(a.saleValue)||0,a.saleCur||a.cur||'HKD')),0),realizedPnl=sold.reduce((n,a)=>n+(Number(a.saleValueHKD)||0)-(Number(a.costHKD)||0),0);return {cost,totalCost,value,realizedCash,realizedPnl,pnl:value-cost+realizedPnl,count:active.length,soldCount:sold.length};}
+function physicalReviewDue(asOf){const d=asOf instanceof Date?asOf:new Date(asOf||Date.now()),year=d.getFullYear();return (S.physicalAssets||[]).some(a=>!a.soldAt)&&Number(S.fixedAssetReviewedYear)!==year;}
+function markPhysicalReviewed(asOf){const d=asOf instanceof Date?asOf:new Date(asOf||Date.now());S.fixedAssetReviewedYear=d.getFullYear();}
 function physicalAssetBasisLabel(k){return k==='market'?tt('估計市值','Estimated market'):k==='liquidation'?tt('變現價','Liquidation value'):tt('帳面值','Book value');}
 function defaultMetalApiSymbol(k){return ({gold:'XAU/USD',silver:'XAG/USD',platinum:'XPT/USD',palladium:'XPD/USD'})[k]||'';}
 function metalQuoteToAssetPerGram(price,quoteCur,quoteUnit,assetCur){const perGram=(Number(price)||0)/(quoteUnit==='oz'?31.1034768:1),hkd=toHKD(perGram,quoteCur||'USD');return assetCur==='HKD'?hkd:hkd/(FX[assetCur]||1);}
@@ -2224,11 +2234,11 @@ function savePhysicalAsset(){
   const market=inputMarket||inputCost,openingBasis=!deducts&&!inputCost,cost=openingBasis?((old&&old.costBasis==='opening')?(Number(old.cost)||market):market):inputCost,costHKD=Number(toHKD(cost,cur).toFixed(2));if(deducts){const avail=acctAvailableCash(acctId,editId);if(costHKD>avail+0.001){showToast(t('insufficient'),1);return;}}
   const valuationDate=document.getElementById('fa-valuedate').value||today(),purchaseDate=document.getElementById('fa-date').value||(deducts?today():''),ac=getAcct(acctId),rec={name,category:document.getElementById('fa-category').value||'other',fundingMode,costBasis:openingBasis?'opening':'purchase',purchaseDate,cost,costHKD,cur,acctId,acctLabel:ac?acctLabel(ac):'',depreciation:'none',lifeYears:0,residualValue:0,marketValue:market,liquidationValue:0,liquidationDiscountPct:0,valueBasis:'market',valuationDate,metalType:document.getElementById('fa-metal').value||'gold',weight:Math.max(0,Number(document.getElementById('fa-weight').value)||0),weightUnit:document.getElementById('fa-unit').value||'g',purityPct:Math.max(0,Math.min(100,Number(document.getElementById('fa-purity').value)||0)),spotPricePerGram:Math.max(0,Number(document.getElementById('fa-spot').value)||0),priceTracking:document.getElementById('fa-track').value||'manual',apiSymbol:(document.getElementById('fa-symbol').value||'').trim(),quoteCurrency:document.getElementById('fa-quote-cur').value||'USD',quoteUnit:document.getElementById('fa-quote-unit').value||'oz',notes:document.getElementById('fa-notes').value||''};
   S.physicalAssets=S.physicalAssets||[];if(editId){const i=S.physicalAssets.findIndex(x=>String(x.id)===String(editId));if(i>=0){const a=S.physicalAssets[i];ensurePhysicalAssetHistory(a);S.physicalAssets[i]={...a,...rec,valuationHistory:a.valuationHistory};recordPhysicalValuation(S.physicalAssets[i],market,valuationDate,'manual');}}else{const a={id:'fa_'+Date.now(),...rec,valuationHistory:[]};if(deducts){recordPhysicalValuation(a,cost,rec.purchaseDate,'purchase');if(Math.abs(market-cost)>0.0001||valuationDate!==rec.purchaseDate)recordPhysicalValuation(a,market,valuationDate,'manual');}else recordPhysicalValuation(a,market,valuationDate,'opening');S.physicalAssets.unshift(a);}
-  saveS();closeM('m-physical');renderGamble();renderHome();refreshWallet();
+  markPhysicalReviewed();saveS();closeM('m-physical');renderGamble();renderHome();refreshWallet();
 }
 function deletePhysicalAsset(id){if(!confirm(t('deltxnq')))return;S.physicalAssets=(S.physicalAssets||[]).filter(a=>String(a.id)!==String(id));saveS();renderGamble();renderHome();refreshWallet();}
 function openPhysicalSale(id){const a=(S.physicalAssets||[]).find(x=>String(x.id)===String(id)&&!x.soldAt);if(!a)return;document.getElementById('fa-sell-id').value=a.id;document.getElementById('fa-sell-title').textContent=tt('出售／變現 ','Sell / liquidate ')+a.name;document.getElementById('fa-sell-value-label').textContent=tt('實收現金','Cash received');document.getElementById('fa-sell-value').value=Number(physicalLatestMarketRaw(a).toFixed(2));document.getElementById('fa-sell-cur').value=a.cur||'HKD';document.getElementById('fa-sell-date').value=today();fillAcctSelect('fa-sell-acct',a.acctId||S.selAcct||'cash');document.getElementById('fa-sell-hint').textContent=tt('出售後資產會結束，實收金額會回到所選戶口，並成為最終估值記錄。','The asset closes after sale; cash received returns to the selected account and becomes the final valuation record.');document.getElementById('fa-sell-btn').textContent=tt('確認出售','Confirm sale');document.getElementById('m-physical-sell').classList.add('open');}
-function confirmPhysicalSale(){const id=document.getElementById('fa-sell-id').value,a=(S.physicalAssets||[]).find(x=>String(x.id)===String(id)&&!x.soldAt),value=Math.max(0,Number(document.getElementById('fa-sell-value').value)||0),cur=document.getElementById('fa-sell-cur').value||'HKD',date=document.getElementById('fa-sell-date').value||today(),acctId=document.getElementById('fa-sell-acct').value,ac=getAcct(acctId);if(!a||!value||!ac){showToast(tt('請填寫實收現金及收款戶口','Enter cash received and receiving account'),1);return;}a.soldAt=date;a.saleValue=value;a.saleCur=cur;a.saleValueHKD=Number(toHKD(value,cur).toFixed(2));a.saleAcctId=acctId;a.saleAcctLabel=acctLabel(ac);recordPhysicalValuation(a,cur===a.cur?value:(a.cur==='HKD'?a.saleValueHKD:a.saleValueHKD/(FX[a.cur]||1)),date,'sale');saveS();closeM('m-physical-sell');renderGamble();renderHome();refreshWallet();}
+function confirmPhysicalSale(){const id=document.getElementById('fa-sell-id').value,a=(S.physicalAssets||[]).find(x=>String(x.id)===String(id)&&!x.soldAt),value=Math.max(0,Number(document.getElementById('fa-sell-value').value)||0),cur=document.getElementById('fa-sell-cur').value||'HKD',date=document.getElementById('fa-sell-date').value||today(),acctId=document.getElementById('fa-sell-acct').value,ac=getAcct(acctId);if(!a||!value||!ac){showToast(tt('請填寫實收現金及收款戶口','Enter cash received and receiving account'),1);return;}a.soldAt=date;a.saleValue=value;a.saleCur=cur;a.saleValueHKD=Number(toHKD(value,cur).toFixed(2));a.saleAcctId=acctId;a.saleAcctLabel=acctLabel(ac);recordPhysicalValuation(a,cur===a.cur?value:(a.cur==='HKD'?a.saleValueHKD:a.saleValueHKD/(FX[a.cur]||1)),date,'sale');markPhysicalReviewed();saveS();closeM('m-physical-sell');renderGamble();renderHome();refreshWallet();}
 async function researchPhysicalAsset(){
   S.ai=S.ai||{};const out=document.getElementById('fa-ai-result');if(!S.ai.key){showToast(t('ainokey'),1);return;}const name=(document.getElementById('fa-name').value||'').trim();if(!name){showToast(tt('請先輸入資產名稱','Enter the asset name first'),1);return;}
   out.style.display='block';out.textContent=tt('研究中…','Researching…');
@@ -2398,8 +2408,8 @@ function acctCash(acctId){
 function pnlNetExcluded(id){return !!(S.pnlNetHidden&&S.pnlNetHidden[id]);}
 function pnlSecForPort(p){return p.secId||(p.type==='stock'?'stock':p.type==='crypto'?'crypto':p.type==='pe'?'pe':p.type||'stock');}
 function pnlSecForGamble(g){return g.secId||'poker';}
-function portCountsInNet(p){return !pnlNetExcluded(pnlSecForPort(p));}
-function gambleCountsInNet(g){return !pnlNetExcluded(pnlSecForGamble(g));}
+function portCountsInNet(p){const ac=(S.accounts||[]).find(a=>String(a.id)===String(p&&p.acctId));return !pnlNetExcluded(pnlSecForPort(p))&&(!ac||acctCountsInNet(ac));}
+function gambleCountsInNet(g){const ac=(S.accounts||[]).find(a=>String(a.id)===String(g&&g.acctId));return !pnlNetExcluded(pnlSecForGamble(g))&&(!ac||acctCountsInNet(ac));}
 function longDebtCountsInNet(){return !pnlNetExcluded('debt');}
 // Outstanding margin debt = borrowed principal still owed on OPEN margin positions of this account
 function acctMarginDebt(acctId){
@@ -2480,8 +2490,8 @@ function acctAsset(acctId){
   return asset;
 }
 // Global totals across all accounts (excluded accounts are skipped)
-function totalAssets(){return (S.accounts||[]).filter(ac=>!ac.excluded).reduce((a,ac)=>a+acctAsset(ac.id),0);}
-function totalDebt(){return (S.accounts||[]).filter(ac=>!ac.excluded).reduce((a,ac)=>a+acctDebt(ac.id),0);}
+function totalAssets(){return (S.accounts||[]).filter(acctCountsInNet).reduce((a,ac)=>a+acctAsset(ac.id),0);}
+function totalDebt(){return (S.accounts||[]).filter(acctCountsInNet).reduce((a,ac)=>a+acctDebt(ac.id),0);}
 function totalNet(){return totalAssets()-totalDebt();}
 function acctFlows(acctId){
   let inn=0,out=0;
@@ -2500,7 +2510,7 @@ function acctFlows(acctId){
 }
 function renderAcctBalances(){
   const accts=S.accounts||[];
-  const total=accts.filter(ac=>!ac.excluded).reduce((a,ac)=>a+acctBalance(ac.id),0);
+  const total=accts.filter(acctCountsInNet).reduce((a,ac)=>a+acctBalance(ac.id),0);
   document.getElementById('acct-total-bal').textContent=fmt(total);
   const taEl=document.getElementById('acct-total-asset');if(taEl)taEl.textContent=fmt(totalAssets());
   const tdEl=document.getElementById('acct-total-debt');if(tdEl)tdEl.textContent=fmt(totalDebt());
@@ -3541,8 +3551,9 @@ function markDeadGroup(ids){
   const items=String(ids).split(',').filter(Boolean).map(id=>S.people.find(x=>String(x.id)===String(id))).filter(p=>p&&rpIsActive(p)&&p.dir!=='p');
   if(!items.length)return;
   const total=items.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0);
-  if(!confirm(tt('將呢筆應收標記為壞帳 / Dead money？\\n\\n之後唔再計入應收資產，但會保留記錄並影響朋友信用。\\n\\n金額: ','Mark this receivable as dead money?\\n\\nIt will no longer count as an asset, but history remains and friend credit is affected.\\n\\nAmount: ')+fmt(total)))return;
+  if(!confirm(tt('將呢筆應收標記為壞帳 / Dead money？\\n\\n之後唔再計入應收資產，但會保留記錄，並加入「曾有壞帳」標籤。\\n\\n金額: ','Mark this receivable as dead money?\\n\\nIt will no longer count as an asset; history stays and the "Had bad debt" label is added.\\n\\nAmount: ')+fmt(total)))return;
   items.forEach(p=>{p.dead=true;p.deadDate=today();p.settled=true;p.urgent=false;});
+  const key=personKey(items[0]),labels=rpLabelsFor(key);if(!labels.includes('baddebt'))labels.push('baddebt');S.rpLabels[key]=labels;
   saveS();setWalletPane('ar');refreshAllViews();
 }
 function reviveDeadGroup(ids){
@@ -3608,14 +3619,9 @@ function saveGroupBill(){
   entries.forEach(e=>S.people.unshift({id:Date.now()+e.k+1,name:e.name,friendId:e.id,amount:e.amt,amtHKD:e.amt,cur:'HKD',desc:title,date:dt,settled:false,groupId:gid,isGroupSplit:true,urgent:false,dir:'r',acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:''}));
   saveS();closeM('m-group');refreshAllViews();setWalletPane('ar');
 }
-// Friends manager (A/R pane)
-function renderFriendsMgr(){
-  const el=document.getElementById('friends-mgr');if(!el)return;
-  const map={};(S.friends||[]).forEach(f=>{const k=friendNameKey(f.name);if(k&&!map[k])map[k]={id:f.id,name:f.name};});
-  (S.people||[]).forEach(p=>{const k=personKey(p);if(k&&!map[k])map[k]={id:p.friendId||'',name:p.name};});
-  const fr=Object.values(map);
-  el.innerHTML='<div style="padding:11px 15px;font-size:12px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">'+t('friends')+' · '+tt('信用','Credit')+'</div>'+(fr.length?fr.map(f=>{const k=friendNameKey(f.name);const c=friendCredit(k);const init=(f.name||'?').slice(0,2).toUpperCase();const meta=(c.avg!=null?tt('平均 ','avg ')+c.avg+tt('日','d'):'—')+(c.open?` · ${tt('未收','open')} ${fmt(c.openHKD)}`:'')+(c.dead?` · ${tt('壞帳','dead')} ${fmt(c.deadHKD)}`:'');return `<div style="display:flex;align-items:center;gap:10px;padding:10px 15px;border-top:0.5px solid var(--bdr)"><div onclick="quickRP(${inlineJsString(f.name)})" style="flex:1;display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0"><div class="avatar" style="background:var(--g2);color:var(--g3)">${escapeHtml(init)}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(f.name)} ${friendCreditBadge(k)}<span style="font-size:11px;color:var(--g3);font-weight:600;margin-left:7px">＋ R/P</span></div><div style="font-size:11px;color:var(--ink3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(meta)}</div></div></div>${f.id?`<button onclick="delFriend(${inlineJsString(f.id)})" style="padding:6px 9px;border:none;background:none;color:var(--r3);font-size:18px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button>`:''}</div>`;}).join(''):'<div style="padding:14px 15px;color:var(--ink3);font-size:13px;border-top:0.5px solid var(--bdr)">—</div>')+`<div style="display:flex;gap:8px;padding:10px 15px;border-top:0.5px solid var(--bdr)"><input id="fr-new" placeholder="${escapeHtml(t('nameph'))}" style="flex:1;border:1px solid var(--bdr2);border-radius:10px;padding:9px;background:var(--bg2);color:var(--ink);font-size:14px"><button onclick="addFriendMgr()" style="padding:9px 14px;background:var(--hero-grad);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer">${t('add')}</button></div>`;
-}
+// Friend names remain available inside split bills and private loans. The old
+// standalone credit block was intentionally removed from the R/P page.
+function renderFriendsMgr(){const el=document.getElementById('friends-mgr');if(el)el.remove();}
 function addFriendMgr(){const el=document.getElementById('fr-new');const nm=(el.value||'').trim();if(!nm)return;S.friends=S.friends||[];if(!S.friends.find(f=>friendNameKey(f.name)===friendNameKey(nm)))S.friends.push({id:newFriendId(),name:nm});el.value='';saveS();renderFriendsMgr();renderBillFriends();}
 function delFriend(id){S.friends=(S.friends||[]).filter(f=>f.id!==id);saveS();renderFriendsMgr();}
 function saveGamble(){
@@ -3662,10 +3668,11 @@ function skipTransfer(txnId){const tx=S.txns.find(x=>x.id===txnId);if(tx)tx._res
 
 
 function balanceSheetBreakdown(){
-  const accts=(S.accounts||[]).filter(ac=>!ac.excluded);
-  const quickAsset=accts.reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
-  const investmentAsset=accts.reduce((a,ac)=>a+acctLiquidAssetValue(ac.id)+acctInvestmentAssetValue(ac.id),0)+privateLoanAssetTotal();
-  const fixedAsset=pnlNetExcluded('physical')?0:physicalAssetsStats().value;
+  const accts=(S.accounts||[]).filter(acctCountsInNet),regular=accts.filter(ac=>!acctIsPhysical(ac)),physicalAccts=accts.filter(acctIsPhysical);
+  const quickAsset=regular.reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
+  const investmentAsset=regular.reduce((a,ac)=>a+acctLiquidAssetValue(ac.id)+acctInvestmentAssetValue(ac.id),0)+privateLoanAssetTotal();
+  const physicalAccountAsset=physicalAccts.reduce((a,ac)=>a+acctAsset(ac.id),0);
+  const fixedAsset=pnlNetExcluded('physical')?0:physicalAssetsStats().value+physicalAccountAsset;
   const receivable=rpAssetTotal();
   const payable=rpDebtTotal();
   const shortDebt=accts.reduce((a,ac)=>a+Math.max(-acctCash(ac.id),0),0);
@@ -3674,7 +3681,7 @@ function balanceSheetBreakdown(){
   const longDebt=marginDebt+(longDebtCountsInNet()?managedLongDebt:0);
   const assets=quickAsset+investmentAsset+fixedAsset+receivable;
   const debt=payable+shortDebt+longDebt;
-  return {quickAsset,investmentAsset,fixedAsset,receivable,payable,shortDebt,marginDebt,managedLongDebt,longDebt,assets,debt,netWorth:assets-debt};
+  return {quickAsset,investmentAsset,physicalAccountAsset,fixedAsset,receivable,payable,shortDebt,marginDebt,managedLongDebt,longDebt,assets,debt,netWorth:assets-debt};
 }
 function dateOnly(d){return new Date(d.getFullYear(),d.getMonth(),d.getDate());}
 function parseDateOnly(s){const p=String(s||'').split('-').map(Number);return p.length>=3?new Date(p[0],p[1]-1,p[2]):new Date(s);}
@@ -3936,9 +3943,10 @@ function notifyEvents(){const c=notifyCfg(),ev=[];const now=new Date(),todayKey=
 let _notifyT=null,_notifyBusy=false;
 function notifySchedule(reason){clearTimeout(_notifyT);_notifyT=setTimeout(function(){notifyCheck(reason);},900);}
 async function notifyCheck(reason){const c=notifyCfg();if(!c.on||!notifySupported()||Notification.permission!=='granted'||_notifyBusy)return;_notifyBusy=true;let baselineChanged=false;try{const ev=notifyEvents().filter(e=>!notifySeen(e.key,e.stamp)).slice(0,4);for(const e of ev){const ok=await notifyShow(e.title,e.body,e.key);if(ok){notifyMark(e.key,e.stamp);if(Number.isFinite(e.resetBaseline)){const r=(c.customRules||[]).find(x=>String(x.id)===String(e.ruleId));if(r){r.baseline=e.resetBaseline;baselineChanged=true;}}}}if(baselineChanged){S.notify=c;saveS();}}finally{_notifyBusy=false;}}
-function pnlPieFilterMeta(){return {cash:['💵',t('positioncash')],stock:['📈',t('stocks')],crypto:['₿',t('crypto')],poker:['🂡',t('poker')],pe:['🏢',t('privateequity')],loan:['🤝',t('privatedebt')],physical:['🧰',assetLabel('fixed')]};}
+function pnlPieFilterMeta(){const meta={cash:['💵',t('positioncash')],stock:['📈',t('stocks')],crypto:['₿',t('crypto')],poker:['🂡',t('poker')],pe:['🏢',t('privateequity')],loan:['🤝',t('privatedebt')],physical:['🧰',assetLabel('fixed')]};(S.customSections||[]).forEach(cs=>{meta[cs.id]=[cs.icon||'◆',cs.name||cs.id];});return meta;}
 function togglePnlPieFilter(kind){S.pnlPieFilters=Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[];if(kind==='all')S.pnlPieFilters=[];else{const i=S.pnlPieFilters.indexOf(kind);if(i>=0)S.pnlPieFilters.splice(i,1);else S.pnlPieFilters.push(kind);}saveS();renderGamble();}
 function renderPnlPieFilters(){const el=document.getElementById('pnl-pie-filters');if(!el)return;const active=Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],meta=pnlPieFilterMeta(),allLabel=t('totaltrend');el.innerHTML=`<button class="fchip${active.length?'':' active'}" onclick="togglePnlPieFilter('all')" title="${escapeHtml(allLabel)}" aria-label="${escapeHtml(allLabel)}" aria-pressed="${!active.length}">${secIcon('total')}</button>`+Object.keys(meta).map(k=>`<button class="fchip${active.includes(k)?' active':''}" onclick="togglePnlPieFilter('${k}')" title="${escapeHtml(meta[k][1])}" aria-label="${escapeHtml(meta[k][1])}" aria-pressed="${active.includes(k)}">${meta[k][0]}</button>`).join('');}
+function togglePnlFilterDrawer(){const drawer=document.getElementById('pnl-filter-drawer'),btn=document.getElementById('pnl-filter-btn');if(!drawer)return;const open=drawer.classList.toggle('open');if(btn){btn.classList.toggle('on',open);btn.setAttribute('aria-expanded',open?'true':'false');}}
 function togglePnlPieCash(){togglePnlPieFilter('cash');}
 function toggleHeroDetail(kind){
   const isAsset=kind==='asset';
@@ -3977,7 +3985,7 @@ function renderHome(){
   const expAll=periTxns.filter(tx=>tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
   const cf=incomeCash-expAll;
   const bs=balanceSheetBreakdown();
-  const fixedOn=!pnlNetExcluded('physical'),fixedRecorded=physicalAssetsStats().value,longDebtOn=longDebtCountsInNet();
+  const fixedOn=!pnlNetExcluded('physical'),fixedRecorded=bs.fixedAsset,longDebtOn=longDebtCountsInNet();
   // hero accounting board: Net worth = Total assets − Total debt
   document.getElementById('h-nw').textContent=fmt(bs.netWorth);
   document.getElementById('h-asset').textContent=fmt(bs.assets);
@@ -4090,7 +4098,7 @@ function enhanceARRecordEditing(groups){
     detail.innerHTML=g.items.map(rpDetailHTML).join('')||'—';
   });
 }
-function filterAR(type,btn){
+function filterARLegacy(type,btn){
   if(btn){document.querySelectorAll('#pane-ar .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
   const active=(S.people||[]).filter(rpIsActive);const groups=rpGroups(active);
   const deadRows=(S.people||[]).filter(p=>p.dead&&p.dir!=='p');const deadHKD=deadRows.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0);
@@ -4100,8 +4108,19 @@ function filterAR(type,btn){
   const elRc=document.getElementById('ar-ct');if(elRc)elRc.textContent=(groups.filter(g=>g.net>0).length?groups.filter(g=>g.net>0).length+' '+t('outstanding'):'')+(deadHKD?' · '+tt('壞帳 ','dead ')+fmt(deadHKD):'');
   const elPc=document.getElementById('ar-urgent-ct');if(elPc)elPc.textContent=groups.filter(g=>g.net<0).length?groups.filter(g=>g.net<0).length+' '+t('outstanding'):'';
   let list=type==='pending'?groups:type==='settled'?[...rpGroups((S.people||[]).filter(p=>p.settled&&!p.dead)),...rpGroups(deadRows)]:type==='group'?rpGroups((S.people||[]).filter(p=>p.isGroupSplit&&rpIsActive(p))):groups;
-  document.getElementById('ar-list').innerHTML=list.length?list.map((g,i)=>{const ci=i%8;const init=escapeHtml((g.name||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase());const dead=g.items.every(p=>p.dead);const settled=!dead&&g.items.every(p=>p.settled);const urg=!dead&&!settled&&g.items.some(p=>p.urgent&&!p.isGroupSplit);const isPay=g.net<0;const hasIncome=g.items.some(isIncomeReceivable);const amtCol=dead?'var(--r3)':(isPay?'var(--r)':'var(--g)');/* green=receivable, red=payable; urgency shows as a badge, not by flipping the colour */const detail=g.items.map(p=>escapeHtml((p.dead?'☠ ':p.dir==='p'?'−':'+')+fmt(p.amtHKD)+(isIncomeReceivable(p)?' · '+(p.catIcon||'💼')+' '+(p.catLabel||tt('收入應收','Income A/R')):'')+(p.desc?' · '+p.desc:'')+(p.payDays!=null?' · '+p.payDays+tt('日還清','d paid'):'')+(p.deadDate?' · '+tt('壞帳 ','dead ')+p.deadDate:''))).join('<br>');const ids=g.items.filter(rpIsActive).map(p=>p.id).join(',');const allIds=g.items.map(p=>p.id).join(',');const deadIds=g.items.filter(p=>rpIsActive(p)&&p.dir!=='p').map(p=>p.id).join(',');return `<div class="crow${urg?' alert-row':''}"><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div class="rinfo"><div class="rtitle">${escapeHtml(g.name)}${friendCreditBadge(g.key)}${hasIncome?`<span class="badge bg">${tt('收入應收','Income A/R')}</span>`:''}${isPay?`<span class="badge br">${t('payable')}</span>`:''}${dead?`<span class="badge br">${tt('壞帳','Dead')}</span>`:''}${g.items.some(p=>p.isGroupSplit)?`<span class="badge bp">${t('group')}</span>`:''}${urg?`<span class="badge br">${t('pending')}</span>`:''}</div><div class="rsub">${detail||'—'}</div></div><div style="text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:5px">${dead?`<span style="font-size:15px;font-weight:700;color:var(--r3)">${fmt(Math.abs(g.net))}</span><button class="settle-btn urgent" onclick="reviveDeadGroup('${allIds}')">${tt('復活','Restore')}</button>`:settled?`<span class="badge bg">${t('settled')}</span>`:`<span style="font-size:15px;font-weight:700;color:${amtCol}">${isPay?'−':'+'}${fmt(Math.abs(g.net))}</span><button class="settle-btn${urg?' urgent':''}" onclick="openSettleGroup('${ids}')">${isPay?t('settlepay'):tt('收回 ✓','Settle ✓')}</button>${deadIds?`<button class="settle-btn urgent" onclick="markDeadGroup('${deadIds}')">${tt('壞帳','Dead')}</button>`:''}`}</div>${settled?`<button onclick="recallGroup('${allIds}')" title="${t('recallbtn')}" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-arrow-back-up"></i></button>`:(!dead?`<button onclick="editAR('${g.items[0].id}')" style="padding:6px 7px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-pencil"></i></button>`:'')}<button onclick="deleteARGroup('${encodeURIComponent(g.key)}')" style="padding:6px 7px;border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer;flex-shrink:0;align-self:center"><i class="ti ti-trash"></i></button></div>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
+  document.getElementById('ar-list').innerHTML=list.length?list.map((g,i)=>{const ci=i%8;const init=escapeHtml((g.name||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase());const dead=g.items.every(p=>p.dead);const settled=!dead&&g.items.every(p=>p.settled);const isPay=g.net<0;return `<div class="crow"><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div class="rinfo"><div class="rtitle">${escapeHtml(g.name)}${rpLabelBadges(g.key)}</div></div><div style="color:${dead||isPay?'var(--r3)':'var(--g3)'}">${isPay?'−':'+'}${fmt(Math.abs(g.net))}</div></div>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
   enhanceARRecordEditing(list);
+}
+let _rpExpandedGroups=new Set();
+function rpGroupDomToken(key){return encodeURIComponent(String(key||'')).replace(/%/g,'_').replace(/[^A-Za-z0-9_.-]/g,'_');}
+function toggleRPGroup(key){key=String(key||'');const open=!_rpExpandedGroups.has(key);if(open)_rpExpandedGroups.add(key);else _rpExpandedGroups.delete(key);const el=document.getElementById('rp-group-'+rpGroupDomToken(key));if(el){el.classList.toggle('open',open);const head=el.querySelector('.rp-group-head');if(head)head.setAttribute('aria-expanded',open?'true':'false');}}
+function filterAR(type,btn){
+  S._arFilter=type||S._arFilter||'all';type=S._arFilter;
+  if(btn){document.querySelectorAll('#pane-ar .seg-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+  const active=(S.people||[]).filter(rpIsActive),groups=rpGroups(active),deadRows=(S.people||[]).filter(p=>p.dead&&p.dir!=='p'),deadHKD=deadRows.reduce((a,p)=>a+Math.abs(p.amtHKD||0),0),recv=groups.reduce((a,g)=>a+Math.max(g.net,0),0),pay=groups.reduce((a,g)=>a+Math.max(-g.net,0),0);
+  const elR=document.getElementById('ar-total');if(elR)elR.textContent=fmt(recv);const elP=document.getElementById('ar-pay-total');if(elP)elP.textContent='−'+fmt(pay);const elRc=document.getElementById('ar-ct');if(elRc)elRc.textContent=(groups.filter(g=>g.net>0).length?groups.filter(g=>g.net>0).length+' '+t('outstanding'):'')+(deadHKD?' · '+tt('壞帳 ','dead ')+fmt(deadHKD):'');const elPc=document.getElementById('ar-urgent-ct');if(elPc)elPc.textContent=groups.filter(g=>g.net<0).length?groups.filter(g=>g.net<0).length+' '+t('outstanding'):'';
+  const list=type==='pending'?groups:type==='settled'?[...rpGroups((S.people||[]).filter(p=>p.settled&&!p.dead)),...rpGroups(deadRows)]:type==='group'?rpGroups((S.people||[]).filter(p=>p.isGroupSplit&&rpIsActive(p))):groups,root=document.getElementById('ar-list');if(!root)return;
+  root.innerHTML=list.length?list.map((g,i)=>{const ci=i%8,init=escapeHtml((g.name||'?').trim().split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()),dead=g.items.every(p=>p.dead),settled=!dead&&g.items.every(p=>p.settled),urg=!dead&&!settled&&g.items.some(p=>p.urgent&&!p.isGroupSplit),isPay=g.net<0||(Math.abs(g.net)<.005&&g.items.every(p=>p.dir==='p')),hasIncome=g.items.some(isIncomeReceivable),ids=g.items.filter(rpIsActive).map(p=>p.id).join(','),allIds=g.items.map(p=>p.id).join(','),deadIds=g.items.filter(p=>rpIsActive(p)&&p.dir!=='p').map(p=>p.id).join(','),open=_rpExpandedGroups.has(g.key),domId='rp-group-'+rpGroupDomToken(g.key),amount=dead||settled?g.items.reduce((n,p)=>n+rpOriginalTotals(p).amtHKD,0):Math.abs(g.net),amountColor=dead||isPay?'var(--r3)':'var(--g3)',statusBadge=dead?`<span class="badge br">${tt('壞帳','Dead')}</span>`:settled?`<span class="badge bg">${t('settled')}</span>`:`<span class="badge ${isPay?'br':'bg'}">${isPay?t('payable'):t('arowed')}</span>`,settleAction=dead?`<button class="settle-btn urgent" onclick="event.stopPropagation();reviveDeadGroup(${inlineJsString(allIds)})">${tt('復活','Restore')}</button>`:settled?`<button class="settle-btn" onclick="event.stopPropagation();recallGroup(${inlineJsString(allIds)})">${t('recallbtn')}</button>`:`<button class="settle-btn${urg?' urgent':''}" onclick="event.stopPropagation();openSettleGroup(${inlineJsString(ids)})">${isPay?t('settlepay'):tt('收回 ✓','Settle ✓')}</button>`;return `<section class="rp-group${open?' open':''}${urg?' alert-row':''}" id="${domId}"><div class="rp-group-head" role="button" tabindex="0" aria-expanded="${open}" onclick="toggleRPGroup(${inlineJsString(g.key)})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleRPGroup(${inlineJsString(g.key)});}"><i class="ti ti-chevron-right rp-chevron"></i><div class="avatar" style="background:${AC[ci]};color:${AT[ci]}">${init}</div><div style="flex:1;min-width:0"><div class="rtitle" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(g.name)} ${statusBadge}${hasIncome?`<span class="badge bg">${tt('收入應收','Income A/R')}</span>`:''}${g.items.some(p=>p.isGroupSplit)?`<span class="badge bp">${t('group')}</span>`:''}${rpLabelBadges(g.key)}</div><div class="rsub">${g.items.length} ${tt('筆記錄','records')}</div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:15px;font-weight:800;color:${amountColor}">${isPay?'−':'+'}${fmt(amount)}</div><div style="margin-top:5px">${settleAction}</div></div></div><div class="rp-group-body">${rpLabelPicker(g.key)}${g.items.map(rpDetailHTML).join('')||'—'}<div class="rp-group-actions">${deadIds?`<button class="settle-btn urgent" onclick="markDeadGroup(${inlineJsString(deadIds)})">${tt('標記壞帳','Mark dead')}</button>`:''}<button class="settle-btn urgent" onclick="deleteARGroup(${inlineJsString(encodeURIComponent(g.key))})"><i class="ti ti-trash"></i> ${t('deletepos')}</button></div></div></section>`;}).join(''):`<div style="text-align:center;padding:32px;color:var(--ink3);font-size:14px">${t('noar')}</div>`;
 }
 function recallGroup(ids){String(ids).split(',').filter(Boolean).forEach(id=>recallAR(id));}
 function deleteARGroup(key){key=decodeURIComponent(key);if(!confirm(t('deltxnq')))return;const doomed=S.people.filter(p=>personKey(p)===key);const ids=doomed.map(p=>p.id);const gids=[...new Set(doomed.map(p=>p.groupId).filter(Boolean))];removeRPMovesFor(ids);S.txns=S.txns.filter(tx=>!(txIsRPFlow(tx)&&gids.includes(tx.groupId)));S.people=S.people.filter(p=>personKey(p)!==key);saveS();setWalletPane('ar');refreshAllViews();}
@@ -4493,6 +4512,39 @@ function drawTrend(){
   labels.forEach((lb,i)=>{if(i%step===0||i===labels.length-1)ctx.fillText(lb,x(i),H-12);});
 }
 function setTrendGran(g,btn){S.trendGran=g;saveS();document.querySelectorAll('#trend-gran .fchip').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');drawTrend();}
+// Calendar replacement for the old aggregate line chart. It plots dated, recorded
+// P&L events only: closed positions/sessions, received loan interest, and changes
+// between successive physical-asset valuations. The allocation filters above are shared.
+let _pnlCalMonth=null,_pnlCalSelected=null;
+function pnlCalendarEvents(){
+  const rows=[];
+  (S.portfolio||[]).filter(p=>p.exitPrice).forEach(p=>rows.push({date:p.exitDate||p.date||today(),value:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),kind:acctIsPhysical(p.acctId)?'physical':(p.secId||p.type||'stock'),label:p.name||t('position')}));
+  (S.gamble||[]).filter(g=>!g.open).forEach(g=>rows.push({date:g.date||today(),value:(Number(g.cashoutHKD)||0)-(Number(g.buyinHKD)||0),kind:acctIsPhysical(g.acctId)?'physical':(g.secId||'poker'),label:g.venue||t('poker')}));
+  (S.privateLoans||[]).forEach(l=>loanPayments(l).forEach(p=>{const value=Number(p.interestHKD)||0;if(value)rows.push({date:p.date||today(),value,kind:'loan',label:l.borrower||t('privatedebt')});}));
+  (S.physicalAssets||[]).filter(a=>!a.excluded).forEach(a=>{const hist=ensurePhysicalAssetHistory(a);for(let i=1;i<hist.length;i++){const value=toHKD((Number(hist[i].value)||0)-(Number(hist[i-1].value)||0),a.cur||'HKD');if(Math.abs(value)>0.004)rows.push({date:hist[i].date||today(),value,kind:'physical',label:a.name||assetLabel('fixed')});}});
+  const filters=Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[];
+  return filters.length?rows.filter(r=>filters.includes(r.kind)):rows;
+}
+function shiftPnlCalendar(delta){if(!_pnlCalMonth){const n=new Date();_pnlCalMonth={y:n.getFullYear(),m:n.getMonth()};}let m=_pnlCalMonth.m+delta,y=_pnlCalMonth.y;if(m<0){m=11;y--;}if(m>11){m=0;y++;}_pnlCalMonth={y,m};_pnlCalSelected=null;renderPnlCalendar();}
+function togglePnlCalendarDay(day){_pnlCalSelected=_pnlCalSelected===day?null:day;renderPnlCalendar();}
+function renderPnlCalendar(){
+  const grid=document.getElementById('pnl-cal-grid');if(!grid)return;
+  if(!_pnlCalMonth){const n=new Date();_pnlCalMonth={y:n.getFullYear(),m:n.getMonth()};}
+  const {y,m}=_pnlCalMonth,events=pnlCalendarEvents().filter(e=>{const d=parseDateOnly(e.date);return !Number.isNaN(d.getTime())&&d.getFullYear()===y&&d.getMonth()===m;}),daily={};
+  events.forEach(e=>{const day=parseDateOnly(e.date).getDate();(daily[day]=daily[day]||[]).push(e);});
+  const monthName=S.lang==='en'?['January','February','March','April','May','June','July','August','September','October','November','December'][m]:(m+1)+'月';
+  const title=document.getElementById('pnl-cal-title');if(title)title.textContent=monthName+' '+y;
+  const label=document.getElementById('pnl-cal-label');if(label)label.textContent=tt('每日損益日曆','Daily P&L calendar');
+  const hint=document.getElementById('pnl-cal-hint');if(hint)hint.textContent=tt('按已記錄嘅實現損益及估值變動顯示','Based on recorded realised P&L and valuation changes');
+  const filterLabel=document.getElementById('pnl-filter-label');if(filterLabel)filterLabel.textContent=tt('篩選','Filter');
+  const filterHint=document.getElementById('pnl-filter-hint');if(filterHint)filterHint.textContent=tt('同一組篩選會套用到資產圓形圖同每日損益日曆。','The same filters apply to both allocation and the daily P&L calendar.');
+  const dow=S.lang==='en'?['S','M','T','W','T','F','S']:['日','一','二','三','四','五','六'];let html=dow.map(d=>`<div style="text-align:center;font-size:10px;color:var(--ink3);font-weight:800;padding:3px 0">${d}</div>`).join('');
+  const first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++)html+='<div></div>';
+  for(let day=1;day<=dim;day++){const v=(daily[day]||[]).reduce((n,e)=>n+e.value,0),has=Math.abs(v)>0.004,cls=has?(v>=0?' pos':' neg'):'',sel=_pnlCalSelected===day?' sel':'';html+=`<button type="button" class="pnl-cal-day${cls}${sel}" onclick="togglePnlCalendarDay(${day})"><span style="font-size:11px;font-weight:700">${day}</span>${has?`<span class="amt">${v>=0?'+':'−'}${escapeHtml(numStr(Math.abs((S.dispCur||'HKD')==='HKD'?v:v/(FX[S.dispCur]||1))))}</span>`:''}</button>`;}
+  grid.innerHTML=html;
+  const profit=events.filter(e=>e.value>0).reduce((n,e)=>n+e.value,0),loss=events.filter(e=>e.value<0).reduce((n,e)=>n+Math.abs(e.value),0),net=profit-loss,summary=document.getElementById('pnl-cal-summary');if(summary)summary.innerHTML=`${tt('本月收入／盈利','Month gains')} <strong style="color:var(--g3)">+${fmt(profit)}</strong> · ${tt('損失','losses')} <strong style="color:var(--r3)">−${fmt(loss)}</strong> · ${tt('淨額','net')} <strong style="color:${net>=0?'var(--g3)':'var(--r3)'}">${net>=0?'+':'−'}${fmt(Math.abs(net))}</strong>`;
+  const detail=document.getElementById('pnl-cal-detail');if(!detail)return;if(!_pnlCalSelected){detail.innerHTML='';return;}const dayRows=daily[_pnlCalSelected]||[],ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(_pnlCalSelected).padStart(2,'0');detail.innerHTML=`<div style="font-size:12px;font-weight:800;margin:9px 2px 5px">${ds}</div>`+(dayRows.length?dayRows.map(e=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-top:.5px solid var(--bdr);font-size:12px"><span>${escapeHtml((pnlPieFilterMeta()[e.kind]||['',e.kind])[0])} ${escapeHtml(e.label)}</span><strong style="color:${e.value>=0?'var(--g3)':'var(--r3)'}">${e.value>=0?'+':'−'}${fmt(Math.abs(e.value))}</strong></div>`).join(''):`<div class="msub" style="padding:8px 2px">${tt('未有已記錄損益','No recorded P&L')}</div>`);
+}
 function pokerRowHTML(g){
   const sp=g.open?0:((g.cashoutHKD||0)-(g.buyinHKD||0));
   const detail=[g.blinds?`${t('blinds')} ${g.blinds}`:'',g.maxp?`${t('maxplayers')} ${g.maxp}`:'',g.bb?`BB ${g.bb}`:'',g.resultbb!=null?`${g.resultbb>0?'+':''}${g.resultbb}BB`:''].filter(Boolean).map(escapeHtml).join(' · '),id=inlineJsString(g.id);
@@ -4532,10 +4584,11 @@ function toggleSecBody(id){
   if(collapsed)_collapsedSecs.add(id);else _collapsedSecs.delete(id);
 }
 function renderPrivateLoans(){const list=document.getElementById('loan-list');if(!list)return;const loans=S.privateLoans||[],st=privateLoanStats();const set=(id,val,cls)=>{const el=document.getElementById(id);if(el){el.textContent=fmt(val);if(cls)el.className=cls;}};set('loan-principal',st.principal,'mval');set('loan-accrued',st.accrued);set('loan-realized',st.realized);set('loan-asset',st.asset);const ct=document.getElementById('loan-ct');if(ct)ct.textContent=st.count;const gp=document.getElementById('g-loan-pnl');if(gp){gp.textContent=fmt(st.pnl);gp.className='pnl-simple-val '+(st.pnl>=0?'pos':'neg');}
-  list.innerHTML=loans.length?loans.map(l=>{const outstanding=loanOutstandingPrincipal(l),accrued=loanAccruedOutstanding(l),received=loanInterestReceived(l),asset=outstanding+accrued,expected=loanAccruedTotal(l,l.dueDate||today()),closed=outstanding<0.005&&received+0.005>=expected,overdue=!closed&&l.dueDate&&parseDateOnly(l.dueDate)<parseDateOnly(today()),status=closed?tt('已完成','completed'):overdue?tt('已逾期','overdue'):tt('進行中','active'),statusCls=closed?'bg':overdue?'br':'ba',key=friendNameKey(l.borrower),payments=loanPayments(l).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),interestDesc=loanInterestMode(l)==='fixed'?t('fixedinterest')+' '+fmtCur(Number(l.fixedInterestHKD)||0,l.cur):Number(l.annualRate||0)+'% / '+tt('年','yr');return `<div style="padding:14px 15px;border-bottom:0.5px solid var(--bdr)"><div style="display:flex;gap:10px;align-items:flex-start"><div class="ibox" style="background:var(--g2);font-size:18px">🤝</div><div class="rinfo"><div class="rtitle">${notifyEsc(l.borrower)} <span class="badge ${statusCls}">${status}</span></div><div class="rsub">${l.startDate||''}${l.dueDate?' → '+l.dueDate:''} · ${interestDesc}</div><div class="rsub" style="margin-top:3px">${friendCreditBadge(key)}</div>${l.notes?`<div class="rsub" style="margin-top:3px">${notifyEsc(l.notes)}</div>`:''}<div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openLoanPayment('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--g);border-radius:20px;background:var(--g2);color:var(--g3);cursor:pointer">${t('recordpayment')}</button><button onclick="openLoanModal('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePrivateLoan('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800">${fmtCur(asset,l.cur)}</div><div class="rsub">${t('principal')} ${fmtCur(outstanding,l.cur)}</div><div style="font-size:11px;color:var(--g3)">${t('accruedinterest')} ${fmtCur(accrued,l.cur)}</div></div></div><div style="margin-top:9px;padding:9px 10px;border-radius:11px;background:var(--bg2);font-size:11px;color:var(--ink3);display:flex;gap:10px;flex-wrap:wrap"><span>${tt('到期預計利息','Expected interest')}: <strong style="color:var(--ink)">${fmtCur(expected,l.cur)}</strong></span><span>${t('receivedinterest')}: <strong style="color:var(--g3)">${fmtCur(received,l.cur)}</strong></span></div>${payments.length?`<div style="margin-top:8px">${payments.map(p=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 2px;font-size:11px;color:var(--ink3)"><span style="flex:1">${p.date} · ${t('principalreturn')} ${fmtCur(p.principalHKD||0,l.cur)} · ${t('interestreceived')} ${fmtCur(p.interestHKD||0,l.cur)}</span><button onclick="deleteLoanPayment('${l.id}','${p.id}')" aria-label="${t('deletepos')}" style="border:none;background:none;color:var(--r3);font-size:15px;padding:5px;cursor:pointer"><i class="ti ti-trash"></i></button></div>`).join('')}</div>`:''}</div>`;}).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;}
+  list.innerHTML=loans.length?loans.map(l=>{const outstanding=loanOutstandingPrincipal(l),accrued=loanAccruedOutstanding(l),received=loanInterestReceived(l),asset=outstanding+accrued,expected=loanAccruedTotal(l,l.dueDate||today()),closed=outstanding<0.005&&received+0.005>=expected,overdue=!closed&&l.dueDate&&parseDateOnly(l.dueDate)<parseDateOnly(today()),status=closed?tt('已完成','completed'):overdue?tt('已逾期','overdue'):tt('進行中','active'),statusCls=closed?'bg':overdue?'br':'ba',key=friendNameKey(l.borrower),payments=loanPayments(l).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),interestDesc=loanInterestMode(l)==='fixed'?t('fixedinterest')+' '+fmtCur(Number(l.fixedInterestHKD)||0,l.cur):Number(l.annualRate||0)+'% / '+tt('年','yr');return `<div style="padding:14px 15px;border-bottom:0.5px solid var(--bdr)"><div style="display:flex;gap:10px;align-items:flex-start"><div class="ibox" style="background:var(--g2);font-size:18px">🤝</div><div class="rinfo"><div class="rtitle">${notifyEsc(l.borrower)} <span class="badge ${statusCls}">${status}</span> ${rpLabelBadges(key)}</div><div class="rsub">${l.startDate||''}${l.dueDate?' → '+l.dueDate:''} · ${interestDesc}</div>${l.notes?`<div class="rsub" style="margin-top:3px">${notifyEsc(l.notes)}</div>`:''}<div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openLoanPayment('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--g);border-radius:20px;background:var(--g2);color:var(--g3);cursor:pointer">${t('recordpayment')}</button><button onclick="openLoanModal('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePrivateLoan('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800">${fmtCur(asset,l.cur)}</div><div class="rsub">${t('principal')} ${fmtCur(outstanding,l.cur)}</div><div style="font-size:11px;color:var(--g3)">${t('accruedinterest')} ${fmtCur(accrued,l.cur)}</div></div></div><div style="margin-top:9px;padding:9px 10px;border-radius:11px;background:var(--bg2);font-size:11px;color:var(--ink3);display:flex;gap:10px;flex-wrap:wrap"><span>${tt('到期預計利息','Expected interest')}: <strong style="color:var(--ink)">${fmtCur(expected,l.cur)}</strong></span><span>${t('receivedinterest')}: <strong style="color:var(--g3)">${fmtCur(received,l.cur)}</strong></span></div>${payments.length?`<div style="margin-top:8px">${payments.map(p=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 2px;font-size:11px;color:var(--ink3)"><span style="flex:1">${p.date} · ${t('principalreturn')} ${fmtCur(p.principalHKD||0,l.cur)} · ${t('interestreceived')} ${fmtCur(p.interestHKD||0,l.cur)}</span><button onclick="deleteLoanPayment('${l.id}','${p.id}')" aria-label="${t('deletepos')}" style="border:none;background:none;color:var(--r3);font-size:15px;padding:5px;cursor:pointer"><i class="ti ti-trash"></i></button></div>`).join('')}</div>`:''}</div>`;}).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;}
 function renderPhysicalAssets(){
   const list=document.getElementById('physical-list');if(!list)return;const rows=(S.physicalAssets||[]).slice().sort((a,b)=>(a.soldAt?1:0)-(b.soldAt?1:0)),st=physicalAssetsStats();
   document.getElementById('physical-sec-label').textContent=assetLabel('fixed');document.getElementById('g-physical-label').textContent=assetLabel('fixed');document.getElementById('physical-add-label').textContent=tt('新增資產','Add asset');document.getElementById('physical-value-label').textContent=tt('目前市值','Current market value');document.getElementById('physical-cash-label').textContent=tt('已變現現金','Realized cash');document.getElementById('physical-cost-label').textContent=tt('持有成本','Active cost');document.getElementById('physical-count-label').textContent=tt('持有項目','Active items');
+  const review=document.getElementById('physical-review-badge'),reviewText=document.getElementById('physical-review-text'),due=physicalReviewDue();if(review){review.classList.toggle('show',due);review.title=tt('每年 1 月 1 日起提示；更新任何一項資產後完成本年度檢視。','Shown from Jan 1 each year; updating any asset completes this year\'s review.');}if(reviewText)reviewText.textContent=tt('年度檢視','Annual review');
   document.getElementById('physical-value').textContent=fmt(st.value);document.getElementById('physical-cash').textContent=fmt(st.realizedCash);document.getElementById('physical-cost-label').textContent=(S.physicalAssets||[]).some(a=>a.costBasis==='opening')?tt('成本／追蹤基準','Cost / tracking basis'):tt('持有成本','Active cost');document.getElementById('physical-cost').textContent=fmt(st.cost);document.getElementById('physical-ct').textContent=st.count+(st.soldCount?' · '+st.soldCount+' '+tt('已售','sold'):'');
   const gp=document.getElementById('g-physical-pnl');gp.textContent=fmt(st.pnl);gp.className='pnl-simple-val '+(st.pnl>=0?'pos':'neg');
   list.innerHTML=rows.length?rows.map(a=>{const sold=!!a.soldAt,value=sold?(Number(a.saleValueHKD)||0):physicalAssetValue(a),delta=value-(Number(a.costHKD)||0),metal=a.category==='metal'&&a.weight?` · ${escapeHtml(a.weight)} ${escapeHtml(a.weightUnit||'g')} · ${escapeHtml(a.purityPct||0)}%`:'',tracked=!sold&&a.category==='metal'&&a.priceTracking&&a.priceTracking!=='manual'?`<span class="badge bg" style="margin-left:5px">↻ ${escapeHtml(a.apiSymbol||defaultMetalApiSymbol(a.metalType))}</span>`:'',linked=!physicalAssetDeductsCash(a)?`<span class="badge bb" style="margin-left:5px">${tt('已有資產 · 不扣款','Existing · no deduction')}</span>`:'',hist=ensurePhysicalAssetHistory(a).slice(-3).map(v=>`${escapeHtml(v.date||'')} ${escapeHtml(a.cur||'HKD')} ${escapeHtml(Number(v.value).toLocaleString())}`).join(' → '),basis=a.costBasis==='opening'?tt('加入後變動','Change since added'):'',actions=sold?`<span class="badge bgr" style="margin-left:0">${tt('已變現','Sold')} · ${escapeHtml(a.soldAt)}</span><button onclick="deletePhysicalAsset(${inlineJsString(a.id)})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button>`:`<button onclick="openPhysicalAssetModal(${inlineJsString(a.id)})" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${tt('更新市值','Update value')}</button><button onclick="openPhysicalSale(${inlineJsString(a.id)})" style="font-size:12px;padding:7px 12px;border:1px solid var(--g);border-radius:20px;background:var(--g2);color:var(--g3);cursor:pointer">${tt('出售／變現','Sell')}</button><button onclick="deletePhysicalAsset(${inlineJsString(a.id)})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button>`;return `<div class="crow" style="${sold?'opacity:.72':''}"><div class="ibox" style="background:var(--a2);font-size:18px">${a.category==='metal'?'🪙':a.category==='vehicle'?'🚗':a.category==='property'?'🏠':a.category==='jewelry'?'💎':'🧰'}</div><div class="rinfo"><div class="rtitle">${escapeHtml(a.name)}${tracked}${linked}</div><div class="rsub">${escapeHtml(physicalCategoryLabel(a.category))}${metal} · ${escapeHtml(a.purchaseDate||tt('日期不詳','Date unknown'))}${a.acctLabel?' · '+escapeHtml(a.acctLabel):''}${!physicalAssetDeductsCash(a)?' · '+tt('只連結，不扣款','Linked only, no deduction'):''}</div><div class="rsub" style="margin-top:3px">${tt('市值記錄','Market history')} · ${hist||'—'}</div>${a.marketQuoteUpdatedAt?`<div class="rsub" style="margin-top:3px">Twelve Data · ${escapeHtml(new Date(a.marketQuoteUpdatedAt).toLocaleString())}</div>`:''}${a.notes?`<div class="rsub" style="margin-top:3px">${escapeHtml(a.notes)}</div>`:''}<div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap">${actions}</div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800">${fmt(value)}</div><div class="${delta>=0?'pos':'neg'}" style="font-size:11px">${basis||((delta>=0?'+':'')+fmt(delta))}</div><div class="rsub">${sold?tt('實收現金','cash received'):tt('目前市值','market value')}</div></div></div>`;}).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${tt('未有固定資產','No physical fixed assets yet')}</div>`;
@@ -4634,9 +4687,10 @@ function renderGamble(){
   document.getElementById('g-roi').textContent='ROI '+(totalPnl>=0?'+':'')+roi+'%';
   // Cash (P&L scope) = idle cash sitting in INVESTMENT accounts only (not your whole wallet) —
   // i.e. money in an investment account with no position deployed against it right now.
-  const totalCash=(S.accounts||[]).filter(ac=>!ac.excluded&&ac.kind==='invest').reduce((a,ac)=>a+acctCash(ac.id),0);
-  const openPosValue=(S.accounts||[]).reduce((a,ac)=>a+acctOpenValue(ac.id),0);
-  const marginDebt=(S.accounts||[]).reduce((a,ac)=>a+acctMarginDebt(ac.id),0);
+  const netAccts=(S.accounts||[]).filter(acctCountsInNet);
+  const totalCash=netAccts.filter(ac=>ac.kind==='invest').reduce((a,ac)=>a+acctCash(ac.id),0);
+  const openPosValue=netAccts.reduce((a,ac)=>a+acctOpenValue(ac.id),0);
+  const marginDebt=netAccts.reduce((a,ac)=>a+acctMarginDebt(ac.id),0);
   // Deployed = own money currently tied up in open positions (margin principal is borrowed, not own money)
   const deployed=S.portfolio.filter(p=>!p.exitPrice&&!p.margin).reduce((a,p)=>a+p.costHKD,0)+S.gamble.filter(g=>g.open&&!g.margin).reduce((a,g)=>a+g.buyinHKD,0)+loanSt.principal+physicalSt.cost;
   // Total worth = realized cash + current value of open positions − outstanding margin debt
@@ -4664,12 +4718,13 @@ function renderGamble(){
   let pieRaw=[];
   // margin positions: only the equity (value minus the borrowed cost) belongs to the user, so the
   // slice reconciles with totalWorth (which already subtracts margin debt) instead of overstating exposure
-  S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v,_kind:p.type||'stock'});});
-  S.gamble.filter(g=>g.open&&g.buyinHKD>0).forEach(g=>pieRaw.push({label:g.venue,val:g.buyinHKD,_kind:'poker'}));
+  S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0&&portCountsInNet(p)).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v,_kind:acctIsPhysical(p.acctId)?'physical':(p.secId||p.type||'stock')});});
+  S.gamble.filter(g=>g.open&&g.buyinHKD>0&&gambleCountsInNet(g)).forEach(g=>pieRaw.push({label:g.venue,val:g.buyinHKD,_kind:acctIsPhysical(g.acctId)?'physical':(g.secId||'poker')}));
   (S.privateLoans||[]).forEach(l=>{const v=loanOutstandingPrincipal(l)+loanAccruedOutstanding(l);if(v>0)pieRaw.push({label:'🤝 '+l.borrower,val:v,_kind:'loan'});});
   if(!pnlNetExcluded('physical'))(S.physicalAssets||[]).filter(a=>!a.excluded&&!a.soldAt).forEach(a=>{const v=physicalAssetValue(a);if(v>0)pieRaw.push({label:'🧰 '+a.name,val:v,_kind:'physical'});});
-  const allCash=(S.accounts||[]).filter(ac=>!ac.excluded&&ac.kind==='invest').reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
+  const allCash=netAccts.filter(ac=>ac.kind==='invest'&&!acctIsPhysical(ac)).reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
   if(allCash>0)pieRaw.push({label:t('positioncash'),val:allCash,_cash:true,_kind:'cash'});
+  netAccts.filter(ac=>ac.kind==='invest'&&acctIsPhysical(ac)).forEach(ac=>{const v=Math.max(acctCash(ac.id),0);if(v>0)pieRaw.push({label:'🧰 '+acctLabel(ac),val:v,_kind:'physical'});});
   const pieFilters=Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[];if(pieFilters.length)pieRaw=pieRaw.filter(d=>pieFilters.includes(d._kind));renderPnlPieFilters();
   const {data:pieData,total:pieTotal}=piePrepData(pieRaw,{minPct:1.5,cap:9});
   let pci=0;pieData.forEach(d=>{const isOther=d._other||String(d.label||'').toLowerCase()==='other'||String(d.label||'')==='其他';d.color=d._cash?'#667085':(isOther?'#FFB020':POS_COLORS[pci++%POS_COLORS.length]);});
@@ -4861,7 +4916,7 @@ function renderGamble(){
     });
   }
   applyPnlLayout();
-  drawTrend();
+  renderPnlCalendar();
   renderDebts();
 }
 // open the right add-modal targeted at a custom section

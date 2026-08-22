@@ -35,6 +35,7 @@ function renderPnlSecMgr(){calls.settings++;}
 function acctCash(){return 100;}
 function acctLiquidAssetValue(){return 200;}
 function acctInvestmentAssetValue(){return 0;}
+function acctAsset(){return 300;}
 function privateLoanAssetTotal(){return 0;}
 function physicalAssetsStats(){return {value:300};}
 function rpAssetTotal(){return 0;}
@@ -43,6 +44,8 @@ function acctMarginDebt(){return 50;}
 function longDebtCountsInNet(){return !pnlNetExcluded('debt');}
 function debtsOutstanding(){return 400;}
 function pnlNetExcluded(kind){return !!S.pnlNetHidden[kind];}
+${declaration('acctIsPhysical')}
+${declaration('acctCountsInNet')}
 ${declaration('balanceSheetBreakdown')}
 ${declaration('setAcctSecondaryKind')}
 ${declaration('toggleHomeFixedAssets')}
@@ -51,6 +54,7 @@ setAcctSecondaryKind('mpf','locked');
 globalThis.afterValid=S.accounts[0].secondaryKind;
 setAcctSecondaryKind('mpf','not-valid');
 globalThis.afterInvalid=S.accounts[0].secondaryKind;
+S.accounts[0].secondaryKind='physical';
 globalThis.beforeHideBalance=balanceSheetBreakdown();
 toggleHomeFixedAssets();
 globalThis.afterHide=S.pnlNetHidden.physical;
@@ -74,10 +78,12 @@ assert.equal(context.afterValid,'locked');
 assert.equal(context.afterInvalid,'none');
 assert.equal(context.afterHide,true);
 assert.equal(context.afterShow,false);
-assert.equal(context.beforeHideBalance.fixedAsset,300);
+assert.equal(context.beforeHideBalance.fixedAsset,600);
+assert.equal(context.beforeHideBalance.physicalAccountAsset,300);
 assert.equal(context.beforeHideBalance.assets,600);
 assert.equal(context.hiddenBalance.fixedAsset,0);
-assert.equal(context.hiddenBalance.assets,300);
+assert.equal(context.hiddenBalance.physicalAccountAsset,0);
+assert.equal(context.hiddenBalance.assets,0);
 assert.equal(context.shownBalance.assets,600);
 assert.equal(context.afterDebtHide,true);
 assert.equal(context.afterDebtShow,false);

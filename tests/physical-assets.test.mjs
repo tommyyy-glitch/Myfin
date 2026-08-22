@@ -24,6 +24,8 @@ const code=[
   declaration('physicalAssetValueRaw'),
   declaration('physicalAssetValue'),
   declaration('physicalAssetsStats'),
+  declaration('physicalReviewDue'),
+  declaration('markPhysicalReviewed'),
   declaration('metalQuoteToAssetPerGram'),
   declaration('acctPositionsCash'),
   declaration('acctLiquidAssetValue'),
@@ -40,7 +42,10 @@ const code=[
   const gold={id:'fa_gold',name:'Gold',category:'metal',purchaseDate:'2026-01-01',cost:6000,costHKD:6000,cur:'HKD',weight:10,weightUnit:'g',purityPct:99.9,spotPricePerGram:700,priceTracking:'twelvedata'};
   const watch={id:'fa_watch',name:'Watch',category:'jewelry',purchaseDate:'2026-01-01',cost:8000,costHKD:8000,cur:'HKD',marketValue:7200,valuationDate:'2026-06-01'};
   const legacyDevice={id:'fa_legacy',name:'Old device',category:'equipment',fundingMode:'existing',costBasis:'opening',purchaseDate:'',cost:3000,costHKD:3000,cur:'HKD',marketValue:3000,valuationDate:'2027-01-01'};
-  const S={portfolio:[],gamble:[],physicalAssets:[laptop,gold,watch,legacyDevice]};
+  const S={portfolio:[],gamble:[],physicalAssets:[laptop,gold,watch,legacyDevice],fixedAssetReviewedYear:0};
+  globalThis.reviewBefore=physicalReviewDue(new Date(2027,0,1));
+  markPhysicalReviewed(new Date(2027,0,1));
+  globalThis.reviewAfter=physicalReviewDue(new Date(2027,0,1));
   recordPhysicalValuation(watch,7600,'2026-12-01','manual');
   globalThis.results={
     goldMarket:physicalMetalValueRaw(gold),
@@ -65,6 +70,8 @@ const code=[
 
 const context={};vm.createContext(context);vm.runInContext(code,context);
 assert.ok(Math.abs(context.results.goldMarket-6993)<0.01);
+assert.equal(context.reviewBefore,true);
+assert.equal(context.reviewAfter,false);
 assert.equal(context.results.laptopMarket,12000);
 assert.equal(context.results.watchMarket,7600);
 assert.deepEqual([...context.results.watchHistory],[8000,7200,7600]);
@@ -99,5 +106,7 @@ assert.match(html,/id="fa-funding-mode"/);
 assert.match(html,/Existing asset \(link only, no deduction\)/);
 assert.match(declaration('savePhysicalAsset'),/fundingMode/);
 assert.match(declaration('savePhysicalAsset'),/if\(deducts\)/);
+assert.match(declaration('savePhysicalAsset'),/markPhysicalReviewed\(\)/);
+assert.match(html,/id="physical-review-badge"/);
 
 console.log('Physical fixed-asset valuation, cash movement, and classification tests passed.');

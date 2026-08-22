@@ -84,6 +84,9 @@ assert.equal(context.result.incomeTxn.nonCash,true);
 assert.equal(context.result.incomeTxn.rpAccrual,true);
 
 const filterCode=declaration('filterAR');
-assert.match(filterCode,/enhanceARRecordEditing\(list\)/);
+assert.match(filterCode,/rp-group-head/);
+assert.match(filterCode,/rpLabelPicker\(g\.key\)/);
+assert.match(filterCode,/toggleRPGroup/);
+assert.doesNotMatch(filterCode,/friendCredit/);
 
 console.log('Per-record R/P editing and receivable-income tests passed.');
