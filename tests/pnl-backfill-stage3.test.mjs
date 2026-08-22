@@ -15,11 +15,17 @@ function declaration(name){
 
 assert.match(html,/Stage 3：支援多次買入同部分賣出/);
 assert.match(html,/id="pnl-backfill-ledger"/);
+assert.match(html,/type="date" id="pnl-backfill-start"/);
+assert.match(declaration('openPnlBackfill'),/modal\.scrollTop=0/);
 assert.match(html,/portfolioLotEvents/);
 assert.doesNotMatch(declaration('previewPnlBackfill'),/askAI|callAI|buildAiContext/);
 
 const code=`
 ${declaration('pnlBackfillPositionKey')}
+${declaration('pnlBackfillEligibility')}
+${declaration('pnlBackfillCandidates')}
+${declaration('pnlBackfillLedgerStart')}
+${declaration('pnlBackfillRangeState')}
 ${declaration('pnlLotLedgerForPosition')}
 ${declaration('normaliseBackfillCurrency')}
 ${declaration('pnlBackfillFxRateForDate')}
@@ -32,9 +38,12 @@ ${declaration('storePnlBackfillBatch')}
 ${declaration('dropPnlBackfillBatch')}
 ${declaration('storePnlLotLedger')}
 ${declaration('recordPortfolioLotEvent')}
+${declaration('pnlBackfillCutoffDate')}
 function tt(zh){return zh;}
 function fmt(n){return 'HK$'+n;}
 function today(){return '2026-08-23';}
+function parseDateOnly(s){const p=String(s||'').split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 
 const position={id:10,type:'stock',name:'VOO',qty:8,entryPrice:610,costHKD:37966.4,valueHKD:40456,cur:'USD',acctId:'invest',secId:'',date:'2026-08-03'};
 const rows=[
@@ -44,7 +53,7 @@ const rows=[
 ];
 const fx=[{date:'2026-08-01',rate:7.78}];
 const bars=[{date:'2026-08-03',close:600},{date:'2026-08-10',close:620},{date:'2026-08-17',close:640},{date:'2026-08-19',close:650}];
-const S={portfolio:[position],accounts:[{id:'invest',balance:1}],txns:[],people:[],gamble:[],physicalAssets:[],debts:[],privateLoans:[],pnlBackfills:[],pnlLotLedgers:[],portfolioLotEvents:[],changelog:[
+const S={portfolio:[position],accounts:[{id:'invest',balance:1}],txns:[],people:[],gamble:[],physicalAssets:[],debts:[],privateLoans:[],pnlBackfills:[],pnlLotLedgers:[],portfolioLotEvents:[],priceHist:[{t:new Date(2026,7,6,12).getTime(),p:{stock:1}}],changelog:[
   {date:'2026-08-03',ts:1,action:'add',name:'VOO',type:'stock',acctId:'invest',secId:'',detail:'5 @ USD600'},
   {date:'2026-08-10',ts:2,action:'add',name:'VOO',type:'stock',acctId:'invest',secId:'',detail:'+5 @ USD620'},
   {date:'2026-08-17',ts:3,action:'sell',name:'VOO',type:'stock',acctId:'invest',secId:'',detail:'2 @ USD640'}
@@ -53,6 +62,10 @@ const S={portfolio:[position],accounts:[{id:'invest',balance:1}],txns:[],people:
 globalThis.reconciled=reconcilePnlLotLedger(position,rows,fx,true);
 globalThis.calc=buildPnlMultiLotDaily(position,bars,fx,reconciled.rows,'stock');
 globalThis.inferred=inferPnlLotLedger(position);
+globalThis.customEligible=pnlBackfillEligibility({...position,secId:'custom-stock'}).eligible;
+globalThis.noGap=pnlBackfillRangeState(position,[{date:'2026-08-06',action:'buy'}]);
+globalThis.hasGap=pnlBackfillRangeState(position,[{date:'2026-08-01',action:'buy'}]);
+globalThis.buyStart=pnlBackfillLedgerStart([{date:'2026-07-20',action:'sell'},{date:'2026-08-01',action:'buy'}]);
 const before=backfillAccountingSignature();
 storePnlLotLedger({positionId:'10',rows:reconciled.rows});
 storePnlBackfillBatch({id:'b1',positionId:'10',key:'k1',daily:calc.daily});
@@ -76,6 +89,11 @@ assert.equal(context.calc.lastUnrealised,2489.6);
 assert.equal(context.calc.daily.reduce((sum,x)=>sum+x.value,0),2489.6);
 assert.equal(context.inferred.rows.length,3);
 assert.deepEqual([...context.inferred.rows].map(x=>x.action),['buy','buy','sell']);
+assert.equal(context.customEligible,true,'custom P&L sections must remain selectable');
+assert.equal(context.noGap.end,'2026-08-05');
+assert.equal(context.noGap.hasGap,false);
+assert.equal(context.hasGap.hasGap,true);
+assert.equal(context.buyStart,'2026-08-01','ledger start comes from the first acquisition, not an earlier sale');
 assert.equal(context.accountingSafe,true);
 assert.equal(context.ledgerSurvives,true,'rollback removes calendar batch but keeps verified ledger metadata');
 assert.equal(context.event.action,'buy');
