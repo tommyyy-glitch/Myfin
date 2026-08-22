@@ -483,6 +483,12 @@ body.dark #s-settings .glass-card{background:rgba(36,36,40,0.9);border-color:rgb
 .pnl-cal-day.sel{outline:2px solid var(--g)}
 .pnl-cal-day .amt{font-size:8px;font-weight:800;line-height:1;color:var(--ink3);max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .pnl-cal-day.pos .amt{color:var(--g3)}.pnl-cal-day.neg .amt{color:var(--r3)}
+.pnl-backfill-btn{margin-top:8px;border:1px solid color-mix(in srgb,var(--g) 45%,var(--bdr2));border-radius:999px;background:var(--g2);color:var(--g3);padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.pnl-backfill-row{border:1px solid var(--bdr);border-radius:14px;background:var(--surf2);padding:11px 12px;margin-top:8px}
+.pnl-backfill-status{border-radius:13px;padding:10px 12px;font-size:12px;line-height:1.5;background:var(--bg2);color:var(--ink3);margin-top:10px}
+.pnl-backfill-status.ok{background:var(--g2);color:var(--g3)}.pnl-backfill-status.err{background:var(--r2);color:var(--r3)}
+.pnl-lot-row{border:1px solid var(--bdr);border-radius:14px;background:var(--surf2);padding:10px;margin-top:8px}
+.pnl-lot-grid{display:grid;grid-template-columns:92px 1fr;gap:7px 9px;align-items:center}.pnl-lot-grid label{font-size:11px;color:var(--ink3);font-weight:700}.pnl-lot-grid input,.pnl-lot-grid select{width:100%;min-width:0;border:1px solid var(--bdr2);border-radius:9px;background:var(--bg2);color:var(--ink);padding:8px;font:inherit;font-size:12px}
 .rp-group{border-bottom:.5px solid var(--bdr)}.rp-group:last-child{border-bottom:none}
 .rp-group-head{width:100%;display:flex;align-items:center;gap:10px;padding:12px 13px;border:none;background:none;color:var(--ink);text-align:left;cursor:pointer}
 .rp-group-head .rp-chevron{font-size:16px;color:var(--ink3);transition:transform .16s}.rp-group.open .rp-chevron{transform:rotate(90deg)}
@@ -828,7 +834,7 @@ img,canvas,svg{max-width:100%;}
       </div>
     </div>
     <div class="glass-card" id="pnl-calendar-card" style="padding:16px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px"><div><div class="mlabel" id="pnl-cal-label">每日損益</div><div class="msub" id="pnl-cal-hint" style="margin-top:3px">按已記錄嘅已實現、未實現損益及估值變動顯示</div></div><div style="display:flex;align-items:center;gap:7px"><button onclick="shiftPnlCalendar(-1)" aria-label="Previous month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-left"></i></button><strong id="pnl-cal-title" style="font-size:13px;min-width:76px;text-align:center"></strong><button onclick="shiftPnlCalendar(1)" aria-label="Next month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-right"></i></button></div></div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px"><div><div class="mlabel" id="pnl-cal-label">每日損益</div><div class="msub" id="pnl-cal-hint" style="margin-top:3px">按已記錄嘅已實現、未實現損益及估值變動顯示</div><button type="button" class="pnl-backfill-btn" onclick="openPnlBackfill()"><i class="ti ti-history"></i><span id="pnl-backfill-label">歷史回填</span></button></div><div style="display:flex;align-items:center;gap:7px"><button onclick="shiftPnlCalendar(-1)" aria-label="Previous month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-left"></i></button><strong id="pnl-cal-title" style="font-size:13px;min-width:76px;text-align:center"></strong><button onclick="shiftPnlCalendar(1)" aria-label="Next month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-right"></i></button></div></div>
       <div class="pnl-calendar-grid" id="pnl-cal-grid"></div>
       <div id="pnl-cal-summary" style="margin-top:11px;font-size:12px;color:var(--ink3)"></div>
       <div id="pnl-cal-detail" style="margin-top:6px"></div>
@@ -1474,6 +1480,29 @@ img,canvas,svg{max-width:100%;}
   <button class="sbtn" onclick="refreshPrices();renderFxRates()" data-i="refreshprices"></button>
 </div></div>
 
+<div class="modal-wrap" id="m-pnl-backfill" onclick="closeM('m-pnl-backfill')"><div class="modal" onclick="event.stopPropagation()">
+  <button class="mclose" onclick="closeM('m-pnl-backfill')" aria-label="Close">&times;</button>
+  <div class="mhandle"></div><div class="mtitle" id="pnl-backfill-title">歷史未實現損益回填</div>
+  <div class="msub-lbl" id="pnl-backfill-intro">Stage 3：支援多次買入同部分賣出，以平均成本重建；只寫入可撤銷嘅日曆資料。</div>
+  <div class="fsec" style="padding-bottom:2px">
+    <div class="frow"><span class="flbl" id="pnl-backfill-position-label">持倉</span><select class="fval" id="pnl-backfill-position" onchange="syncPnlBackfillPosition()"></select></div>
+    <div class="frow"><span class="flbl" id="pnl-backfill-symbol-label">市場代碼</span><input class="fval" id="pnl-backfill-symbol" placeholder="AAPL / 0700.HK" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" id="pnl-backfill-start-label">Ledger 開始</span><strong id="pnl-backfill-start" style="font-size:13px;color:var(--ink2)"></strong></div>
+    <div class="frow"><span class="flbl" id="pnl-backfill-end-label">回填至</span><strong id="pnl-backfill-end" style="font-size:13px;color:var(--ink2)"></strong></div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px 0"><strong id="pnl-backfill-ledger-label" style="font-size:13px">買賣 Ledger</strong><span style="display:flex;gap:6px"><button type="button" onclick="addPnlLotRow('buy')" style="border:1px solid var(--bdr2);background:var(--g2);color:var(--g3);border-radius:9px;padding:6px 8px;font-size:11px;font-weight:800">＋買入</button><button type="button" onclick="addPnlLotRow('sell')" style="border:1px solid var(--bdr2);background:var(--r2);color:var(--r3);border-radius:9px;padding:6px 8px;font-size:11px;font-weight:800">＋賣出</button></span></div>
+  <div id="pnl-backfill-ledger" style="padding:0 14px"></div>
+  <label style="display:flex;align-items:flex-start;gap:9px;margin:10px 18px 0;font-size:12px;line-height:1.45;color:var(--ink2);cursor:pointer"><input type="checkbox" id="pnl-backfill-align" checked style="margin-top:2px;flex-shrink:0"><span id="pnl-backfill-align-label">如全部買入成本由歷史匯率推算，而差異不多於 5%，對齊現時剩餘成本。</span></label>
+  <label style="display:flex;align-items:flex-start;gap:9px;margin:10px 18px 0;font-size:12px;line-height:1.45;color:var(--ink2);cursor:pointer"><input type="checkbox" id="pnl-backfill-confirm" style="margin-top:2px;flex-shrink:0"><span id="pnl-backfill-confirm-label">我已核對完整買入及賣出紀錄、日期、數量同成本。</span></label>
+  <div id="pnl-backfill-position-note" class="msub-lbl" style="padding-bottom:0"></div>
+  <button class="sbtn" id="pnl-backfill-preview-btn" onclick="previewPnlBackfill()" style="margin-top:12px">建立預覽</button>
+  <div id="pnl-backfill-status" class="pnl-backfill-status" style="display:none"></div>
+  <div id="pnl-backfill-preview" style="display:none"></div>
+  <button class="sbtn" id="pnl-backfill-save-btn" onclick="commitPnlBackfill()" style="display:none;background:var(--hero-grad)">確認匯入日曆</button>
+  <div class="slbl" id="pnl-backfill-history-label" style="padding:16px 18px 4px">已匯入批次</div>
+  <div id="pnl-backfill-batches" style="padding:0 14px 18px"></div>
+</div></div>
+
 <div class="modal-wrap" id="m-ai" onclick="closeM('m-ai')"><div class="modal" onclick="event.stopPropagation()">
   <button class="mclose" onclick="closeM('m-ai')" aria-label="Close">&times;</button>
   <div class="mhandle"></div>
@@ -1959,7 +1988,7 @@ function hasQuoteKey(kind){return quoteKeys(kind).length>0;}
 function quoteApiCloudSafe(){const q=defaultQuoteApis();Object.keys(q).forEach(k=>{const src=ensureQuoteApis()[k];q[k].provider=src.provider;q[k].cursor=0;});return q;}
 
 function createAppState(){return {
-  txns:[],people:[],gamble:[],autopay:[],autoincome:[],portfolio:[],physicalAssets:[],debts:[],privateLoans:[],friends:[],rpLabels:{},tuScores:[],customSections:[],changelog:[],priceHist:[],
+  txns:[],people:[],gamble:[],autopay:[],autoincome:[],portfolio:[],physicalAssets:[],debts:[],privateLoans:[],friends:[],rpLabels:{},tuScores:[],customSections:[],changelog:[],priceHist:[],pnlBackfills:[],pnlLotLedgers:[],portfolioLotEvents:[],
   cats:DEF_CATS.map(c=>({...c,aliases:[...(c.aliases||[])]})),accounts:DEF_ACCTS.map(a=>({...a})),
   lang:'zh',theme:'auto',motionMode:'dance',dispCur:'HKD',period:'month',privacy:false,numFmt:'full',
   budget:{amount:0,cur:'HKD',mode:'cycle',startDay:1,cutoffDay:31,customStart:'',customEnd:'',excludedCats:[]},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},
@@ -2013,6 +2042,9 @@ if(!S.debts)S.debts=[];
 if(!S.privateLoans)S.privateLoans=[];
 if(!S.physicalAssets)S.physicalAssets=[];
 if(!Array.isArray(S.pnlPieFilters))S.pnlPieFilters=[];
+if(!Array.isArray(S.pnlBackfills))S.pnlBackfills=[];
+if(!Array.isArray(S.pnlLotLedgers))S.pnlLotLedgers=[];
+if(!Array.isArray(S.portfolioLotEvents))S.portfolioLotEvents=[];
 if(!S.rpLabels||typeof S.rpLabels!=='object')S.rpLabels={};
 if(!Number.isFinite(Number(S.fixedAssetReviewedYear)))S.fixedAssetReviewedYear=0;
 if(!S.assetLabels)S.assetLabels=createAppState().assetLabels;
@@ -2029,7 +2061,7 @@ if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
 S.notify=notifyCfg();
 if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return c.id===dc.id;});if(!ex){S.cats.push({...dc,aliases:[...dc.aliases]});}else{dc.aliases.forEach(function(a){if((ex.aliases||[]).indexOf(a)<0)ex.aliases=(ex.aliases||[]).concat(a);});}});
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(typeof ensureRPIncomeAccruals==='function'&&ensureRPIncomeAccruals())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));showStorageError('load',e);}}
-function profileSnapshot(){const cloud=S.cloud||{};return {txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],rpLabels:S.rpLabels||{},customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],fixedAssetReviewedYear:Number(S.fixedAssetReviewedYear)||0,setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
+function profileSnapshot(){const cloud=S.cloud||{};return {txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],rpLabels:S.rpLabels||{},customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],fixedAssetReviewedYear:Number(S.fixedAssetReviewedYear)||0,setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),pnlBackfills:Array.isArray(S.pnlBackfills)?S.pnlBackfills:[],pnlLotLedgers:Array.isArray(S.pnlLotLedgers)?S.pnlLotLedgers:[],portfolioLotEvents:Array.isArray(S.portfolioLotEvents)?S.portfolioLotEvents:[],acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
 function saveS(opt){
   opt=opt||{};
   if(window._storageReadOnly&&!opt.force){showStorageError('load',new Error('storage is read-only after load failure'));return false;}
@@ -2043,6 +2075,12 @@ function saveS(opt){
   }catch(e){showStorageError('save',e);return false;}
 }
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
+function recordPortfolioLotEvent(p,action,data){
+  if(!p||p.type!=='stock'||!['buy','sell','edit'].includes(action))return null;
+  data=data||{};S.portfolioLotEvents=Array.isArray(S.portfolioLotEvents)?S.portfolioLotEvents:[];
+  const e={id:'ple_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),positionId:String(p.id||''),identityKey:pnlBackfillPositionKey(p),date:data.date||today(),ts:Date.now(),action,qty:Number(data.qty)||0,price:Number(data.price)||0,cur:p.cur||'HKD',costHKD:Number(data.costHKD)||0,costRemovedHKD:Number(data.costRemovedHKD)||0,source:'app'};
+  S.portfolioLotEvents.push(e);return e;
+}
 function t(k){const en=S.lang==='en';const fb={budgetplanner:en?'Monthly budget':'月度預算',taxestimate:en?'Tax estimate':'稅務預計',notifications:en?'Notifications':'通知',privatedebt:en?'Private debt':'私人債權',addloan:en?'Add private loan':'新增私人借款',borrower:en?'Borrower':'借款人',principal:en?'Principal':'本金',interesttype:en?'Interest method':'利息方式',annualrate:en?'Annual interest %':'年利率 %',fixedinterest:en?'Fixed interest amount':'固定利息金額',startdate:en?'Start date':'借出日期',duedate:en?'Due date':'到期日',outstandingprincipal:en?'Outstanding principal':'未收回本金',accruedinterest:en?'Accrued interest':'應計利息',receivedinterest:en?'Interest received':'已收利息',recordpayment:en?'Record repayment':'記錄還款',principalreturn:en?'Principal returned':'收回本金',interestreceived:en?'Interest received':'收到利息',loanhint:en?'Principal leaves the selected normal account and becomes a fixed asset. Choose annual-rate interest or a fixed total interest amount.':'本金會由所選普通戶口扣除並列作固定資產；利息可選年利率或固定總金額。'};return LANGS[S.lang][k]||LANGS.en[k]||fb[k]||k;}
 function tt(zh,en){return S.lang==='en'?en:zh;}
 function catLabel(c){return S.lang==='en'?(c.labelEn||c.label):c.label;}
@@ -4236,7 +4274,7 @@ function savePortfolio(){
   if(!S.portfolio)S.portfolio=[];
   if(editId){
     const idx=S.portfolio.findIndex(x=>String(x.id)===String(editId));
-    if(idx>=0){const exitDate=exitPrice?(S.portfolio[idx].exitDate||today()):null;S.portfolio[idx]={...S.portfolio[idx],name,qty,entryPrice,currentPrice,exitPrice,exitDate,budgetPrice,cur,apiSymbol,notes,costHKD,valueHKD,acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin,secId,divPct,divFreq};logChange('edit',S.portfolio[idx],(qty||'')+' @ '+cur+(entryPrice||0));}
+    if(idx>=0){const exitDate=exitPrice?(S.portfolio[idx].exitDate||today()):null;S.portfolio[idx]={...S.portfolio[idx],name,qty,entryPrice,currentPrice,exitPrice,exitDate,budgetPrice,cur,apiSymbol,notes,costHKD,valueHKD,acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin,secId,divPct,divFreq};logChange('edit',S.portfolio[idx],(qty||'')+' @ '+cur+(entryPrice||0));recordPortfolioLotEvent(S.portfolio[idx],'edit',{qty,price:entryPrice,costHKD});}
   } else {
     // Auto-merge: a new OPEN buy with the same name + account + currency + margin + section folds into the
     // existing open position — combine units and recompute the unit-weighted average entry price.
@@ -4255,9 +4293,10 @@ function savePortfolio(){
       if(!existing.notes&&notes)existing.notes=notes;
       if(divPct)existing.divPct=divPct;if(divFreq)existing.divFreq=divFreq;
       logChange('add',existing,'+'+qty+' @ '+cur+(entryPrice||0));
+      recordPortfolioLotEvent(existing,'buy',{qty,price:entryPrice,costHKD});
     } else {
       const np={id:Date.now(),type,name,qty,entryPrice,currentPrice,exitPrice,exitDate:exitPrice?today():null,budgetPrice,cur,apiSymbol,notes,costHKD,valueHKD,acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin,secId,divPct,divFreq,date:today()};
-      S.portfolio.unshift(np);logChange('add',np,qty+' @ '+cur+(entryPrice||0));
+      S.portfolio.unshift(np);logChange('add',np,qty+' @ '+cur+(entryPrice||0));if(!exitPrice)recordPortfolioLotEvent(np,'buy',{qty,price:entryPrice,costHKD});
     }
   }
   recordPriceSnapshot();saveS();closeM('m-port');refreshAllViews();
@@ -4286,6 +4325,7 @@ function endPosition(id){
   if(!p)return;
   if(!confirm(t('endposq')))return;
   const px=p.currentPrice||p.entryPrice||0;     // close at the latest known price
+  recordPortfolioLotEvent(p,'sell',{qty:p.qty,price:px,costRemovedHKD:p.costHKD});
   p.exitPrice=px;
   p.exitDate=today();
   p.valueHKD=parseFloat(toHKD(px*(p.qty||0),p.cur).toFixed(2));
@@ -4310,20 +4350,23 @@ function confirmSell(){
   const sellPx=parseFloat(document.getElementById('sell-price').value)||0;
   if(sellQty<=0||sellQty>(p.qty||0)+1e-9||sellPx<=0){showToast(t('sellerr'),1);return;}
   const acct=getAcct(p.acctId);
+  const originalQty=Number(p.qty)||0,originalCost=Number(p.costHKD)||0,costRemoved=parseFloat((originalQty?originalCost*sellQty/originalQty:0).toFixed(2));
   if(sellQty>=(p.qty||0)-1e-9){
     // selling the whole thing → just close it at the sell price
+    recordPortfolioLotEvent(p,'sell',{qty:sellQty,price:sellPx,costRemovedHKD:originalCost});
     p.exitPrice=sellPx;
     p.exitDate=today();
     p.valueHKD=parseFloat(toHKD(sellPx*(p.qty||0),p.cur).toFixed(2));
   } else {
     // split off a realized (closed) lot for the sold units; reduce the open position by the same qty
-    const lotCost=parseFloat(toHKD(p.entryPrice*sellQty,p.cur).toFixed(2));
+    const lotCost=costRemoved;
     const lotValue=parseFloat(toHKD(sellPx*sellQty,p.cur).toFixed(2));
     S.portfolio.unshift({id:Date.now(),type:p.type,name:p.name,qty:sellQty,entryPrice:p.entryPrice,currentPrice:sellPx,exitPrice:sellPx,exitDate:today(),budgetPrice:null,cur:p.cur,apiSymbol:'',notes:t('soldlot')+' '+today(),costHKD:lotCost,valueHKD:lotValue,acctId:p.acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin:p.margin,secId:p.secId||'',date:today()});
     const remQty=p.qty-sellQty;
     p.qty=parseFloat(remQty.toFixed(6));
-    p.costHKD=parseFloat(toHKD(p.entryPrice*p.qty,p.cur).toFixed(2));
+    p.costHKD=parseFloat((originalCost-costRemoved).toFixed(2));
     p.valueHKD=parseFloat(toHKD((p.currentPrice||p.entryPrice)*p.qty,p.cur).toFixed(2));
+    recordPortfolioLotEvent(p,'sell',{qty:sellQty,price:sellPx,costRemovedHKD:costRemoved});
   }
   logChange('sell',p,sellQty+' @ '+p.cur+sellPx);
   recordPriceSnapshot();saveS();closeM('m-sell');renderGamble();renderHome();refreshWallet();
@@ -4540,8 +4583,140 @@ function pnlUnrealizedEvents(){
   });
   return rows;
 }
+// Stage 1 historical backfill is deliberately separate from live priceHist.
+// It only adds reversible calendar events and never rewrites accounting records.
+let _pnlBackfillPreview=null;
+let _pnlLotDraft=[];
+function pnlBackfillFingerprint(p){
+  if(!p)return '';
+  return JSON.stringify([String(p.id||''),p.type||'',p.name||'',Number(p.qty)||0,Number(p.entryPrice)||0,Number(p.costHKD)||0,p.cur||'HKD',p.acctId||'',p.secId||'',p.date||'',p.apiSymbol||'',!!p.margin]);
+}
+function pnlBackfillPositionKey(p){return [p&&p.type||'',p&&p.name||'',p&&p.acctId||'',p&&p.secId||''].join('|');}
+function pnlBackfillEligibility(p){
+  const issues=[];
+  if(!p||p.type!=='stock'||p.exitPrice)issues.push(tt('Stage 3 只支援未平倉股票／ETF','Stage 3 supports open stocks / ETFs only'));
+  if(p&&p.secId)issues.push(tt('自訂 section 暫時未支援','Custom sections are not supported yet'));
+  if(!(Number(p&&p.qty)>0)||!(Number(p&&p.entryPrice)>0)||!(Number(p&&p.costHKD)>0))issues.push(tt('缺少有效數量或成本','Valid quantity or cost is missing'));
+  return {eligible:issues.length===0,issues};
+}
+function pnlBackfillCandidates(){return (S.portfolio||[]).filter(p=>p&&p.type==='stock'&&!p.exitPrice).map(p=>({position:p,...pnlBackfillEligibility(p)}));}
+function pnlLotLedgerForPosition(p){return (S.pnlLotLedgers||[]).find(x=>x&&String(x.positionId)===String(p&&p.id));}
+function parsePnlLotDetail(detail){const m=String(detail||'').match(/^\s*\+?([0-9]+(?:\.[0-9]+)?)\s*@\s*(?:[A-Za-z]{3})?\s*([0-9]+(?:\.[0-9]+)?)/);return m?{qty:Number(m[1]),price:Number(m[2])}:null;}
+function inferPnlLotLedger(p){
+  const saved=pnlLotLedgerForPosition(p);if(saved&&Array.isArray(saved.rows)&&saved.rows.length)return {rows:saved.rows.map(x=>({...x})),source:'saved',warnings:[]};
+  const identity=pnlBackfillPositionKey(p),structured=(S.portfolioLotEvents||[]).filter(e=>e&&e.identityKey===identity&&e.action!=='edit').slice().sort((a,b)=>(Number(a.ts)||0)-(Number(b.ts)||0));
+  if(structured.length){return {rows:structured.map((e,i)=>({id:e.id||'lot_'+i,date:e.date,action:e.action,qty:Number(e.qty)||0,price:Number(e.price)||0,costHKD:e.action==='buy'?(Number(e.costHKD)||''):'',costSource:e.costHKD?'app':''})),source:'structured',warnings:(S.portfolioLotEvents||[]).some(e=>e&&e.identityKey===identity&&e.action==='edit')?[tt('曾經手動修改持倉，請逐行核對。','The position was edited manually; verify every row.')]:[]};}
+  const changes=(S.changelog||[]).filter(c=>pnlBackfillPositionKey(c)===identity).slice().sort((a,b)=>(Number(a.ts)||0)-(Number(b.ts)||0)),rows=[];let edited=false;
+  changes.forEach((c,i)=>{if(c.action==='edit'||c.action==='delete')edited=true;if(c.action!=='add'&&c.action!=='sell')return;const v=parsePnlLotDetail(c.detail);if(v)rows.push({id:'log_'+i,date:c.date||p.date||today(),action:c.action==='sell'?'sell':'buy',qty:v.qty,price:v.price,costHKD:'',costSource:''});});
+  if(rows.length)return {rows,source:'changelog',warnings:edited?[tt('舊記錄曾經修改，系統只作草稿；請補正後先確認。','Old records include edits. This is only a draft; correct it before confirming.')]:[]};
+  return {rows:[{id:'fallback_'+String(p.id),date:p.date||today(),action:'buy',qty:Number(p.qty)||0,price:Number(p.entryPrice)||0,costHKD:Number(p.costHKD)||'',costSource:'current'}],source:'fallback',warnings:[tt('未搵到完整舊記錄，已用現時持倉建立一行草稿。','No complete old record was found; one draft row was created from the current position.')]};
+}
+function reconcilePnlLotLedger(p,rows,fxRows,align){
+  const clean=(rows||[]).map((r,i)=>({...r,_i:i,date:String(r.date||''),action:r.action==='sell'?'sell':'buy',qty:Number(r.qty),price:Number(r.price),costHKD:r.costHKD===''||r.costHKD==null?'':Number(r.costHKD)})).sort((a,b)=>a.date.localeCompare(b.date)||a._i-b._i);let qty=0,cost=0,derivedOnly=true;
+  clean.forEach(r=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||!(r.qty>0)||!(r.price>0))throw new Error(tt('每一行都要有有效日期、數量同價格','Every row needs a valid date, quantity, and price'));if(r.action==='buy'){let c=r.costHKD;if(!(c>0)){const fx=normaliseBackfillCurrency(p.cur)==='HKD'?1:pnlBackfillFxRateForDate(fxRows,r.date);if(!(fx>0))throw new Error(tt('缺少 '+r.date+' 或之前嘅買入匯率','Missing purchase FX on or before '+r.date));c=r.qty*r.price*fx;r.costSource='historical-fx';}else{if(r.costSource!=='historical-fx')derivedOnly=false;r.costSource=r.costSource||'manual';}r.costHKD=Number(c.toFixed(2));qty+=r.qty;cost+=r.costHKD;}else{if(r.qty>qty+1e-8)throw new Error(tt('賣出數量超過當時持有數量','A sale exceeds the quantity held at that time'));const removed=qty?cost*r.qty/qty:0;qty-=r.qty;cost-=removed;r.costRemovedHKD=Number(removed.toFixed(2));}});
+  const targetQty=Number(p.qty)||0,targetCost=Number(p.costHKD)||0;if(Math.abs(qty-targetQty)>1e-6)throw new Error(tt('Ledger 最後數量 '+qty+'，同現時持倉 '+targetQty+' 對唔上','Ledger ending quantity '+qty+' does not match current '+targetQty));
+  let diff=targetCost-cost,ratio=targetCost?Math.abs(diff)/targetCost:Math.abs(diff),aligned=false;
+  if(Math.abs(diff)>0.02&&derivedOnly&&align&&ratio<=0.05&&cost>0){const scale=targetCost/cost;clean.forEach(r=>{if(r.action==='buy')r.costHKD=Number((r.costHKD*scale).toFixed(2));});qty=0;cost=0;clean.forEach(r=>{if(r.action==='buy'){qty+=r.qty;cost+=r.costHKD;}else{const removed=qty?cost*r.qty/qty:0;qty-=r.qty;cost-=removed;r.costRemovedHKD=Number(removed.toFixed(2));}});diff=targetCost-cost;ratio=targetCost?Math.abs(diff)/targetCost:Math.abs(diff);aligned=true;}
+  if(Math.abs(diff)>0.05)throw new Error(tt('成本對盤相差 '+fmt(Math.abs(diff))+'；請補回正確買入成本。','Cost reconciliation differs by '+fmt(Math.abs(diff))+'; enter the correct acquisition costs.'));
+  return {rows:clean.map(({_i,...r})=>r),endingQty:Number(qty.toFixed(6)),endingCost:Number(cost.toFixed(2)),aligned,confidence:aligned?'reconciled-estimate':(derivedOnly?'historical-fx-estimate':'user-confirmed-ledger')};
+}
+function buildPnlMultiLotDaily(p,bars,fxRows,ledger,kind){
+  const events=(ledger||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))),daily=[];let ei=0,qty=0,cost=0,previous=0;
+  (bars||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(bar=>{while(ei<events.length&&events[ei].date<=bar.date){const e=events[ei++];if(e.action==='buy'){qty+=Number(e.qty)||0;cost+=Number(e.costHKD)||0;}else{const sold=Number(e.qty)||0,removed=qty?cost*sold/qty:0;qty-=sold;cost-=removed;}}if(qty<=0)return;const fx=normaliseBackfillCurrency(p.cur)==='HKD'?1:pnlBackfillFxRateForDate(fxRows,bar.date);if(!(fx>0))throw new Error(tt('缺少 '+bar.date+' 或之前嘅歷史匯率','Missing historical FX on or before '+bar.date));const unreal=qty*(Number(bar.close)||0)*fx-cost,value=unreal-previous;previous=unreal;if(Math.abs(value)>0.004)daily.push({date:bar.date,value:Number(value.toFixed(2)),kind:kind||'stock',label:(p.name||tt('持倉','Position'))+' · '+tt('歷史未實現變動','historical unrealised change')});});
+  return {daily,lastUnrealised:Number(previous.toFixed(2)),endingQty:Number(qty.toFixed(6)),endingCost:Number(cost.toFixed(2))};
+}
+function storePnlLotLedger(ledger){S.pnlLotLedgers=Array.isArray(S.pnlLotLedgers)?S.pnlLotLedgers:[];const i=S.pnlLotLedgers.findIndex(x=>x&&String(x.positionId)===String(ledger&&ledger.positionId));if(i>=0)S.pnlLotLedgers[i]=ledger;else S.pnlLotLedgers.push(ledger);return true;}
+function pnlBackfillCutoffDate(p){
+  const idTime=Number(p&&p.id),dateTime=parseDateOnly(p&&p.date||'').getTime(),recordedAt=idTime>1000000000000?idTime:(Number.isFinite(dateTime)?dateTime:0),times=(S.priceHist||[]).map(x=>Number(x&&x.t)).filter(t=>Number.isFinite(t)&&t>=recordedAt).sort((a,b)=>a-b),d=times.length?new Date(times[0]):new Date();
+  d.setDate(d.getDate()-1);return ymd(d);
+}
+function normaliseBackfillCurrency(cur){cur=String(cur||'HKD').toUpperCase();return cur==='RMB'?'CNY':cur;}
+function pnlBackfillFxRateForDate(rows,date){
+  let rate=null;(rows||[]).forEach(r=>{if(r&&String(r.date||'')<=date&&Number(r.rate)>0)rate=Number(r.rate);});return rate;
+}
+function buildPnlBackfillDaily(p,bars,fxRows,kind){
+  const rows=[];let previous=0;
+  (bars||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(bar=>{
+    const fx=normaliseBackfillCurrency(p.cur)==='HKD'?1:pnlBackfillFxRateForDate(fxRows,bar.date);
+    if(!(Number(fx)>0))throw new Error(tt('缺少 '+bar.date+' 或之前嘅歷史匯率','Missing historical FX on or before '+bar.date));
+    const marketHKD=(Number(p.qty)||0)*(Number(bar.close)||0)*Number(fx),unreal=marketHKD-(Number(p.costHKD)||0),value=unreal-previous;
+    previous=unreal;
+    if(Math.abs(value)>0.004)rows.push({date:bar.date,value:Number(value.toFixed(2)),kind:kind||'stock',label:(p.name||tt('持倉','Position'))+' · '+tt('歷史未實現變動','historical unrealised change')});
+  });
+  return {daily:rows,lastUnrealised:Number(previous.toFixed(2))};
+}
+function pnlBackfillBatchKey(p,symbol,start,end){return [pnlBackfillFingerprint(p),String(symbol||'').trim().toUpperCase(),start||'',end||''].join('|');}
+function backfillAccountingSignature(){return JSON.stringify({portfolio:S.portfolio||[],accounts:S.accounts||[],txns:S.txns||[],people:S.people||[],gamble:S.gamble||[],physicalAssets:S.physicalAssets||[],debts:S.debts||[],privateLoans:S.privateLoans||[]});}
+function storePnlBackfillBatch(batch){
+  S.pnlBackfills=Array.isArray(S.pnlBackfills)?S.pnlBackfills:[];
+  if(!batch||!batch.key||S.pnlBackfills.some(b=>b&&(b.key===batch.key||String(b.positionId||'')===String(batch.positionId||''))))return false;
+  S.pnlBackfills.push(batch);return true;
+}
+function dropPnlBackfillBatch(id){const before=(S.pnlBackfills||[]).length;S.pnlBackfills=(S.pnlBackfills||[]).filter(b=>String(b&&b.id)!==String(id));return S.pnlBackfills.length<before;}
+function pnlBackfillEvents(){
+  const rows=[];(S.pnlBackfills||[]).forEach(batch=>(batch&&Array.isArray(batch.daily)?batch.daily:[]).forEach(e=>{if(e&&e.date&&Number.isFinite(Number(e.value)))rows.push({...e,batchId:batch.id,source:'backfill'});}));return rows;
+}
+async function fetchTwelveDataHistory(symbol,start,end){
+  return withQuoteKey('stock',async function(key){
+    const qs=new URLSearchParams({symbol,interval:'1day',start_date:start,end_date:end,adjust:'splits',order:'asc',apikey:key});let r,j;
+    try{r=await fetch('https://api.twelvedata.com/time_series?'+qs.toString());j=await r.json();}catch(e){throw quoteRequestError(e&&e.message||String(e),0,true);}
+    const status=Number(j&&j.code||r.status)||0,msg=j&&j.message||tt('未能取得歷史價格','Historical prices are unavailable'),values=Array.isArray(j&&j.values)?j.values:[];
+    if(!r.ok||!values.length){const retry=/rate|limit|credit|quota|api.?key|authentication/i.test(msg)||[401,403,429].includes(status);throw quoteRequestError(msg,status,retry);}
+    const byDate=new Map();values.forEach(v=>{const date=String(v&&v.datetime||'').slice(0,10),close=Number(v&&v.close);if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(close)&&close>0)byDate.set(date,{date,close});});
+    const bars=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));if(!bars.length)throw quoteRequestError(tt('歷史價格格式不完整','Historical price response is incomplete'),0,false);
+    return {bars,currency:j&&j.meta&&j.meta.currency?normaliseBackfillCurrency(j.meta.currency):'',exchange:j&&j.meta&&j.meta.exchange||'',provider:'Twelve Data'};
+  });
+}
+async function fetchPnlBackfillFx(cur,start,end){
+  cur=normaliseBackfillCurrency(cur);if(cur==='HKD')return [{date:start,rate:1}];
+  const from=parseDateOnly(start);from.setDate(from.getDate()-10);
+  const qs=new URLSearchParams({from:ymd(from),to:end,base:cur,quotes:'HKD'});let r,j;
+  try{r=await fetch('https://api.frankfurter.dev/v2/rates?'+qs.toString());j=await r.json();}catch(e){throw new Error(e&&e.message||String(e));}
+  if(!r.ok||!Array.isArray(j)){throw new Error(j&&j.message||tt('未能取得歷史匯率','Historical FX is unavailable'));}
+  const rows=j.filter(x=>x&&x.quote==='HKD'&&normaliseBackfillCurrency(x.base)===cur&&Number(x.rate)>0).map(x=>({date:String(x.date||''),rate:Number(x.rate)})).sort((a,b)=>a.date.localeCompare(b.date));
+  if(!rows.length)throw new Error(tt('歷史匯率回應冇可用資料','Historical FX response has no usable rates'));return rows;
+}
+function renderPnlBackfillBatches(){
+  const el=document.getElementById('pnl-backfill-batches');if(!el)return;const batches=(S.pnlBackfills||[]).slice().reverse();
+  el.innerHTML=batches.length?batches.map(b=>`<div class="pnl-backfill-row"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div style="min-width:0"><div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(b.name||b.symbol||tt('歷史回填','Historical backfill'))}</div><div class="msub" style="margin-top:3px">${escapeHtml(b.start||'')} → ${escapeHtml(b.end||'')} · ${Number((b.daily||[]).length)} ${tt('個變動日','change days')}</div><div class="msub" style="margin-top:2px">${escapeHtml(b.provider||'Twelve Data')} · ${escapeHtml(b.confidence||'user-confirmed-ledger')} · ${Number((b.ledger||[]).length)} lots</div></div><button type="button" onclick="removePnlBackfill(${inlineJsString(String(b.id))})" style="border:0;background:var(--r2);color:var(--r3);border-radius:10px;padding:7px 9px;font-weight:800;cursor:pointer">${tt('撤銷','Remove')}</button></div></div>`).join(''):`<div class="msub" style="padding:12px 4px">${tt('未有回填批次','No imported batches')}</div>`;
+}
+function renderPnlLotDraft(){
+  const el=document.getElementById('pnl-backfill-ledger'),start=document.getElementById('pnl-backfill-start');if(!el)return;const escAttr=v=>escapeHtml(String(v==null?'':v));
+  el.innerHTML=_pnlLotDraft.length?_pnlLotDraft.map((r,i)=>`<div class="pnl-lot-row"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><strong style="font-size:12px">#${i+1} · ${r.action==='sell'?tt('賣出','Sell'):tt('買入','Buy')}</strong><button type="button" onclick="removePnlLotRow(${i})" aria-label="Remove lot" style="border:0;background:none;color:var(--r3);font-size:17px">×</button></div><div class="pnl-lot-grid"><label>${tt('類型','Action')}</label><select onchange="updatePnlLotRow(${i},'action',this.value)"><option value="buy"${r.action!=='sell'?' selected':''}>${tt('買入','Buy')}</option><option value="sell"${r.action==='sell'?' selected':''}>${tt('賣出','Sell')}</option></select><label>${tt('日期','Date')}</label><input type="date" value="${escAttr(r.date)}" onchange="updatePnlLotRow(${i},'date',this.value)"><label>${tt('數量','Quantity')}</label><input type="number" inputmode="decimal" value="${escAttr(r.qty)}" onchange="updatePnlLotRow(${i},'qty',this.value)"><label>${tt('每股價格','Unit price')}</label><input type="number" inputmode="decimal" value="${escAttr(r.price)}" onchange="updatePnlLotRow(${i},'price',this.value)">${r.action==='sell'?'':`<label>${tt('總成本 HKD','Total cost HKD')}</label><input type="number" inputmode="decimal" placeholder="${tt('留空＝歷史匯率','blank = historical FX')}" value="${escAttr(r.costHKD)}" onchange="updatePnlLotRow(${i},'costHKD',this.value)">`}</div></div>`).join(''):`<div class="msub" style="padding:12px 4px">${tt('請加入至少一行買入記錄','Add at least one buy row')}</div>`;
+  const dates=_pnlLotDraft.map(r=>r.date).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)).sort();if(start)start.textContent=dates[0]||'—';
+}
+function updatePnlLotRow(i,key,value){const r=_pnlLotDraft[i];if(!r)return;r[key]=['qty','price'].includes(key)?Number(value):(key==='costHKD'?(value===''?'':Number(value)):value);if(key==='costHKD')r.costSource=value===''?'':'manual';_pnlBackfillPreview=null;renderPnlLotDraft();}
+function addPnlLotRow(action){_pnlLotDraft.push({id:'draft_'+Date.now()+'_'+_pnlLotDraft.length,date:today(),action:action==='sell'?'sell':'buy',qty:'',price:'',costHKD:'',costSource:''});_pnlBackfillPreview=null;renderPnlLotDraft();}
+function removePnlLotRow(i){_pnlLotDraft.splice(i,1);_pnlBackfillPreview=null;renderPnlLotDraft();}
+function renderPnlBackfillUiText(){
+  const text={
+    'pnl-backfill-title':['歷史未實現損益回填','Historical unrealised P&L backfill'],'pnl-backfill-intro':['Stage 3：支援多次買入同部分賣出，以平均成本重建；只寫入可撤銷嘅日曆資料。','Stage 3: reconstruct multiple buys and partial sells using average cost; only reversible calendar data is written.'],'pnl-backfill-position-label':['持倉','Position'],'pnl-backfill-symbol-label':['市場代碼','Market symbol'],'pnl-backfill-start-label':['Ledger 開始','Ledger starts'],'pnl-backfill-end-label':['回填至','Backfill through'],'pnl-backfill-ledger-label':['買賣 Ledger','Trade ledger'],'pnl-backfill-align-label':['如全部買入成本由歷史匯率推算，而差異不多於 5%，對齊現時剩餘成本。','If every buy cost is FX-derived and the gap is within 5%, align to the current remaining cost.'],'pnl-backfill-confirm-label':['我已核對完整買入及賣出紀錄、日期、數量同成本。','I verified the complete buy/sell ledger, dates, quantities, and costs.'],'pnl-backfill-history-label':['已匯入批次','Imported batches']
+  };Object.entries(text).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent=S.lang==='en'?v[1]:v[0];});
+  const preview=document.getElementById('pnl-backfill-preview-btn'),save=document.getElementById('pnl-backfill-save-btn');if(preview)preview.textContent=tt('建立預覽','Build preview');if(save)save.textContent=tt('確認匯入日曆','Import into calendar');
+}
+function openPnlBackfill(){_pnlBackfillPreview=null;renderPnlBackfillUiText();const list=document.getElementById('pnl-backfill-position'),rows=pnlBackfillCandidates(),eligible=rows.filter(r=>r.eligible);list.innerHTML=eligible.length?eligible.map(r=>`<option value="${escapeHtml(String(r.position.id))}">${escapeHtml(r.position.name||'')} · ${escapeHtml(r.position.cur||'HKD')} ${escapeHtml(String(r.position.qty||0))}</option>`).join(''):`<option value="">${tt('未有合資格持倉','No eligible positions')}</option>`;const rejected=rows.filter(r=>!r.eligible),note=document.getElementById('pnl-backfill-position-note');if(note)note.textContent=rejected.length?tt('另有 '+rejected.length+' 個持倉因資料不完整或自訂 section 而略過。',rejected.length+' position(s) skipped because of incomplete data or a custom section.') : tt('只會建立 lot metadata 同日曆資料；唔會改盤數。','Only lot metadata and calendar data will be created; accounting is unchanged.');syncPnlBackfillPosition();renderPnlBackfillBatches();document.getElementById('m-pnl-backfill').classList.add('open');}
+function syncPnlBackfillPosition(){
+  _pnlBackfillPreview=null;const id=document.getElementById('pnl-backfill-position').value,p=(S.portfolio||[]).find(x=>String(x.id)===String(id)),symbol=document.getElementById('pnl-backfill-symbol'),end=document.getElementById('pnl-backfill-end'),confirm=document.getElementById('pnl-backfill-confirm');if(symbol)symbol.value=p?(p.apiSymbol||p.name||''):'';if(end)end.textContent=pnlBackfillCutoffDate(p);if(confirm)confirm.checked=false;const inferred=p?inferPnlLotLedger(p):{rows:[],warnings:[]};_pnlLotDraft=inferred.rows.map(x=>({...x}));const note=document.getElementById('pnl-backfill-position-note');if(note&&inferred.warnings.length)note.textContent=inferred.warnings.join(' ');renderPnlLotDraft();const status=document.getElementById('pnl-backfill-status'),preview=document.getElementById('pnl-backfill-preview'),save=document.getElementById('pnl-backfill-save-btn');if(status)status.style.display='none';if(preview)preview.style.display='none';if(save)save.style.display='none';}
+async function previewPnlBackfill(){
+  const btn=document.getElementById('pnl-backfill-preview-btn'),status=document.getElementById('pnl-backfill-status'),preview=document.getElementById('pnl-backfill-preview'),save=document.getElementById('pnl-backfill-save-btn'),id=document.getElementById('pnl-backfill-position').value,p=(S.portfolio||[]).find(x=>String(x.id)===String(id)),symbol=document.getElementById('pnl-backfill-symbol').value.trim(),dates=_pnlLotDraft.map(r=>String(r.date||'')).filter(x=>/^\d{4}-\d{2}-\d{2}$/.test(x)).sort(),start=dates[0]||'',end=pnlBackfillCutoffDate(p);
+  function fail(msg){_pnlBackfillPreview=null;status.className='pnl-backfill-status err';status.textContent=msg;status.style.display='block';preview.style.display='none';save.style.display='none';}
+  if(!p)return fail(tt('請選擇合資格持倉','Select an eligible position'));if(!pnlBackfillEligibility(p).eligible)return fail(tt('持倉狀態已改變，請重新開啟','Position state changed; reopen this tool'));if(!document.getElementById('pnl-backfill-confirm').checked)return fail(tt('請先確認完整 Ledger','Confirm the complete ledger first'));if(!symbol)return fail(tt('請輸入市場代碼','Enter a market symbol'));if(!_pnlLotDraft.length||!start||start>end)return fail(tt('Ledger 日期無效，或者已超過可回填範圍','Ledger dates are invalid or beyond the backfill range'));
+  btn.disabled=true;btn.textContent=tt('取得歷史資料中…','Fetching history…');status.className='pnl-backfill-status';status.textContent=tt('只建立預覽，暫時未儲存。','Preview only; nothing has been saved.');status.style.display='block';preview.style.display='none';save.style.display='none';
+  try{
+    const history=await fetchTwelveDataHistory(symbol,start,end),positionCur=normaliseBackfillCurrency(p.cur),apiCur=normaliseBackfillCurrency(history.currency||p.cur);if(apiCur&&apiCur!==positionCur)throw new Error(tt('市場資料貨幣係 '+apiCur+'，但持倉設定係 '+positionCur+'。請先修正持倉貨幣。','Market data currency is '+apiCur+', but the position uses '+positionCur+'. Correct the position currency first.'));
+    const fx=await fetchPnlBackfillFx(positionCur,start,end),ledger=reconcilePnlLotLedger(p,_pnlLotDraft,fx,document.getElementById('pnl-backfill-align').checked),calc=buildPnlMultiLotDaily(p,history.bars,fx,ledger.rows,pnlSecForPort(p)),key=pnlBackfillBatchKey(p,symbol,start,end);if(!calc.daily.length)throw new Error(tt('範圍內未有可用損益變動','No usable P&L changes in this range'));
+    _pnlBackfillPreview={positionId:String(p.id),fingerprint:pnlBackfillFingerprint(p),key,name:p.name||symbol,symbol,start,end,currency:positionCur,qty:Number(p.qty),costHKD:Number(p.costHKD),provider:history.provider,exchange:history.exchange||'',daily:calc.daily,lastUnrealised:calc.lastUnrealised,ledger:ledger.rows,confidence:ledger.confidence,aligned:ledger.aligned,createdAt:Date.now()};
+    const first=history.bars[0],last=history.bars[history.bars.length-1];status.className='pnl-backfill-status ok';status.textContent=tt('對盤完成，仍未寫入。請核對後先確認。','Reconciliation ready and still unsaved. Review before importing.');preview.innerHTML=`<div class="pnl-backfill-row"><div style="font-size:14px;font-weight:850">${escapeHtml(p.name||symbol)} · ${escapeHtml(symbol.toUpperCase())}</div><div class="msub" style="margin-top:5px">${escapeHtml(first.date)} → ${escapeHtml(last.date)} · ${history.bars.length} ${tt('個交易日','trading days')} · ${ledger.rows.length} lots</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><div><div class="mlabel">${tt('對盤數量','Reconciled qty')}</div><strong>${escapeHtml(String(ledger.endingQty))}</strong></div><div><div class="mlabel">${tt('剩餘成本','Remaining cost')}</div><strong>${fmt(ledger.endingCost)}</strong></div><div><div class="mlabel">${tt('最後估計未實現','Ending unrealised')}</div><strong style="color:${calc.lastUnrealised>=0?'var(--g3)':'var(--r3)'}">${calc.lastUnrealised>=0?'+':'−'}${fmt(Math.abs(calc.lastUnrealised))}</strong></div><div><div class="mlabel">${tt('可信度','Confidence')}</div><strong>${escapeHtml(ledger.confidence)}</strong></div></div><div class="msub" style="margin-top:9px">${ledger.aligned?tt('已在 5% 容差內對齊現時成本 · ','Aligned to current cost within 5% · '):''}${escapeHtml(history.provider)}${history.exchange?' · '+escapeHtml(history.exchange):''} · ${tt('拆股調整收市價','split-adjusted close')}</div></div>`;preview.style.display='block';save.style.display='block';
+  }catch(e){fail((e&&e.message)||String(e));}
+  finally{btn.disabled=false;btn.textContent=tt('重新建立預覽','Rebuild preview');}
+}
+function commitPnlBackfill(){
+  const p=_pnlBackfillPreview&&(S.portfolio||[]).find(x=>String(x.id)===String(_pnlBackfillPreview.positionId)),status=document.getElementById('pnl-backfill-status');if(!_pnlBackfillPreview||!p){if(status){status.className='pnl-backfill-status err';status.textContent=tt('預覽已失效，請重新建立','Preview expired; rebuild it');status.style.display='block';}return;}if(pnlBackfillFingerprint(p)!==_pnlBackfillPreview.fingerprint){_pnlBackfillPreview=null;status.className='pnl-backfill-status err';status.textContent=tt('持倉喺預覽後有改動，請重新建立','Position changed after preview; rebuild it');return;}
+  const before=backfillAccountingSignature(),oldLedgers=(S.pnlLotLedgers||[]).map(x=>({...x,rows:(x.rows||[]).map(r=>({...r}))})),batch={..._pnlBackfillPreview,id:'pbf_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),daily:_pnlBackfillPreview.daily.map(x=>({...x})),ledger:_pnlBackfillPreview.ledger.map(x=>({...x}))},ledger={positionId:String(p.id),identityKey:pnlBackfillPositionKey(p),updatedAt:Date.now(),source:'stage3-user-confirmed',rows:_pnlBackfillPreview.ledger.map(x=>({...x}))};if(!storePnlBackfillBatch(batch)){status.className='pnl-backfill-status err';status.textContent=tt('相同回填批次已經存在','This backfill batch already exists');return;}storePnlLotLedger(ledger);if(backfillAccountingSignature()!==before){dropPnlBackfillBatch(batch.id);S.pnlLotLedgers=oldLedgers;status.className='pnl-backfill-status err';status.textContent=tt('安全檢查失敗，未有儲存','Safety check failed; nothing was saved');return;}if(!saveS()){dropPnlBackfillBatch(batch.id);S.pnlLotLedgers=oldLedgers;status.className='pnl-backfill-status err';status.textContent=tt('本機儲存失敗，未有匯入','Local save failed; batch was not imported');return;}_pnlBackfillPreview=null;status.className='pnl-backfill-status ok';status.textContent=tt('已加入日曆；持倉、現金同交易完全冇改動。','Added to the calendar; portfolio, cash, and transactions are unchanged.');document.getElementById('pnl-backfill-preview').style.display='none';document.getElementById('pnl-backfill-save-btn').style.display='none';renderPnlBackfillBatches();renderPnlCalendar();showToast(tt('Stage 3 歷史損益已回填','Stage 3 historical P&L backfilled'));
+}
+function removePnlBackfill(id){if(!confirm(tt('撤銷呢個回填批次？只會移除日曆資料。','Remove this backfill batch? Only calendar data will be removed.')))return;const before=backfillAccountingSignature();if(!dropPnlBackfillBatch(id))return;if(backfillAccountingSignature()!==before){showToast(tt('安全檢查失敗','Safety check failed'),1);return;}saveS();renderPnlBackfillBatches();renderPnlCalendar();showToast(tt('已撤銷回填','Backfill removed'));}
 function pnlCalendarEvents(){
-  const rows=pnlUnrealizedEvents();
+  const rows=pnlUnrealizedEvents().concat(pnlBackfillEvents());
   (S.portfolio||[]).filter(p=>p.exitPrice).forEach(p=>rows.push({date:p.exitDate||p.date||today(),value:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),kind:acctIsPhysical(p.acctId)?'physical':(p.secId||p.type||'stock'),label:(p.name||t('position'))+' · '+t('realisedpnl')}));
   (S.gamble||[]).filter(g=>!g.open).forEach(g=>rows.push({date:g.date||today(),value:(Number(g.cashoutHKD)||0)-(Number(g.buyinHKD)||0),kind:acctIsPhysical(g.acctId)?'physical':(g.secId||'poker'),label:g.venue||t('poker')}));
   (S.privateLoans||[]).forEach(l=>loanPayments(l).forEach(p=>{const value=Number(p.interestHKD)||0;if(value)rows.push({date:p.date||today(),value,kind:'loan',label:l.borrower||t('privatedebt')});}));
@@ -4560,6 +4735,7 @@ function renderPnlCalendar(){
   const title=document.getElementById('pnl-cal-title');if(title)title.textContent=monthName+' '+y;
   const label=document.getElementById('pnl-cal-label');if(label)label.textContent=tt('每日損益日曆','Daily P&L calendar');
   const hint=document.getElementById('pnl-cal-hint');if(hint)hint.textContent=tt('按已記錄嘅已實現、未實現損益及估值變動顯示','Based on recorded realised, unrealised and valuation P&L changes');
+  const backfillLabel=document.getElementById('pnl-backfill-label');if(backfillLabel)backfillLabel.textContent=tt('歷史回填','Historical backfill');
   const filterLabel=document.getElementById('pnl-filter-label');if(filterLabel)filterLabel.textContent=tt('篩選','Filter');
   const filterHint=document.getElementById('pnl-filter-hint');if(filterHint)filterHint.textContent=tt('同一組篩選會套用到資產圓形圖同每日損益日曆。','The same filters apply to both allocation and the daily P&L calendar.');
   const dow=S.lang==='en'?['S','M','T','W','T','F','S']:['日','一','二','三','四','五','六'];let html=dow.map(d=>`<div style="text-align:center;font-size:10px;color:var(--ink3);font-weight:800;padding:3px 0">${d}</div>`).join('');

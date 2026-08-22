@@ -20,9 +20,11 @@ assert.match(html,/input,textarea,select,\[contenteditable="true"\]\{-webkit-use
 
 const code=`
 ${declaration('pnlUnrealizedEvents')}
+${declaration('pnlBackfillEvents')}
 ${declaration('pnlCalendarEvents')}
 const S={
   pnlPieFilters:[],
+  pnlBackfills:[],
   accounts:[],
   priceHist:[
     {t:new Date(2026,7,1,12).getTime(),p:{stock:10,crypto:-5}},
