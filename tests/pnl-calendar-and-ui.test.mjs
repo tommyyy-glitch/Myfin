@@ -14,8 +14,13 @@ assert.match(html,/id="pnl-cal-mode-year"/);
 assert.match(html,/id="pnl-import-file"/);
 assert.match(html,/id="m-crypto-est"/);
 assert.match(html,/id="pnl-filter-drawer"/);
+assert.match(html,/id="pnl-currency-btn"/);
 assert.match(html,/id="pnl-cal-filter-drawer"/);
 assert.match(html,/id="pnl-calendar-filters"/);
+assert.match(html,/function quickCyclePnlCurrency\(/);
+assert.match(html,/function pnlCalendarBlockAmount\(/);
+assert.ok(html.indexOf('id="pnl-cal-summary"')<html.indexOf('id="pnl-cal-grid"'),'period summary should appear above the calendar grid');
+assert.match(html,/onclick="togglePnlCalendarMonth\(\$\{i\}\)"/);
 assert.match(html,/\.pnl-sec-body\.collapsed>:not\(:first-child\)\{display:none!important\}/);
 assert.doesNotMatch(html,/\.pnl-sec-body\.collapsed\{display:none\}/);
 assert.doesNotMatch(html,/\.settle-record-choice\.sel::before/);
@@ -97,6 +102,14 @@ assert.equal(marketDateContext.atSummerClose,'2026-08-03');
 assert.equal(marketDateContext.beforeWinterClose,'2026-01-02');
 assert.equal(marketDateContext.atWinterClose,'2026-01-05');
 assert.equal(marketDateContext.weekend,'2026-08-07');
+
+const compactCode=`
+${declaration('pnlCalendarBlockAmount')}
+const S={privacy:false};
+globalThis.values=[pnlCalendarBlockAmount(258.62),pnlCalendarBlockAmount(-396.84),pnlCalendarBlockAmount(6274.02),pnlCalendarBlockAmount(1250000)];
+`;
+const compactContext={Number,Math};vm.createContext(compactContext);vm.runInContext(compactCode,compactContext);
+assert.deepEqual([...compactContext.values],['+259','−397','+6.3K','+1.3M']);
 
 const snapshotCode=`
 ${declaration('portfolioUnrealizedSnapshot')}
