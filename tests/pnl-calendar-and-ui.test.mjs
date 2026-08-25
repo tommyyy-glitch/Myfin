@@ -27,6 +27,8 @@ ${declaration('pnlSnapshotUsesUsMarketClose')}
 ${declaration('pnlSnapshotCalendarDate')}
 ${declaration('pnlUnrealizedEvents')}
 ${declaration('pnlCalendarSectionEnabled')}
+${declaration('pnlCalendarSourceText')}
+${declaration('pnlCalendarAllowsMoneyPlus')}
 ${declaration('pnlCalendarRecordKind')}
 ${declaration('pnlCalendarEvents')}
 const S={
@@ -39,8 +41,8 @@ const S={
     {t:Date.parse('2026-08-03T19:00:00Z'),p:{stock:10,crypto:-5}},
     {t:Date.parse('2026-08-03T20:05:00Z'),p:{stock:25,crypto:5}}
   ],
-  portfolio:[{name:'Stock gain',exitPrice:12,exitDate:'2026-08-03',valueHKD:120,costHKD:100,type:'stock'},{name:'Legacy import',exitPrice:1,exitDate:'2026-08-03',valueHKD:999,costHKD:0,type:'crypto',acctLabel:'N8 polymarket',imported:'mp'}],
-  gamble:[{venue:'Game',open:false,date:'2026-08-04',cashoutHKD:80,buyinHKD:100},{venue:'14',open:false,date:'2026-08-04',cashoutHKD:999,buyinHKD:0,imported:'mp',_mpKey:'mp|2026-08-04|income|999|賭|HSBC|14'}],
+  portfolio:[{name:'Stock gain',exitPrice:12,exitDate:'2026-08-03',valueHKD:120,costHKD:100,type:'stock'},{name:'Legacy import',exitPrice:1,exitDate:'2026-08-03',valueHKD:999,costHKD:0,type:'crypto',acctLabel:'N8 polymarket',imported:'mp'},{name:'FuTu⭐',exitPrice:1,exitDate:'2024-12-14',valueHKD:6274.02,costHKD:0,type:'stock',acctLabel:'Futu',imported:'mp',_mpKey:'mp|2024-12-14|income|6274.02|理財投資|Futu|FuTu⭐'}],
+  gamble:[{venue:'Game',open:false,date:'2026-08-04',cashoutHKD:80,buyinHKD:100},{venue:'14',open:false,date:'2026-08-04',cashoutHKD:999,buyinHKD:0,imported:'mp',_mpKey:'mp|2026-08-04|income|999|賭|HSBC|14'},{venue:'14',open:false,date:'2026-08-04',cashoutHKD:55,buyinHKD:0,imported:'mp',_mpKey:'mp|2026-08-04|income|55|賭|N8|14'}],
   privateLoans:[{borrower:'Alex',payments:[{date:'2026-08-05',interestHKD:30}]}],
   physicalAssets:[{name:'Watch',cur:'HKD',valuationHistory:[{date:'2026-01-01',value:500},{date:'2026-08-06',value:600}]}]
 };
@@ -65,12 +67,12 @@ globalThis.customOff=pnlCalendarEvents();S.pnlCalendarSections.cs_test=true;glob
 `;
 const context={};vm.createContext(context);vm.runInContext(code,context);
 assert.equal(context.all.length,8);
-assert.equal(context.all.reduce((n,e)=>n+(e.value||0),0),2153);
+assert.equal(context.all.reduce((n,e)=>n+(e.value||0),0),1209);
 assert.deepEqual([...context.unreal].map(e=>[e.date,e.kind,e.value]),[['2026-08-03','stock',15],['2026-08-04','crypto',10]]);
 assert.deepEqual([...context.physical].map(e=>e.value),[100]);
 assert.equal(context.withImports.length,9);
 assert.deepEqual([...context.polymarket].map(e=>e.value),[999]);
-assert.deepEqual([...context.poker].map(e=>e.value),[-20,999]);
+assert.deepEqual([...context.poker].map(e=>e.value),[-20,55]);
 assert.equal(context.customOff.length,8);
 assert.equal(context.customOn.length,9);
 

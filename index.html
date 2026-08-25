@@ -4591,18 +4591,21 @@ function pnlEventDisplayValue(e){
   const hkd=Number(e.value)||0;return target==='HKD'?hkd:hkd/(FX[target]||1);
 }
 function pnlDisplayAmount(v){if(S.privacy)return '••••';return (CUR_SYM[S.dispCur||'HKD']||'')+numStr(Math.abs(Number(v)||0));}
+function pnlCalendarSourceText(record){return [record&&record.acctLabel,record&&record.venue,record&&record.name,record&&record.notes,record&&record._mpKey].filter(Boolean).join(' ').toLowerCase();}
+function pnlCalendarAllowsMoneyPlus(record){if(!record||record.imported!=='mp')return true;const text=pnlCalendarSourceText(record);return /polymarket/.test(text)||/(^|[^a-z0-9])n\s*8([^a-z0-9]|$)/.test(text)||/natural\s*8/.test(text);}
 function pnlCalendarRecordKind(record,fallback){
   if(record&&record.secId)return record.secId;
-  const text=[record&&record.acctLabel,record&&record.venue,record&&record.name,record&&record.notes,record&&record._mpKey].filter(Boolean).join(' ').toLowerCase();
+  const text=pnlCalendarSourceText(record);
   if(/polymarket/.test(text)){const custom=(S.customSections||[]).find(cs=>/polymarket/i.test(String(cs.name||cs.id)));return custom?custom.id:'polymarket';}
   return fallback;
 }
 function pnlCalendarEvents(){
   const rows=pnlUnrealizedEvents();
-  // Money+ source names remain recoverable in acctLabel/_mpKey. Route reliable
-  // Poker and Polymarket P&L into separate filters without rewriting raw data.
-  (S.portfolio||[]).filter(p=>p.exitPrice).forEach(p=>rows.push({date:p.exitDate||p.date||today(),value:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),kind:acctIsPhysical(p.acctId)?'physical':pnlCalendarRecordKind(p,p.type||'stock'),label:(p.name||t('position'))+' · '+t('realisedpnl')}));
-  (S.gamble||[]).filter(g=>!g.open).forEach(g=>rows.push({date:g.date||today(),value:(Number(g.cashoutHKD)||0)-(Number(g.buyinHKD)||0),kind:acctIsPhysical(g.acctId)?'physical':pnlCalendarRecordKind(g,'poker'),label:g.venue||t('poker')}));
+  // Existing Money+ rows stay untouched, but only the explicitly trusted N8 /
+  // Natural 8 and Polymarket sources may feed this calendar. Stock history such
+  // as Futu comes through the standalone reviewed Excel import instead.
+  (S.portfolio||[]).filter(p=>p.exitPrice&&pnlCalendarAllowsMoneyPlus(p)).forEach(p=>rows.push({date:p.exitDate||p.date||today(),value:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),kind:acctIsPhysical(p.acctId)?'physical':pnlCalendarRecordKind(p,p.type||'stock'),label:(p.name||t('position'))+' · '+t('realisedpnl')}));
+  (S.gamble||[]).filter(g=>!g.open&&pnlCalendarAllowsMoneyPlus(g)).forEach(g=>rows.push({date:g.date||today(),value:(Number(g.cashoutHKD)||0)-(Number(g.buyinHKD)||0),kind:acctIsPhysical(g.acctId)?'physical':pnlCalendarRecordKind(g,'poker'),label:g.venue||t('poker')}));
   (S.privateLoans||[]).forEach(l=>loanPayments(l).forEach(p=>{const value=Number(p.interestHKD)||0;if(value)rows.push({date:p.date||today(),value,kind:'loan',label:l.borrower||t('privatedebt')});}));
   (S.physicalAssets||[]).filter(a=>!a.excluded).forEach(a=>{const hist=ensurePhysicalAssetHistory(a);for(let i=1;i<hist.length;i++){const value=toHKD((Number(hist[i].value)||0)-(Number(hist[i-1].value)||0),a.cur||'HKD');if(Math.abs(value)>0.004)rows.push({date:hist[i].date||today(),value,kind:'physical',label:a.name||assetLabel('fixed')});}});
   (S.pnlImports||[]).filter(b=>b&&b.active).forEach(b=>(b.rows||[]).forEach(r=>rows.push({...r,kind:r.kind||b.kind||'stock',importBatch:b.id})));

@@ -22,6 +22,8 @@ assert.match(html,/\.pnl-calendar-grid\.year/);
 assert.match(html,/2026-08-22/);
 assert.match(html,/date:'2026-08-23'.*boundary:true/);
 assert.match(html,/function pnlCalendarRecordKind\(/);
+assert.match(html,/function pnlCalendarAllowsMoneyPlus\(/);
+assert.match(html,/p\.exitPrice&&pnlCalendarAllowsMoneyPlus\(p\)/);
 assert.match(html,/meta\.polymarket=\['◈','Polymarket'\]/);
 assert.match(html,/record&&record\._mpKey/);
 assert.match(html,/function pnlHistoricalFxForDate\(/);
