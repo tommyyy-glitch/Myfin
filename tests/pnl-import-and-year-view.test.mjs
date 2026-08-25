@@ -18,7 +18,9 @@ assert.match(html,/pnlImports:\[\]/);
 assert.match(html,/pnlCalendarSections:\{\}/);
 assert.match(html,/pnlCalendarFilters:\[\]/);
 assert.match(html,/sheet_to_json\(ws,\{raw:true,defval:'',range:3\}\)/);
-assert.match(html,/active:false,kind:kinds\[0\],kinds,rows/);
+assert.match(html,/XLSX\.read\(new Uint8Array\(ev\.target\.result\),\{type:'array',cellDates:false\}\)/);
+assert.match(html,/active:false,dateBasis:'date-only-v2',kind:kinds\[0\],kinds,rows/);
+assert.match(html,/dateBasis:'date-only-v2'/);
 assert.match(html,/\.pnl-calendar-grid\.year/);
 assert.match(html,/\.pnl-cal-month\.sel/);
 assert.match(html,/function togglePnlCalendarMonth\(/);
@@ -45,13 +47,15 @@ const FX={USD:7.8,RMB:1.08,JPY:0.052};
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function toHKD(n,cur){return cur==='USD'?n*FX.USD:n;}
 globalThis.iso=pnlImportDate('2026/08/23 00:00:00');
+globalThis.serial=pnlImportDate(46204);
 globalThis.sig1=pnlImportBatchSignature([{date:'2026-08-01',kind:'stock',nativeAmount:1,currency:'USD'}]);
 globalThis.sig2=pnlImportBatchSignature([{date:'2026-08-01',kind:'stock',nativeAmount:1,currency:'USD'}]);
 const row={nativeAmount:10,currency:'USD',fx:{HKD:7.77,CNY:7.2,JPY:150}};
 globalThis.hkd=pnlEventDisplayValue(row);S.dispCur='USD';globalThis.usd=pnlEventDisplayValue(row);S.dispCur='RMB';globalThis.rmb=pnlEventDisplayValue(row);S.dispCur='JPY';globalThis.jpy=pnlEventDisplayValue(row);
 `;
-const context={Date,Number,String,Math};vm.createContext(context);vm.runInContext(code,context);
+const context={Date,Number,String,Math,XLSX:{SSF:{parse_date_code:v=>v===46204?{y:2026,m:7,d:1}:null}}};vm.createContext(context);vm.runInContext(code,context);
 assert.equal(context.iso,'2026-08-23');
+assert.equal(context.serial,'2026-07-01');
 assert.equal(context.sig1,context.sig2);
 assert.ok(Math.abs(context.hkd-77.7)<1e-9);
 assert.equal(context.usd,10);

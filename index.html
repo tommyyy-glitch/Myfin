@@ -4608,8 +4608,21 @@ function pnlCalendarRecordKind(record,fallback){
   if(/polymarket/.test(text)){const custom=(S.customSections||[]).find(cs=>/polymarket/i.test(String(cs.name||cs.id)));return custom?custom.id:'polymarket';}
   return fallback;
 }
+function pnlShiftIsoDate(date,days){const m=String(date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return date;const d=new Date(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])+Number(days||0)));return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');}
+function pnlImportBatchDateOffset(batch){
+  if(!batch||batch.dateBasis==='date-only-v2')return 0;
+  // Older SheetJS imports could turn an Excel date into a zoned Date and save
+  // the whole US-stock batch one day early. A non-zero Sunday stock return is
+  // an unambiguous legacy signature because the US cash market is closed.
+  const rows=(batch.rows||[]).filter(r=>pnlSnapshotUsesUsMarketClose(r.kind||batch.kind||'stock')&&Math.abs(Number(r.nativeAmount)||0)>0.004);
+  return rows.some(r=>{const m=String(r.date||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m&&new Date(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3]))).getUTCDay()===0;})?1:0;
+}
+function pnlImportCalendarRows(batch){const offset=pnlImportBatchDateOffset(batch);return (batch.rows||[]).map(r=>{const kind=r.kind||batch.kind||'stock',date=offset&&pnlSnapshotUsesUsMarketClose(kind)?pnlShiftIsoDate(r.date,offset):r.date;return {...r,date,kind,importBatch:batch.id,dateCorrected:!!offset};});}
 function pnlCalendarEvents(){
-  const rows=pnlUnrealizedEvents();
+  const activeImports=(S.pnlImports||[]).filter(b=>b&&b.active),importRows=activeImports.flatMap(pnlImportCalendarRows),importedKeys=new Set(importRows.map(r=>r.kind+'|'+r.date));
+  // A reviewed standalone import is authoritative for its section/date. Keep
+  // realised records, but do not add the same day's automatic price delta too.
+  const rows=pnlUnrealizedEvents().filter(r=>!importedKeys.has(r.kind+'|'+r.date));
   // Existing Money+ rows stay untouched, but only the explicitly trusted N8 /
   // Natural 8 and Polymarket sources may feed this calendar. Stock history such
   // as Futu comes through the standalone reviewed Excel import instead.
@@ -4617,7 +4630,7 @@ function pnlCalendarEvents(){
   (S.gamble||[]).filter(g=>!g.open&&pnlCalendarAllowsMoneyPlus(g)).forEach(g=>rows.push({date:g.date||today(),value:(Number(g.cashoutHKD)||0)-(Number(g.buyinHKD)||0),kind:acctIsPhysical(g.acctId)?'physical':pnlCalendarRecordKind(g,'poker'),label:g.venue||t('poker')}));
   (S.privateLoans||[]).forEach(l=>loanPayments(l).forEach(p=>{const value=Number(p.interestHKD)||0;if(value)rows.push({date:p.date||today(),value,kind:'loan',label:l.borrower||t('privatedebt')});}));
   (S.physicalAssets||[]).filter(a=>!a.excluded).forEach(a=>{const hist=ensurePhysicalAssetHistory(a);for(let i=1;i<hist.length;i++){const value=toHKD((Number(hist[i].value)||0)-(Number(hist[i-1].value)||0),a.cur||'HKD');if(Math.abs(value)>0.004)rows.push({date:hist[i].date||today(),value,kind:'physical',label:a.name||assetLabel('fixed')});}});
-  (S.pnlImports||[]).filter(b=>b&&b.active).forEach(b=>(b.rows||[]).forEach(r=>rows.push({...r,kind:r.kind||b.kind||'stock',importBatch:b.id})));
+  importRows.forEach(r=>rows.push(r));
   const sectionRows=rows.filter(r=>pnlCalendarSectionEnabled(r.kind));
   const filters=Array.isArray(S.pnlCalendarFilters)?S.pnlCalendarFilters:[];
   return filters.length?sectionRows.filter(r=>filters.includes(r.kind)):sectionRows;
@@ -5255,12 +5268,12 @@ function importPnlExcel(input){
   const f=input.files&&input.files[0];if(!f)return;if(typeof XLSX==='undefined'){showToast('Excel library still loading',1);return;}
   const st=document.getElementById('pnl-import-status');if(st)st.textContent=tt('讀取中…','Reading…');const reader=new FileReader();
   reader.onload=function(ev){try{
-    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});const ws=wb.Sheets['P&L Import'];if(!ws)throw new Error('Missing sheet: P&L Import');
+    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:false});const ws=wb.Sheets['P&L Import'];if(!ws)throw new Error('Missing sheet: P&L Import');
     const raw=XLSX.utils.sheet_to_json(ws,{raw:true,defval:'',range:3});const required=['Date','Section_ID','Amount_USD','Currency'];if(!raw.length||required.some(k=>!Object.prototype.hasOwnProperty.call(raw[0],k)))throw new Error('Invalid P&L Import headers');
     const validSections=new Set(['poker','stock','crypto','pe','physical','loan','debt',...(S.customSections||[]).map(c=>c.id)]);const rows=raw.map((x,i)=>{const date=pnlImportDate(x.Date),amount=Number(x.Amount_USD),currency=String(x.Currency||'USD').trim().toUpperCase(),kind=String(x.Section_ID||'').trim(),fx={HKD:Number(x.USD_to_HKD)||null,CNY:Number(x.USD_to_CNY)||null,JPY:Number(x.USD_to_JPY)||null};if(!date||!validSections.has(kind)||!Number.isFinite(amount)||(currency==='USD'&&(!fx.HKD||!fx.CNY||!fx.JPY)))throw new Error('Invalid row '+(i+5));return {date,kind,label:String(x.Section_Name||kind),nativeAmount:amount,currency,returnPct:x.Daily_Return_Pct===''?null:Number(x.Daily_Return_Pct),fx,estimated:String(x.Is_Estimated||'').toLowerCase()==='true'||x.Is_Estimated===true,quality:String(x.Quality||''),sourceRef:String(x.Source_Ref||''),boundary:false};});
     const sig=pnlImportBatchSignature(rows);if((S.pnlImports||[]).some(b=>b.signature===sig))throw new Error(tt('呢一批資料已經匯入','This batch is already imported'));
     const months=[...new Set(rows.map(r=>r.date.slice(0,7)))],sum=rows.reduce((n,r)=>n+r.nativeAmount,0);if(!confirm(tt(`預覽：${rows.length} 日、${months.length} 個月、USD 淨額 ${sum.toFixed(2)}。匯入為草稿？`,`Preview: ${rows.length} days, ${months.length} months, USD net ${sum.toFixed(2)}. Import as draft?`)))return;
-    const kinds=[...new Set(rows.map(r=>r.kind))];S.pnlImports=S.pnlImports||[];S.pnlImports.push({id:'pi_'+Date.now(),signature:sig,name:f.name,createdAt:Date.now(),active:false,kind:kinds[0],kinds,rows});saveS();renderPnlImportBatches();if(st)st.textContent=tt('已匯入草稿，未加入日曆。','Draft imported; not yet in calendar.');
+    const kinds=[...new Set(rows.map(r=>r.kind))];S.pnlImports=S.pnlImports||[];S.pnlImports.push({id:'pi_'+Date.now(),signature:sig,name:f.name,createdAt:Date.now(),active:false,dateBasis:'date-only-v2',kind:kinds[0],kinds,rows});saveS();renderPnlImportBatches();if(st)st.textContent=tt('已匯入草稿，未加入日曆。','Draft imported; not yet in calendar.');
   }catch(e){if(st)st.textContent='';showToast(tt('P&L 匯入失敗：','P&L import failed: ')+((e&&e.message)||e),1);}finally{input.value='';}};reader.readAsArrayBuffer(f);
 }
 function togglePnlImportBatch(id){const b=(S.pnlImports||[]).find(x=>x.id===id);if(!b)return;b.active=!b.active;if(b.active){S.pnlCalendarSections=S.pnlCalendarSections||{};(b.kinds||[b.kind||'stock']).forEach(k=>{S.pnlCalendarSections[k]=true;});}saveS();renderPnlImportBatches();renderPnlSecMgr();if(S.activeTab==='gamble')renderPnlCalendar();}

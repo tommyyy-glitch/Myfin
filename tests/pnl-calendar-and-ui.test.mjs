@@ -37,6 +37,9 @@ ${declaration('pnlCalendarSectionEnabled')}
 ${declaration('pnlCalendarSourceText')}
 ${declaration('pnlCalendarAllowsMoneyPlus')}
 ${declaration('pnlCalendarRecordKind')}
+${declaration('pnlShiftIsoDate')}
+${declaration('pnlImportBatchDateOffset')}
+${declaration('pnlImportCalendarRows')}
 ${declaration('pnlCalendarEvents')}
 const S={
   pnlPieFilters:[],
@@ -70,8 +73,9 @@ S.pnlPieFilters=[];
 S.pnlCalendarFilters=['physical'];
 globalThis.physical=pnlCalendarEvents();
 S.pnlCalendarFilters=[];
-S.pnlImports=[{id:'draft',active:false,kind:'stock',rows:[{date:'2026-08-07',kind:'stock',nativeAmount:99,currency:'HKD'}]},{id:'live',active:true,kind:'stock',rows:[{date:'2026-08-08',kind:'stock',nativeAmount:12,currency:'HKD'}]}];
+S.pnlImports=[{id:'draft',active:false,kind:'stock',rows:[{date:'2026-08-07',kind:'stock',nativeAmount:99,currency:'HKD'}]},{id:'live',active:true,dateBasis:'date-only-v2',kind:'stock',rows:[{date:'2026-08-08',kind:'stock',nativeAmount:12,currency:'HKD'},{date:'2026-08-03',kind:'stock',nativeAmount:40,currency:'HKD'}]}];
 globalThis.withImports=pnlCalendarEvents();
+S.pnlImports=[{id:'legacy-futu',active:true,kind:'stock',rows:[{date:'2026-07-05',kind:'stock',nativeAmount:5.14,currency:'USD'},{date:'2026-07-06',kind:'stock',nativeAmount:7.78,currency:'USD'},{date:'2026-07-09',kind:'stock',nativeAmount:-49.4,currency:'USD'}]}];globalThis.legacyShift=pnlCalendarEvents();
 S.pnlCalendarFilters=['polymarket'];globalThis.polymarket=pnlCalendarEvents();S.pnlCalendarFilters=['poker'];globalThis.poker=pnlCalendarEvents();S.pnlCalendarFilters=[];
 S.customSections=[{id:'cs_test',base:'stock'}];S.pnlImports=[{id:'custom',active:true,kind:'cs_test',rows:[{date:'2026-08-09',kind:'cs_test',nativeAmount:50,currency:'HKD'}]}];
 globalThis.customOff=pnlCalendarEvents();S.pnlCalendarSections.cs_test=true;globalThis.customOn=pnlCalendarEvents();
@@ -83,6 +87,11 @@ assert.equal(context.all.reduce((n,e)=>n+(e.value||0),0),1209);
 assert.deepEqual([...context.unreal].map(e=>[e.date,e.kind,e.value]),[['2026-08-03','stock',15],['2026-08-04','crypto',10]]);
 assert.deepEqual([...context.physical].map(e=>e.value),[100]);
 assert.equal(context.withImports.length,9);
+assert.equal(context.withImports.some(e=>e.date==='2026-08-03'&&e.kind==='stock'&&e.label==='未實現損益變動'),false);
+assert.equal(context.withImports.some(e=>e.date==='2026-08-03'&&e.kind==='stock'&&e.importBatch==='live'&&e.nativeAmount===40),true);
+assert.equal(context.legacyShift.some(e=>e.importBatch==='legacy-futu'&&e.date==='2026-07-05'),false);
+assert.equal(context.legacyShift.some(e=>e.importBatch==='legacy-futu'&&e.date==='2026-07-06'&&e.nativeAmount===5.14&&e.dateCorrected),true);
+assert.equal(context.legacyShift.some(e=>e.importBatch==='legacy-futu'&&e.date==='2026-07-10'&&e.nativeAmount===-49.4&&e.dateCorrected),true);
 assert.deepEqual([...context.polymarket].map(e=>e.value),[999]);
 assert.deepEqual([...context.poker].map(e=>e.value),[-20,55]);
 assert.equal(context.customOff.length,8);
