@@ -1362,6 +1362,7 @@ img,canvas,svg{max-width:100%;}
     <button onclick="createCryptoEstimateBatch()" style="width:100%;padding:13px;background:var(--hero-grad);color:#fff;border:none;border-radius:13px;font-size:14px;font-weight:800;cursor:pointer">建立草稿</button>
   </div>
 </div>
+</div>
 <div class="modal-wrap" id="m-profiles" onclick="closeM('m-profiles')"><div class="modal" onclick="event.stopPropagation()">
   <button class="mclose" onclick="closeM('m-profiles')" aria-label="Close">&times;</button>
   <div class="mhandle"></div><div class="mtitle">帳戶切換</div>
@@ -5999,7 +6000,9 @@ if(cloudReady())setTimeout(function(){const c=cloudCfg();if(c.pending)cloudPush(
     f.classList.remove('scrolling','drag-ready');f.classList.add('dragging','pinned');
     f.style.left=r.left+'px';f.style.top=r.top+'px';
     try{if(e.pointerId!=null&&f.setPointerCapture)f.setPointerCapture(e.pointerId);}catch(_e){}
-    if(e.cancelable)e.preventDefault();
+    // Keep a plain tap as a real click so the inline fabAction handler opens
+    // the transaction modal on iOS. The move handler prevents default only
+    // after the gesture has actually become a drag.
   }
   function move(e){
     if(!dragging)return;
@@ -6008,7 +6011,7 @@ if(cloudReady())setTimeout(function(){const c=cloudCfg();if(c.pending)cloudPush(
     const b=bounds();
     f.style.left=clamp(p.x-dx,b.leftMin,b.rightMax)+'px';
     f.style.top=clamp(p.y-dy,b.topMin,b.bottomMax)+'px';
-    if(e.cancelable)e.preventDefault();
+    if(moved&&e.cancelable)e.preventDefault();
   }
   function end(e){
     if(!dragging)return;dragging=false;activeId=null;f.classList.remove('dragging');
