@@ -16,6 +16,7 @@ function declaration(name){
 
 assert.match(html,/pnlImports:\[\]/);
 assert.match(html,/pnlCalendarSections:\{\}/);
+assert.match(html,/pnlCalendarFilters:\[\]/);
 assert.match(html,/sheet_to_json\(ws,\{raw:true,defval:'',range:3\}\)/);
 assert.match(html,/active:false,kind:kinds\[0\],kinds,rows/);
 assert.match(html,/\.pnl-calendar-grid\.year/);
@@ -23,6 +24,9 @@ assert.match(html,/2026-08-22/);
 assert.match(html,/date:'2026-08-23'.*boundary:true/);
 assert.match(html,/function pnlCalendarRecordKind\(/);
 assert.match(html,/function pnlCalendarAllowsMoneyPlus\(/);
+assert.match(html,/function togglePnlCalendarFilter\(/);
+assert.match(html,/function renderPnlCalendarFilters\(/);
+assert.match(html,/Array\.isArray\(S\.pnlCalendarFilters\)\?S\.pnlCalendarFilters:\[\]/);
 assert.match(html,/p\.exitPrice&&pnlCalendarAllowsMoneyPlus\(p\)/);
 assert.match(html,/meta\.polymarket=\['◈','Polymarket'\]/);
 assert.match(html,/record&&record\._mpKey/);

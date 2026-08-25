@@ -92,6 +92,7 @@ assert.equal(S.cloud.key,'');
 assert.equal(S.theme,'auto');
 assert.equal(S.privacy,false);
 assert.deepEqual(S.priceHist,[]);
+assert.deepEqual(S.pnlCalendarFilters,[]);
 assert.equal(S.fx,null);
 assert.deepEqual(FX,DEFAULT_FX);
 assert.equal(_cloudKey,null);

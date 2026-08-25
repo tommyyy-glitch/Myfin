@@ -14,6 +14,8 @@ assert.match(html,/id="pnl-cal-mode-year"/);
 assert.match(html,/id="pnl-import-file"/);
 assert.match(html,/id="m-crypto-est"/);
 assert.match(html,/id="pnl-filter-drawer"/);
+assert.match(html,/id="pnl-cal-filter-drawer"/);
+assert.match(html,/id="pnl-calendar-filters"/);
 assert.match(html,/\.pnl-sec-body\.collapsed>:not\(:first-child\)\{display:none!important\}/);
 assert.doesNotMatch(html,/\.pnl-sec-body\.collapsed\{display:none\}/);
 assert.doesNotMatch(html,/\.settle-record-choice\.sel::before/);
@@ -33,6 +35,7 @@ ${declaration('pnlCalendarRecordKind')}
 ${declaration('pnlCalendarEvents')}
 const S={
   pnlPieFilters:[],
+  pnlCalendarFilters:[],
   pnlCalendarSections:{},
   pnlImports:[],
   customSections:[],
@@ -57,16 +60,20 @@ function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'
 globalThis.all=pnlCalendarEvents();
 globalThis.unreal=pnlUnrealizedEvents();
 S.pnlPieFilters=['physical'];
-globalThis.physical=pnlCalendarEvents();
+globalThis.pageFilterIgnored=pnlCalendarEvents();
 S.pnlPieFilters=[];
+S.pnlCalendarFilters=['physical'];
+globalThis.physical=pnlCalendarEvents();
+S.pnlCalendarFilters=[];
 S.pnlImports=[{id:'draft',active:false,kind:'stock',rows:[{date:'2026-08-07',kind:'stock',nativeAmount:99,currency:'HKD'}]},{id:'live',active:true,kind:'stock',rows:[{date:'2026-08-08',kind:'stock',nativeAmount:12,currency:'HKD'}]}];
 globalThis.withImports=pnlCalendarEvents();
-S.pnlPieFilters=['polymarket'];globalThis.polymarket=pnlCalendarEvents();S.pnlPieFilters=['poker'];globalThis.poker=pnlCalendarEvents();S.pnlPieFilters=[];
+S.pnlCalendarFilters=['polymarket'];globalThis.polymarket=pnlCalendarEvents();S.pnlCalendarFilters=['poker'];globalThis.poker=pnlCalendarEvents();S.pnlCalendarFilters=[];
 S.customSections=[{id:'cs_test',base:'stock'}];S.pnlImports=[{id:'custom',active:true,kind:'cs_test',rows:[{date:'2026-08-09',kind:'cs_test',nativeAmount:50,currency:'HKD'}]}];
 globalThis.customOff=pnlCalendarEvents();S.pnlCalendarSections.cs_test=true;globalThis.customOn=pnlCalendarEvents();
 `;
 const context={};vm.createContext(context);vm.runInContext(code,context);
 assert.equal(context.all.length,8);
+assert.equal(context.pageFilterIgnored.length,8);
 assert.equal(context.all.reduce((n,e)=>n+(e.value||0),0),1209);
 assert.deepEqual([...context.unreal].map(e=>[e.date,e.kind,e.value]),[['2026-08-03','stock',15],['2026-08-04','crypto',10]]);
 assert.deepEqual([...context.physical].map(e=>e.value),[100]);
