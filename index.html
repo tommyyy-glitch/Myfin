@@ -478,17 +478,14 @@ body.dark #s-settings .glass-card{background:rgba(36,36,40,0.9);border-color:rgb
 .pnl-filter-drawer.open{display:block}
 .pnl-filter-btn.on{border-color:var(--g)!important;color:var(--g3)!important;background:var(--g2)!important}
 .pnl-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
+.pnl-calendar-grid.year{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .pnl-cal-day{border:0;background:var(--bg2);border-radius:9px;min-height:44px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink);cursor:pointer}
 .pnl-cal-day.pos{background:var(--g2)}.pnl-cal-day.neg{background:var(--r2)}
 .pnl-cal-day.sel{outline:2px solid var(--g)}
+.pnl-cal-day.estimated{box-shadow:inset 0 0 0 1.5px #c88a22}.pnl-cal-day.boundary{box-shadow:inset 0 0 0 2px #c88a22}
 .pnl-cal-day .amt{font-size:8px;font-weight:800;line-height:1;color:var(--ink3);max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .pnl-cal-day.pos .amt{color:var(--g3)}.pnl-cal-day.neg .amt{color:var(--r3)}
-.pnl-backfill-btn{margin-top:8px;border:1px solid color-mix(in srgb,var(--g) 45%,var(--bdr2));border-radius:999px;background:var(--g2);color:var(--g3);padding:6px 10px;font-size:11px;font-weight:800;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
-.pnl-backfill-row{border:1px solid var(--bdr);border-radius:14px;background:var(--surf2);padding:11px 12px;margin-top:8px}
-.pnl-backfill-status{border-radius:13px;padding:10px 12px;font-size:12px;line-height:1.5;background:var(--bg2);color:var(--ink3);margin-top:10px}
-.pnl-backfill-status.ok{background:var(--g2);color:var(--g3)}.pnl-backfill-status.err{background:var(--r2);color:var(--r3)}
-.pnl-lot-row{border:1px solid var(--bdr);border-radius:14px;background:var(--surf2);padding:10px;margin-top:8px}
-.pnl-lot-grid{display:grid;grid-template-columns:92px 1fr;gap:7px 9px;align-items:center}.pnl-lot-grid label{font-size:11px;color:var(--ink3);font-weight:700}.pnl-lot-grid input,.pnl-lot-grid select{width:100%;min-width:0;border:1px solid var(--bdr2);border-radius:9px;background:var(--bg2);color:var(--ink);padding:8px;font:inherit;font-size:12px}
+.pnl-cal-month{border:0;background:var(--bg2);border-radius:12px;min-height:72px;padding:10px 6px;color:var(--ink);cursor:pointer;text-align:center}.pnl-cal-month.pos{background:var(--g2)}.pnl-cal-month.neg{background:var(--r2)}.pnl-cal-month.estimated{box-shadow:inset 0 0 0 1.5px #c88a22}.pnl-cal-month .amt{display:block;font-size:11px;font-weight:800;margin-top:7px}.pnl-quality{display:inline-flex;align-items:center;gap:4px;border-radius:999px;background:#fff4cf;color:#9a640e;font-size:10px;font-weight:800;padding:3px 7px}
 .rp-group{border-bottom:.5px solid var(--bdr)}.rp-group:last-child{border-bottom:none}
 .rp-group-head{width:100%;display:flex;align-items:center;gap:10px;padding:12px 13px;border:none;background:none;color:var(--ink);text-align:left;cursor:pointer}
 .rp-group-head .rp-chevron{font-size:16px;color:var(--ink3);transition:transform .16s}.rp-group.open .rp-chevron{transform:rotate(90deg)}
@@ -834,7 +831,8 @@ img,canvas,svg{max-width:100%;}
       </div>
     </div>
     <div class="glass-card" id="pnl-calendar-card" style="padding:16px;margin-bottom:12px">
-      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:12px"><div><div class="mlabel" id="pnl-cal-label">每日損益</div><div class="msub" id="pnl-cal-hint" style="margin-top:3px">按已記錄嘅已實現、未實現損益及估值變動顯示</div><button type="button" class="pnl-backfill-btn" onclick="openPnlBackfill()"><i class="ti ti-history"></i><span id="pnl-backfill-label">歷史回填</span></button></div><div style="display:flex;align-items:center;gap:7px"><button onclick="shiftPnlCalendar(-1)" aria-label="Previous month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-left"></i></button><strong id="pnl-cal-title" style="font-size:13px;min-width:76px;text-align:center"></strong><button onclick="shiftPnlCalendar(1)" aria-label="Next month" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-right"></i></button></div></div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:10px"><div><div class="mlabel" id="pnl-cal-label">每日損益</div><div class="msub" id="pnl-cal-hint" style="margin-top:3px">按已記錄嘅已實現、未實現損益及估值變動顯示</div></div><div class="seg-ctrl" style="width:104px;margin:0"><button class="seg-btn active" id="pnl-cal-mode-month" onclick="setPnlCalendarMode('month')">月</button><button class="seg-btn" id="pnl-cal-mode-year" onclick="setPnlCalendarMode('year')">年</button></div></div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:7px;margin-bottom:12px"><button onclick="shiftPnlCalendar(-1)" aria-label="Previous period" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-left"></i></button><strong id="pnl-cal-title" style="font-size:13px;min-width:86px;text-align:center"></strong><button onclick="shiftPnlCalendar(1)" aria-label="Next period" style="width:30px;height:30px;border:1px solid var(--bdr2);border-radius:9px;background:var(--surf2);color:var(--ink2)"><i class="ti ti-chevron-right"></i></button></div>
       <div class="pnl-calendar-grid" id="pnl-cal-grid"></div>
       <div id="pnl-cal-summary" style="margin-top:11px;font-size:12px;color:var(--ink3)"></div>
       <div id="pnl-cal-detail" style="margin-top:6px"></div>
@@ -1322,6 +1320,15 @@ img,canvas,svg{max-width:100%;}
       </div>
     </div>
 
+    <div class="slbl">P&amp;L 日曆資料</div>
+    <div class="glass-card" style="padding:15px;margin-bottom:12px">
+      <div class="msub" style="margin-bottom:12px;line-height:1.55">獨立匯入每日損益；只影響 P&amp;L 日曆，唔會改戶口、持倉、現金或交易。匯入後預設為草稿，要再按「加入日曆」。</div>
+      <label style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;background:var(--hero-grad);color:#fff;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer"><i class="ti ti-file-spreadsheet" style="font-size:18px"></i><span>預覽 P&amp;L Excel</span><input id="pnl-import-file" type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="importPnlExcel(this)" style="display:none"></label>
+      <button onclick="openCryptoEstimate()" style="width:100%;margin-top:9px;padding:11px;border:1.5px solid #c88a22;border-radius:12px;background:#fff4cf;color:#8b5b0b;font-size:13px;font-weight:800;cursor:pointer"><i class="ti ti-coins"></i> 建立 Crypto 歷史估算</button>
+      <div id="pnl-import-status" class="msub" style="margin-top:10px"></div>
+      <div id="pnl-import-batches" style="margin-top:10px"></div>
+    </div>
+
     <div class="slbl" data-i="mpimport"></div>
     <div class="glass-card" style="padding:15px;margin-bottom:12px">
       <div class="msub" data-i="mpimporthint" style="margin-bottom:12px"></div>
@@ -1343,6 +1350,17 @@ img,canvas,svg{max-width:100%;}
 </nav>
 
 <!-- MODALS -->
+<div class="modal-wrap" id="m-crypto-est" onclick="closeM('m-crypto-est')"><div class="modal" onclick="event.stopPropagation()">
+  <button class="mclose" onclick="closeM('m-crypto-est')" aria-label="Close">&times;</button>
+  <div class="mhandle"></div><div class="mtitle">Crypto 歷史估算</div>
+  <div style="padding:6px 18px 22px">
+    <div class="msub" style="line-height:1.55;margin-bottom:12px">將目前未實現損益平均分配到每個曆日（包括週末），只去到 2026-08-22。2026-08-23 會以金色標示實際追蹤開始；建立後仍然係草稿。</div>
+    <label style="display:block;font-size:12px;color:var(--ink3);margin-bottom:10px">第一個有效日期<input id="crypto-est-start" type="date" style="display:block;width:100%;margin-top:5px;border:1px solid var(--bdr2);border-radius:11px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px"></label>
+    <label style="display:block;font-size:12px;color:var(--ink3);margin-bottom:10px">目前未實現損益（HKD）<input id="crypto-est-total" type="number" step="0.01" style="display:block;width:100%;margin-top:5px;border:1px solid var(--bdr2);border-radius:11px;padding:10px;background:var(--bg2);color:var(--ink);font-size:14px"></label>
+    <div id="crypto-est-preview" class="msub" style="padding:10px;border-radius:11px;background:#fff4cf;color:#8b5b0b;margin-bottom:12px"></div>
+    <button onclick="createCryptoEstimateBatch()" style="width:100%;padding:13px;background:var(--hero-grad);color:#fff;border:none;border-radius:13px;font-size:14px;font-weight:800;cursor:pointer">建立草稿</button>
+  </div>
+</div>
 <div class="modal-wrap" id="m-profiles" onclick="closeM('m-profiles')"><div class="modal" onclick="event.stopPropagation()">
   <button class="mclose" onclick="closeM('m-profiles')" aria-label="Close">&times;</button>
   <div class="mhandle"></div><div class="mtitle">帳戶切換</div>
@@ -1478,29 +1496,6 @@ img,canvas,svg{max-width:100%;}
   <div class="msub-lbl" id="fx-updated"></div>
   <div class="fsec" id="fx-rate-list" style="padding-top:4px"></div>
   <button class="sbtn" onclick="refreshPrices();renderFxRates()" data-i="refreshprices"></button>
-</div></div>
-
-<div class="modal-wrap" id="m-pnl-backfill" onclick="closeM('m-pnl-backfill')"><div class="modal" onclick="event.stopPropagation()">
-  <button class="mclose" onclick="closeM('m-pnl-backfill')" aria-label="Close">&times;</button>
-  <div class="mhandle"></div><div class="mtitle" id="pnl-backfill-title">歷史未實現損益回填</div>
-  <div class="msub-lbl" id="pnl-backfill-intro">Stage 3：支援多次買入同部分賣出，以平均成本重建；只寫入可撤銷嘅日曆資料。</div>
-  <div class="fsec" style="padding-bottom:2px">
-    <div class="frow"><span class="flbl" id="pnl-backfill-position-label">持倉</span><select class="fval" id="pnl-backfill-position" onchange="syncPnlBackfillPosition()"></select></div>
-    <div class="frow"><span class="flbl" id="pnl-backfill-symbol-label">市場代碼</span><input class="fval" id="pnl-backfill-symbol" placeholder="AAPL / 0700.HK" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" id="pnl-backfill-start-label">Ledger 開始</span><input class="fval" type="date" id="pnl-backfill-start" onchange="setPnlBackfillStart(this.value)"></div>
-    <div class="frow"><span class="flbl" id="pnl-backfill-end-label">回填至</span><strong id="pnl-backfill-end" style="font-size:13px;color:var(--ink2)"></strong></div>
-  </div>
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 18px 0"><strong id="pnl-backfill-ledger-label" style="font-size:13px">買賣 Ledger</strong><span style="display:flex;gap:6px"><button type="button" onclick="addPnlLotRow('buy')" style="border:1px solid var(--bdr2);background:var(--g2);color:var(--g3);border-radius:9px;padding:6px 8px;font-size:11px;font-weight:800">＋買入</button><button type="button" onclick="addPnlLotRow('sell')" style="border:1px solid var(--bdr2);background:var(--r2);color:var(--r3);border-radius:9px;padding:6px 8px;font-size:11px;font-weight:800">＋賣出</button></span></div>
-  <div id="pnl-backfill-ledger" style="padding:0 14px"></div>
-  <label style="display:flex;align-items:flex-start;gap:9px;margin:10px 18px 0;font-size:12px;line-height:1.45;color:var(--ink2);cursor:pointer"><input type="checkbox" id="pnl-backfill-align" checked style="margin-top:2px;flex-shrink:0"><span id="pnl-backfill-align-label">如全部買入成本由歷史匯率推算，而差異不多於 5%，對齊現時剩餘成本。</span></label>
-  <label style="display:flex;align-items:flex-start;gap:9px;margin:10px 18px 0;font-size:12px;line-height:1.45;color:var(--ink2);cursor:pointer"><input type="checkbox" id="pnl-backfill-confirm" style="margin-top:2px;flex-shrink:0"><span id="pnl-backfill-confirm-label">我已核對完整買入及賣出紀錄、日期、數量同成本。</span></label>
-  <div id="pnl-backfill-position-note" class="msub-lbl" style="padding-bottom:0"></div>
-  <button class="sbtn" id="pnl-backfill-preview-btn" onclick="previewPnlBackfill()" style="margin-top:12px">建立預覽</button>
-  <div id="pnl-backfill-status" class="pnl-backfill-status" style="display:none"></div>
-  <div id="pnl-backfill-preview" style="display:none"></div>
-  <button class="sbtn" id="pnl-backfill-save-btn" onclick="commitPnlBackfill()" style="display:none;background:var(--hero-grad)">確認匯入日曆</button>
-  <div class="slbl" id="pnl-backfill-history-label" style="padding:16px 18px 4px">已匯入批次</div>
-  <div id="pnl-backfill-batches" style="padding:0 14px 18px"></div>
 </div></div>
 
 <div class="modal-wrap" id="m-ai" onclick="closeM('m-ai')"><div class="modal" onclick="event.stopPropagation()">
@@ -1988,12 +1983,12 @@ function hasQuoteKey(kind){return quoteKeys(kind).length>0;}
 function quoteApiCloudSafe(){const q=defaultQuoteApis();Object.keys(q).forEach(k=>{const src=ensureQuoteApis()[k];q[k].provider=src.provider;q[k].cursor=0;});return q;}
 
 function createAppState(){return {
-  txns:[],people:[],gamble:[],autopay:[],autoincome:[],portfolio:[],physicalAssets:[],debts:[],privateLoans:[],friends:[],rpLabels:{},tuScores:[],customSections:[],changelog:[],priceHist:[],pnlBackfills:[],pnlLotLedgers:[],portfolioLotEvents:[],
+  txns:[],people:[],gamble:[],autopay:[],autoincome:[],portfolio:[],physicalAssets:[],debts:[],privateLoans:[],friends:[],rpLabels:{},tuScores:[],customSections:[],changelog:[],priceHist:[],
   cats:DEF_CATS.map(c=>({...c,aliases:[...(c.aliases||[])]})),accounts:DEF_ACCTS.map(a=>({...a})),
   lang:'zh',theme:'auto',motionMode:'dance',dispCur:'HKD',period:'month',privacy:false,numFmt:'full',
   budget:{amount:0,cur:'HKD',mode:'cycle',startDay:1,cutoffDay:31,customStart:'',customEnd:'',excludedCats:[]},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},
   notify:{on:false,budgetLow:true,budgetPct:20,budgetOver:true,autopayDue:true,autopayDays:3,rpOverdue:true,rpDays:14,negCash:true,customRules:[]},
-  pnlOrder:['poker','stock','crypto','pe','physical','loan','debt'],pnlHidden:{},pnlNetHidden:{},pnlPieNoCash:false,pnlPieFilters:[],setCollapsed:{},
+  pnlOrder:['poker','stock','crypto','pe','physical','loan','debt'],pnlHidden:{},pnlNetHidden:{},pnlCalendarSections:{},pnlImports:[],pnlPieNoCash:false,pnlPieFilters:[],setCollapsed:{},
   assetLabels:{quick:{zh:'現金／速動資產',en:'Cash / quick assets'},investment:{zh:'流動／投資資產',en:'Liquid / investment assets'},fixed:{zh:'實體固定資產',en:'Physical fixed assets'},receivable:{zh:'應收',en:'Receivables'}},
   ai:{provider:'gemini',key:'',model:''},quoteApis:defaultQuoteApis(),tdKey:'',fx:null,cloud:{url:'',key:'',pass:'',salt:'',on:false,ver:0,last:0,pending:false,pendingAt:0,lastError:'',_dirty:false},
   creditLimit:0,wealthGran:'month',trendGran:'month',catMRU:[],acctMRU:[],acctFilter:'all',billMe:true,fixedAssetReviewedYear:0,
@@ -2042,9 +2037,8 @@ if(!S.debts)S.debts=[];
 if(!S.privateLoans)S.privateLoans=[];
 if(!S.physicalAssets)S.physicalAssets=[];
 if(!Array.isArray(S.pnlPieFilters))S.pnlPieFilters=[];
-if(!Array.isArray(S.pnlBackfills))S.pnlBackfills=[];
-if(!Array.isArray(S.pnlLotLedgers))S.pnlLotLedgers=[];
-if(!Array.isArray(S.portfolioLotEvents))S.portfolioLotEvents=[];
+if(!S.pnlCalendarSections||typeof S.pnlCalendarSections!=='object')S.pnlCalendarSections={};
+if(!Array.isArray(S.pnlImports))S.pnlImports=[];
 if(!S.rpLabels||typeof S.rpLabels!=='object')S.rpLabels={};
 if(!Number.isFinite(Number(S.fixedAssetReviewedYear)))S.fixedAssetReviewedYear=0;
 if(!S.assetLabels)S.assetLabels=createAppState().assetLabels;
@@ -2061,7 +2055,7 @@ if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
 S.notify=notifyCfg();
 if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return c.id===dc.id;});if(!ex){S.cats.push({...dc,aliases:[...dc.aliases]});}else{dc.aliases.forEach(function(a){if((ex.aliases||[]).indexOf(a)<0)ex.aliases=(ex.aliases||[]).concat(a);});}});
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(typeof ensureRPIncomeAccruals==='function'&&ensureRPIncomeAccruals())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));showStorageError('load',e);}}
-function profileSnapshot(){const cloud=S.cloud||{};return {txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],rpLabels:S.rpLabels||{},customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],fixedAssetReviewedYear:Number(S.fixedAssetReviewedYear)||0,setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),pnlBackfills:Array.isArray(S.pnlBackfills)?S.pnlBackfills:[],pnlLotLedgers:Array.isArray(S.pnlLotLedgers)?S.pnlLotLedgers:[],portfolioLotEvents:Array.isArray(S.portfolioLotEvents)?S.portfolioLotEvents:[],acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
+function profileSnapshot(){const cloud=S.cloud||{};return {txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},pnlCalendarSections:S.pnlCalendarSections||{},pnlImports:Array.isArray(S.pnlImports)?S.pnlImports:[],ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],rpLabels:S.rpLabels||{},customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],fixedAssetReviewedYear:Number(S.fixedAssetReviewedYear)||0,setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
 function saveS(opt){
   opt=opt||{};
   if(window._storageReadOnly&&!opt.force){showStorageError('load',new Error('storage is read-only after load failure'));return false;}
@@ -2075,12 +2069,6 @@ function saveS(opt){
   }catch(e){showStorageError('save',e);return false;}
 }
 function logChange(action,p,extra){if(!p||(p.type!=='stock'&&p.type!=='crypto'))return;S.changelog=S.changelog||[];S.changelog.unshift({date:today(),ts:Date.now(),action,name:p.name,acctId:p.acctId||'',secId:p.secId||'',type:p.type,detail:extra||''});if(S.changelog.length>300)S.changelog=S.changelog.slice(0,300);}
-function recordPortfolioLotEvent(p,action,data){
-  if(!p||p.type!=='stock'||!['buy','sell','edit'].includes(action))return null;
-  data=data||{};S.portfolioLotEvents=Array.isArray(S.portfolioLotEvents)?S.portfolioLotEvents:[];
-  const e={id:'ple_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),positionId:String(p.id||''),identityKey:pnlBackfillPositionKey(p),date:data.date||today(),ts:Date.now(),action,qty:Number(data.qty)||0,price:Number(data.price)||0,cur:p.cur||'HKD',costHKD:Number(data.costHKD)||0,costRemovedHKD:Number(data.costRemovedHKD)||0,source:'app'};
-  S.portfolioLotEvents.push(e);return e;
-}
 function t(k){const en=S.lang==='en';const fb={budgetplanner:en?'Monthly budget':'月度預算',taxestimate:en?'Tax estimate':'稅務預計',notifications:en?'Notifications':'通知',privatedebt:en?'Private debt':'私人債權',addloan:en?'Add private loan':'新增私人借款',borrower:en?'Borrower':'借款人',principal:en?'Principal':'本金',interesttype:en?'Interest method':'利息方式',annualrate:en?'Annual interest %':'年利率 %',fixedinterest:en?'Fixed interest amount':'固定利息金額',startdate:en?'Start date':'借出日期',duedate:en?'Due date':'到期日',outstandingprincipal:en?'Outstanding principal':'未收回本金',accruedinterest:en?'Accrued interest':'應計利息',receivedinterest:en?'Interest received':'已收利息',recordpayment:en?'Record repayment':'記錄還款',principalreturn:en?'Principal returned':'收回本金',interestreceived:en?'Interest received':'收到利息',loanhint:en?'Principal leaves the selected normal account and becomes a fixed asset. Choose annual-rate interest or a fixed total interest amount.':'本金會由所選普通戶口扣除並列作固定資產；利息可選年利率或固定總金額。'};return LANGS[S.lang][k]||LANGS.en[k]||fb[k]||k;}
 function tt(zh,en){return S.lang==='en'?en:zh;}
 function catLabel(c){return S.lang==='en'?(c.labelEn||c.label):c.label;}
@@ -3992,7 +3980,7 @@ function notifyEvents(){const c=notifyCfg(),ev=[];const now=new Date(),todayKey=
 let _notifyT=null,_notifyBusy=false;
 function notifySchedule(reason){clearTimeout(_notifyT);_notifyT=setTimeout(function(){notifyCheck(reason);},900);}
 async function notifyCheck(reason){const c=notifyCfg();if(!c.on||!notifySupported()||Notification.permission!=='granted'||_notifyBusy)return;_notifyBusy=true;let baselineChanged=false;try{const ev=notifyEvents().filter(e=>!notifySeen(e.key,e.stamp)).slice(0,4);for(const e of ev){const ok=await notifyShow(e.title,e.body,e.key);if(ok){notifyMark(e.key,e.stamp);if(Number.isFinite(e.resetBaseline)){const r=(c.customRules||[]).find(x=>String(x.id)===String(e.ruleId));if(r){r.baseline=e.resetBaseline;baselineChanged=true;}}}}if(baselineChanged){S.notify=c;saveS();}}finally{_notifyBusy=false;}}
-function pnlPieFilterMeta(){const meta={cash:['💵',t('positioncash')],stock:['📈',t('stocks')],crypto:['₿',t('crypto')],poker:['🂡',t('poker')],pe:['🏢',t('privateequity')],loan:['🤝',t('privatedebt')],physical:['🧰',assetLabel('fixed')]};(S.customSections||[]).forEach(cs=>{meta[cs.id]=[cs.icon||'◆',cs.name||cs.id];});return meta;}
+function pnlPieFilterMeta(){const meta={cash:['💵',t('positioncash')],stock:['📈',t('stocks')],crypto:['₿',t('crypto')],poker:['🂡',t('poker')],pe:['🏢',t('privateequity')],loan:['🤝',t('privatedebt')],physical:['🧰',assetLabel('fixed')]};const custom=S.customSections||[];if(!custom.some(cs=>/polymarket/i.test(String(cs.name||cs.id))))meta.polymarket=['◈','Polymarket'];custom.forEach(cs=>{meta[cs.id]=[cs.icon||'◆',cs.name||cs.id];});return meta;}
 function togglePnlPieFilter(kind){S.pnlPieFilters=Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[];if(kind==='all')S.pnlPieFilters=[];else{const i=S.pnlPieFilters.indexOf(kind);if(i>=0)S.pnlPieFilters.splice(i,1);else S.pnlPieFilters.push(kind);}saveS();renderGamble();}
 function renderPnlPieFilters(){const el=document.getElementById('pnl-pie-filters');if(!el)return;const active=Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],meta=pnlPieFilterMeta(),allLabel=t('totaltrend');el.innerHTML=`<button class="fchip${active.length?'':' active'}" onclick="togglePnlPieFilter('all')" title="${escapeHtml(allLabel)}" aria-label="${escapeHtml(allLabel)}" aria-pressed="${!active.length}">${secIcon('total')}</button>`+Object.keys(meta).map(k=>`<button class="fchip${active.includes(k)?' active':''}" onclick="togglePnlPieFilter('${k}')" title="${escapeHtml(meta[k][1])}" aria-label="${escapeHtml(meta[k][1])}" aria-pressed="${active.includes(k)}">${meta[k][0]}</button>`).join('');}
 function togglePnlFilterDrawer(){const drawer=document.getElementById('pnl-filter-drawer'),btn=document.getElementById('pnl-filter-btn');if(!drawer)return;const open=drawer.classList.toggle('open');if(btn){btn.classList.toggle('on',open);btn.setAttribute('aria-expanded',open?'true':'false');}}
@@ -4274,7 +4262,7 @@ function savePortfolio(){
   if(!S.portfolio)S.portfolio=[];
   if(editId){
     const idx=S.portfolio.findIndex(x=>String(x.id)===String(editId));
-    if(idx>=0){const exitDate=exitPrice?(S.portfolio[idx].exitDate||today()):null;S.portfolio[idx]={...S.portfolio[idx],name,qty,entryPrice,currentPrice,exitPrice,exitDate,budgetPrice,cur,apiSymbol,notes,costHKD,valueHKD,acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin,secId,divPct,divFreq};logChange('edit',S.portfolio[idx],(qty||'')+' @ '+cur+(entryPrice||0));recordPortfolioLotEvent(S.portfolio[idx],'edit',{qty,price:entryPrice,costHKD});}
+    if(idx>=0){const exitDate=exitPrice?(S.portfolio[idx].exitDate||today()):null;S.portfolio[idx]={...S.portfolio[idx],name,qty,entryPrice,currentPrice,exitPrice,exitDate,budgetPrice,cur,apiSymbol,notes,costHKD,valueHKD,acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin,secId,divPct,divFreq};logChange('edit',S.portfolio[idx],(qty||'')+' @ '+cur+(entryPrice||0));}
   } else {
     // Auto-merge: a new OPEN buy with the same name + account + currency + margin + section folds into the
     // existing open position — combine units and recompute the unit-weighted average entry price.
@@ -4293,10 +4281,9 @@ function savePortfolio(){
       if(!existing.notes&&notes)existing.notes=notes;
       if(divPct)existing.divPct=divPct;if(divFreq)existing.divFreq=divFreq;
       logChange('add',existing,'+'+qty+' @ '+cur+(entryPrice||0));
-      recordPortfolioLotEvent(existing,'buy',{qty,price:entryPrice,costHKD});
     } else {
       const np={id:Date.now(),type,name,qty,entryPrice,currentPrice,exitPrice,exitDate:exitPrice?today():null,budgetPrice,cur,apiSymbol,notes,costHKD,valueHKD,acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin,secId,divPct,divFreq,date:today()};
-      S.portfolio.unshift(np);logChange('add',np,qty+' @ '+cur+(entryPrice||0));if(!exitPrice)recordPortfolioLotEvent(np,'buy',{qty,price:entryPrice,costHKD});
+      S.portfolio.unshift(np);logChange('add',np,qty+' @ '+cur+(entryPrice||0));
     }
   }
   recordPriceSnapshot();saveS();closeM('m-port');refreshAllViews();
@@ -4325,7 +4312,6 @@ function endPosition(id){
   if(!p)return;
   if(!confirm(t('endposq')))return;
   const px=p.currentPrice||p.entryPrice||0;     // close at the latest known price
-  recordPortfolioLotEvent(p,'sell',{qty:p.qty,price:px,costRemovedHKD:p.costHKD});
   p.exitPrice=px;
   p.exitDate=today();
   p.valueHKD=parseFloat(toHKD(px*(p.qty||0),p.cur).toFixed(2));
@@ -4350,23 +4336,20 @@ function confirmSell(){
   const sellPx=parseFloat(document.getElementById('sell-price').value)||0;
   if(sellQty<=0||sellQty>(p.qty||0)+1e-9||sellPx<=0){showToast(t('sellerr'),1);return;}
   const acct=getAcct(p.acctId);
-  const originalQty=Number(p.qty)||0,originalCost=Number(p.costHKD)||0,costRemoved=parseFloat((originalQty?originalCost*sellQty/originalQty:0).toFixed(2));
   if(sellQty>=(p.qty||0)-1e-9){
     // selling the whole thing → just close it at the sell price
-    recordPortfolioLotEvent(p,'sell',{qty:sellQty,price:sellPx,costRemovedHKD:originalCost});
     p.exitPrice=sellPx;
     p.exitDate=today();
     p.valueHKD=parseFloat(toHKD(sellPx*(p.qty||0),p.cur).toFixed(2));
   } else {
     // split off a realized (closed) lot for the sold units; reduce the open position by the same qty
-    const lotCost=costRemoved;
+    const lotCost=parseFloat(toHKD(p.entryPrice*sellQty,p.cur).toFixed(2));
     const lotValue=parseFloat(toHKD(sellPx*sellQty,p.cur).toFixed(2));
     S.portfolio.unshift({id:Date.now(),type:p.type,name:p.name,qty:sellQty,entryPrice:p.entryPrice,currentPrice:sellPx,exitPrice:sellPx,exitDate:today(),budgetPrice:null,cur:p.cur,apiSymbol:'',notes:t('soldlot')+' '+today(),costHKD:lotCost,valueHKD:lotValue,acctId:p.acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin:p.margin,secId:p.secId||'',date:today()});
     const remQty=p.qty-sellQty;
     p.qty=parseFloat(remQty.toFixed(6));
-    p.costHKD=parseFloat((originalCost-costRemoved).toFixed(2));
+    p.costHKD=parseFloat(toHKD(p.entryPrice*p.qty,p.cur).toFixed(2));
     p.valueHKD=parseFloat(toHKD((p.currentPrice||p.entryPrice)*p.qty,p.cur).toFixed(2));
-    recordPortfolioLotEvent(p,'sell',{qty:sellQty,price:sellPx,costRemovedHKD:costRemoved});
   }
   logChange('sell',p,sellQty+' @ '+p.cur+sellPx);
   recordPriceSnapshot();saveS();closeM('m-sell');renderGamble();renderHome();refreshWallet();
@@ -4462,12 +4445,14 @@ function renderTrendChips(){
 }
 function toggleSecShow(id){S.pnlHidden=S.pnlHidden||{};S.pnlHidden[id]=!S.pnlHidden[id];saveS();renderPnlSecMgr();applyPnlLayout();}
 function toggleSecNet(id){S.pnlNetHidden=S.pnlNetHidden||{};S.pnlNetHidden[id]=!S.pnlNetHidden[id];saveS();renderPnlSecMgr();renderHome();refreshWallet();if(S.activeTab==='gamble')renderGamble();}
+function pnlCalendarSectionEnabled(id){S.pnlCalendarSections=S.pnlCalendarSections||{};if(Object.prototype.hasOwnProperty.call(S.pnlCalendarSections,id))return !!S.pnlCalendarSections[id];return !(S.customSections||[]).some(c=>c.id===id);}
+function toggleSecCalendar(id){S.pnlCalendarSections=S.pnlCalendarSections||{};S.pnlCalendarSections[id]=!pnlCalendarSectionEnabled(id);saveS();renderPnlSecMgr();if(S.activeTab==='gamble')renderPnlCalendar();}
 function moveSec(id,dir){const o=pnlOrderSafe();const i=o.indexOf(id);const j=i+dir;if(j<0||j>=o.length)return;[o[i],o[j]]=[o[j],o[i]];S.pnlOrder=o;saveS();renderPnlSecMgr();applyPnlLayout();}
 function renderPnlSecMgr(){
   const el=document.getElementById('pnl-sec-mgr');if(!el)return;
   const o=pnlOrderSafe();
   const custom=(S.customSections||[]).map(c=>c.id);
-  const rows=o.map((id,i)=>{const on=!(S.pnlHidden&&S.pnlHidden[id]);const netOn=!(S.pnlNetHidden&&S.pnlNetHidden[id]);const isC=custom.includes(id),arg=inlineJsString(id);return `<div style="display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:0.5px solid var(--bdr)"><div style="flex:1;min-width:0;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${on?'':'opacity:0.4'}">${escapeHtml(secName(id))}</div><button onclick="moveSec(${arg},-1)" ${i===0?'disabled':''} style="width:30px;height:30px;border:1.5px solid var(--bdr2);border-radius:8px;background:none;color:var(--ink2);cursor:pointer;${i===0?'opacity:0.3':''}">▲</button><button onclick="moveSec(${arg},1)" ${i===o.length-1?'disabled':''} style="width:30px;height:30px;border:1.5px solid var(--bdr2);border-radius:8px;background:none;color:var(--ink2);cursor:pointer;${i===o.length-1?'opacity:0.3':''}">▼</button><div title="${t('showhide')}" style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink3)">👁<button class="toggle${on?' on':''}" onclick="toggleSecShow(${arg})"></button></div><div title="${t('netassettip')}" style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink3)">Net<button class="toggle${netOn?' on':''}" onclick="toggleSecNet(${arg})"></button></div><button onclick="trashSec(${arg})" title="${isC?t('act_delete'):t('exclude')}" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer"><i class="ti ti-trash"></i></button></div>`;}).join('');
+  const rows=o.map((id,i)=>{const on=!(S.pnlHidden&&S.pnlHidden[id]);const netOn=!(S.pnlNetHidden&&S.pnlNetHidden[id]);const calOn=pnlCalendarSectionEnabled(id);const isC=custom.includes(id),arg=inlineJsString(id);return `<div style="display:flex;align-items:center;gap:7px;padding:11px 15px;border-bottom:0.5px solid var(--bdr);flex-wrap:wrap"><div style="flex:1;min-width:110px;font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;${on?'':'opacity:0.4'}">${escapeHtml(secName(id))}</div><button onclick="moveSec(${arg},-1)" ${i===0?'disabled':''} style="width:30px;height:30px;border:1.5px solid var(--bdr2);border-radius:8px;background:none;color:var(--ink2);cursor:pointer;${i===0?'opacity:0.3':''}">▲</button><button onclick="moveSec(${arg},1)" ${i===o.length-1?'disabled':''} style="width:30px;height:30px;border:1.5px solid var(--bdr2);border-radius:8px;background:none;color:var(--ink2);cursor:pointer;${i===o.length-1?'opacity:0.3':''}">▼</button><div title="${t('showhide')}" style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink3)">👁<button class="toggle${on?' on':''}" onclick="toggleSecShow(${arg})"></button></div><div title="${t('netassettip')}" style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink3)">Net<button class="toggle${netOn?' on':''}" onclick="toggleSecNet(${arg})"></button></div><div title="${tt('加入損益日曆','Include in P&L calendar')}" style="display:flex;align-items:center;gap:4px;font-size:11px;color:${calOn?'#9a640e':'var(--ink3)'}">📅<button class="toggle${calOn?' on':''}" onclick="toggleSecCalendar(${arg})"></button></div><button onclick="trashSec(${arg})" title="${isC?t('act_delete'):t('exclude')}" style="border:none;background:none;color:var(--r3);font-size:17px;cursor:pointer"><i class="ti ti-trash"></i></button></div>`;}).join('');
   const emojis=['🏠','🏢','📈','₿','🪙','🎯','💎','🚗','🛢️','🏦','🌐','🎨','⚽','🍷'];
   const addForm=`<div style="padding:11px 15px">
     <div style="display:flex;gap:6px;align-items:center">
@@ -4488,6 +4473,7 @@ function addCustomSection(){
   const icon=(document.getElementById('newsec-icon').value||'').trim();
   const id='cs_'+Date.now()+'_'+Math.floor(Math.random()*9999);
   S.customSections=S.customSections||[];S.customSections.push({id,name:nm,base,icon});
+  S.pnlCalendarSections=S.pnlCalendarSections||{};S.pnlCalendarSections[id]=false;
   S.pnlOrder=pnlOrderSafe();
   saveS();renderPnlSecMgr();if(S.activeTab==='gamble')renderGamble();
 }
@@ -4497,6 +4483,7 @@ function delCustomSection(id){
   (S.portfolio||[]).forEach(p=>{if(p.secId===id)p.secId='';}); // move its items back to the built-in section
   if(S.pnlHidden)delete S.pnlHidden[id];
   if(S.pnlNetHidden)delete S.pnlNetHidden[id];
+  if(S.pnlCalendarSections)delete S.pnlCalendarSections[id];
   S.pnlOrder=(S.pnlOrder||[]).filter(x=>x!==id);
   saveS();renderPnlSecMgr();if(S.activeTab==='gamble')renderGamble();
 }
@@ -4569,199 +4556,80 @@ function setTrendGran(g,btn){S.trendGran=g;saveS();document.querySelectorAll('#t
 // Calendar replacement for the old aggregate line chart. It combines realised
 // events with changes between recorded unrealised-P&L snapshots and physical valuations.
 // The allocation filters above are shared.
-let _pnlCalMonth=null,_pnlCalSelected=null;
+let _pnlCalMonth=null,_pnlCalSelected=null,_pnlCalMode='month';
+// Stock snapshots are end-of-session figures. Keep them on the latest completed
+// US market day (16:00 America/New_York, DST-aware) instead of letting Hong Kong
+// midnight move a US close into the following calendar date. Date-only imports
+// already carry their US trading date and therefore bypass this conversion.
+function pnlUsMarketCloseDate(at){
+  const parts=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(Number(at)));
+  const get=k=>Number((parts.find(p=>p.type===k)||{}).value),y=get('year'),m=get('month'),d=get('day'),hour=get('hour');
+  if(!y||!m||!d)return ymd(new Date(Number(at)));
+  const marketDate=new Date(Date.UTC(y,m-1,d));
+  if(hour<16)marketDate.setUTCDate(marketDate.getUTCDate()-1);
+  while(marketDate.getUTCDay()===0||marketDate.getUTCDay()===6)marketDate.setUTCDate(marketDate.getUTCDate()-1);
+  return marketDate.getUTCFullYear()+'-'+String(marketDate.getUTCMonth()+1).padStart(2,'0')+'-'+String(marketDate.getUTCDate()).padStart(2,'0');
+}
+function pnlSnapshotUsesUsMarketClose(kind){if(kind==='stock')return true;const custom=(S.customSections||[]).find(c=>c.id===kind);return !!(custom&&custom.base==='stock');}
+function pnlSnapshotCalendarDate(at,kind){return pnlSnapshotUsesUsMarketClose(kind)?pnlUsMarketCloseDate(at):ymd(new Date(Number(at)));}
 function pnlUnrealizedEvents(){
   const snaps=(S.priceHist||[]).filter(x=>x&&Number.isFinite(Number(x.t))&&x.p&&typeof x.p==='object').slice().sort((a,b)=>Number(a.t)-Number(b.t));
   const rows=[];let prev=null;
   snaps.forEach(s=>{
     const current=s.p||{};
     if(prev){
-      const keys=new Set([...Object.keys(prev),...Object.keys(current)]),date=ymd(new Date(Number(s.t)));
-      keys.forEach(kind=>{const value=(Number(current[kind])||0)-(Number(prev[kind])||0);if(Math.abs(value)>0.004)rows.push({date,value,kind,label:tt('未實現損益變動','Unrealised P&L change')});});
+      const keys=new Set([...Object.keys(prev),...Object.keys(current)]);
+      keys.forEach(kind=>{const value=(Number(current[kind])||0)-(Number(prev[kind])||0),date=pnlSnapshotCalendarDate(s.t,kind);if(Math.abs(value)>0.004)rows.push({date,value,kind,label:tt('未實現損益變動','Unrealised P&L change')});});
     }
     prev=current;
   });
   return rows;
 }
-// Stage 1 historical backfill is deliberately separate from live priceHist.
-// It only adds reversible calendar events and never rewrites accounting records.
-let _pnlBackfillPreview=null;
-let _pnlLotDraft=[];
-function pnlBackfillFingerprint(p){
-  if(!p)return '';
-  return JSON.stringify([String(p.id||''),p.type||'',p.name||'',Number(p.qty)||0,Number(p.entryPrice)||0,Number(p.costHKD)||0,p.cur||'HKD',p.acctId||'',p.secId||'',p.date||'',p.apiSymbol||'',!!p.margin]);
+function pnlEventDisplayValue(e){
+  const target=S.dispCur||'HKD';
+  if(Number.isFinite(Number(e.nativeAmount))){const n=Number(e.nativeAmount),cur=(e.currency||'HKD').toUpperCase(),fx=e.fx||{},targetFx=target==='RMB'?fx.CNY:fx[target];if(cur===target||(cur==='CNY'&&target==='RMB'))return n;if(cur==='USD'&&target==='HKD'&&fx.HKD)return n*fx.HKD;if(cur==='USD'&&targetFx)return n*targetFx;if(cur==='HKD')return target==='HKD'?n:n/(FX[target]||1);const hkd=toHKD(n,cur==='CNY'?'RMB':cur);return target==='HKD'?hkd:hkd/(FX[target]||1);}
+  const hkd=Number(e.value)||0;return target==='HKD'?hkd:hkd/(FX[target]||1);
 }
-function pnlBackfillPositionKey(p){return [p&&p.type||'',p&&p.name||'',p&&p.acctId||'',p&&p.secId||''].join('|');}
-function pnlBackfillEligibility(p){
-  const issues=[];
-  if(!p||p.type!=='stock'||p.exitPrice)issues.push(tt('Stage 3 只支援未平倉股票／ETF','Stage 3 supports open stocks / ETFs only'));
-  if(!(Number(p&&p.qty)>0)||!(Number(p&&p.entryPrice)>0)||!(Number(p&&p.costHKD)>0))issues.push(tt('缺少有效數量或成本','Valid quantity or cost is missing'));
-  return {eligible:issues.length===0,issues};
+function pnlDisplayAmount(v){if(S.privacy)return '••••';return (CUR_SYM[S.dispCur||'HKD']||'')+numStr(Math.abs(Number(v)||0));}
+function pnlCalendarRecordKind(record,fallback){
+  if(record&&record.secId)return record.secId;
+  const text=[record&&record.acctLabel,record&&record.venue,record&&record.name,record&&record.notes,record&&record._mpKey].filter(Boolean).join(' ').toLowerCase();
+  if(/polymarket/.test(text)){const custom=(S.customSections||[]).find(cs=>/polymarket/i.test(String(cs.name||cs.id)));return custom?custom.id:'polymarket';}
+  return fallback;
 }
-function pnlBackfillCandidates(){return (S.portfolio||[]).filter(p=>p&&p.type==='stock'&&!p.exitPrice).map(p=>({position:p,...pnlBackfillEligibility(p)}));}
-function pnlBackfillLedgerStart(rows){return (rows||[]).filter(r=>r&&r.action!=='sell'&&/^\d{4}-\d{2}-\d{2}$/.test(String(r.date||''))).map(r=>String(r.date)).sort()[0]||'';}
-function pnlBackfillRangeState(p,rows){const start=pnlBackfillLedgerStart(rows),end=pnlBackfillCutoffDate(p),hasGap=!!start&&start<=end;return {start,end,hasGap};}
-function pnlLotLedgerForPosition(p){return (S.pnlLotLedgers||[]).find(x=>x&&String(x.positionId)===String(p&&p.id));}
-function parsePnlLotDetail(detail){const m=String(detail||'').match(/^\s*\+?([0-9]+(?:\.[0-9]+)?)\s*@\s*(?:[A-Za-z]{3})?\s*([0-9]+(?:\.[0-9]+)?)/);return m?{qty:Number(m[1]),price:Number(m[2])}:null;}
-function inferPnlLotLedger(p){
-  const saved=pnlLotLedgerForPosition(p);if(saved&&Array.isArray(saved.rows)&&saved.rows.length)return {rows:saved.rows.map(x=>({...x})),source:'saved',warnings:[]};
-  const identity=pnlBackfillPositionKey(p),structured=(S.portfolioLotEvents||[]).filter(e=>e&&e.identityKey===identity&&e.action!=='edit').slice().sort((a,b)=>(Number(a.ts)||0)-(Number(b.ts)||0));
-  if(structured.length){return {rows:structured.map((e,i)=>({id:e.id||'lot_'+i,date:e.date,action:e.action,qty:Number(e.qty)||0,price:Number(e.price)||0,costHKD:e.action==='buy'?(Number(e.costHKD)||''):'',costSource:e.costHKD?'app':''})),source:'structured',warnings:(S.portfolioLotEvents||[]).some(e=>e&&e.identityKey===identity&&e.action==='edit')?[tt('曾經手動修改持倉，請逐行核對。','The position was edited manually; verify every row.')]:[]};}
-  const changes=(S.changelog||[]).filter(c=>pnlBackfillPositionKey(c)===identity).slice().sort((a,b)=>(Number(a.ts)||0)-(Number(b.ts)||0)),rows=[];let edited=false;
-  changes.forEach((c,i)=>{if(c.action==='edit'||c.action==='delete')edited=true;if(c.action!=='add'&&c.action!=='sell')return;const v=parsePnlLotDetail(c.detail);if(v)rows.push({id:'log_'+i,date:c.date||p.date||today(),action:c.action==='sell'?'sell':'buy',qty:v.qty,price:v.price,costHKD:'',costSource:''});});
-  if(rows.length)return {rows,source:'changelog',warnings:edited?[tt('舊記錄曾經修改，系統只作草稿；請補正後先確認。','Old records include edits. This is only a draft; correct it before confirming.')]:[]};
-  return {rows:[{id:'fallback_'+String(p.id),date:p.date||today(),action:'buy',qty:Number(p.qty)||0,price:Number(p.entryPrice)||0,costHKD:Number(p.costHKD)||'',costSource:'current'}],source:'fallback',warnings:[tt('未搵到完整舊記錄，已用現時持倉建立一行草稿。','No complete old record was found; one draft row was created from the current position.')]};
-}
-function reconcilePnlLotLedger(p,rows,fxRows,align){
-  const clean=(rows||[]).map((r,i)=>({...r,_i:i,date:String(r.date||''),action:r.action==='sell'?'sell':'buy',qty:Number(r.qty),price:Number(r.price),costHKD:r.costHKD===''||r.costHKD==null?'':Number(r.costHKD)})).sort((a,b)=>a.date.localeCompare(b.date)||a._i-b._i);let qty=0,cost=0,derivedOnly=true;
-  clean.forEach(r=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(r.date)||!(r.qty>0)||!(r.price>0))throw new Error(tt('每一行都要有有效日期、數量同價格','Every row needs a valid date, quantity, and price'));if(r.action==='buy'){let c=r.costHKD;if(!(c>0)){const fx=normaliseBackfillCurrency(p.cur)==='HKD'?1:pnlBackfillFxRateForDate(fxRows,r.date);if(!(fx>0))throw new Error(tt('缺少 '+r.date+' 或之前嘅買入匯率','Missing purchase FX on or before '+r.date));c=r.qty*r.price*fx;r.costSource='historical-fx';}else{if(r.costSource!=='historical-fx')derivedOnly=false;r.costSource=r.costSource||'manual';}r.costHKD=Number(c.toFixed(2));qty+=r.qty;cost+=r.costHKD;}else{if(r.qty>qty+1e-8)throw new Error(tt('賣出數量超過當時持有數量','A sale exceeds the quantity held at that time'));const removed=qty?cost*r.qty/qty:0;qty-=r.qty;cost-=removed;r.costRemovedHKD=Number(removed.toFixed(2));}});
-  const targetQty=Number(p.qty)||0,targetCost=Number(p.costHKD)||0;if(Math.abs(qty-targetQty)>1e-6)throw new Error(tt('Ledger 最後數量 '+qty+'，同現時持倉 '+targetQty+' 對唔上','Ledger ending quantity '+qty+' does not match current '+targetQty));
-  let diff=targetCost-cost,ratio=targetCost?Math.abs(diff)/targetCost:Math.abs(diff),aligned=false;
-  if(Math.abs(diff)>0.02&&derivedOnly&&align&&ratio<=0.05&&cost>0){const scale=targetCost/cost;clean.forEach(r=>{if(r.action==='buy')r.costHKD=Number((r.costHKD*scale).toFixed(2));});qty=0;cost=0;clean.forEach(r=>{if(r.action==='buy'){qty+=r.qty;cost+=r.costHKD;}else{const removed=qty?cost*r.qty/qty:0;qty-=r.qty;cost-=removed;r.costRemovedHKD=Number(removed.toFixed(2));}});diff=targetCost-cost;ratio=targetCost?Math.abs(diff)/targetCost:Math.abs(diff);aligned=true;}
-  if(Math.abs(diff)>0.05)throw new Error(tt('成本對盤相差 '+fmt(Math.abs(diff))+'；請補回正確買入成本。','Cost reconciliation differs by '+fmt(Math.abs(diff))+'; enter the correct acquisition costs.'));
-  return {rows:clean.map(({_i,...r})=>r),endingQty:Number(qty.toFixed(6)),endingCost:Number(cost.toFixed(2)),aligned,confidence:aligned?'reconciled-estimate':(derivedOnly?'historical-fx-estimate':'user-confirmed-ledger')};
-}
-function buildPnlMultiLotDaily(p,bars,fxRows,ledger,kind){
-  const events=(ledger||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))),daily=[];let ei=0,qty=0,cost=0,previous=0;
-  (bars||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(bar=>{while(ei<events.length&&events[ei].date<=bar.date){const e=events[ei++];if(e.action==='buy'){qty+=Number(e.qty)||0;cost+=Number(e.costHKD)||0;}else{const sold=Number(e.qty)||0,removed=qty?cost*sold/qty:0;qty-=sold;cost-=removed;}}if(qty<=0)return;const fx=normaliseBackfillCurrency(p.cur)==='HKD'?1:pnlBackfillFxRateForDate(fxRows,bar.date);if(!(fx>0))throw new Error(tt('缺少 '+bar.date+' 或之前嘅歷史匯率','Missing historical FX on or before '+bar.date));const unreal=qty*(Number(bar.close)||0)*fx-cost,value=unreal-previous;previous=unreal;if(Math.abs(value)>0.004)daily.push({date:bar.date,value:Number(value.toFixed(2)),kind:kind||'stock',label:(p.name||tt('持倉','Position'))+' · '+tt('歷史未實現變動','historical unrealised change')});});
-  return {daily,lastUnrealised:Number(previous.toFixed(2)),endingQty:Number(qty.toFixed(6)),endingCost:Number(cost.toFixed(2))};
-}
-function storePnlLotLedger(ledger){S.pnlLotLedgers=Array.isArray(S.pnlLotLedgers)?S.pnlLotLedgers:[];const i=S.pnlLotLedgers.findIndex(x=>x&&String(x.positionId)===String(ledger&&ledger.positionId));if(i>=0)S.pnlLotLedgers[i]=ledger;else S.pnlLotLedgers.push(ledger);return true;}
-function pnlBackfillCutoffDate(p){
-  const idTime=Number(p&&p.id),dateTime=parseDateOnly(p&&p.date||'').getTime(),recordedAt=idTime>1000000000000?idTime:(Number.isFinite(dateTime)?dateTime:0),times=(S.priceHist||[]).map(x=>Number(x&&x.t)).filter(t=>Number.isFinite(t)&&t>=recordedAt).sort((a,b)=>a-b),d=times.length?new Date(times[0]):new Date();
-  d.setDate(d.getDate()-1);return ymd(d);
-}
-function normaliseBackfillCurrency(cur){cur=String(cur||'HKD').toUpperCase();return cur==='RMB'?'CNY':cur;}
-function pnlBackfillFxRateForDate(rows,date){
-  let rate=null;(rows||[]).forEach(r=>{if(r&&String(r.date||'')<=date&&Number(r.rate)>0)rate=Number(r.rate);});return rate;
-}
-function buildPnlBackfillDaily(p,bars,fxRows,kind){
-  const rows=[];let previous=0;
-  (bars||[]).slice().sort((a,b)=>String(a.date).localeCompare(String(b.date))).forEach(bar=>{
-    const fx=normaliseBackfillCurrency(p.cur)==='HKD'?1:pnlBackfillFxRateForDate(fxRows,bar.date);
-    if(!(Number(fx)>0))throw new Error(tt('缺少 '+bar.date+' 或之前嘅歷史匯率','Missing historical FX on or before '+bar.date));
-    const marketHKD=(Number(p.qty)||0)*(Number(bar.close)||0)*Number(fx),unreal=marketHKD-(Number(p.costHKD)||0),value=unreal-previous;
-    previous=unreal;
-    if(Math.abs(value)>0.004)rows.push({date:bar.date,value:Number(value.toFixed(2)),kind:kind||'stock',label:(p.name||tt('持倉','Position'))+' · '+tt('歷史未實現變動','historical unrealised change')});
-  });
-  return {daily:rows,lastUnrealised:Number(previous.toFixed(2))};
-}
-function pnlBackfillBatchKey(p,symbol,start,end){return [pnlBackfillFingerprint(p),String(symbol||'').trim().toUpperCase(),start||'',end||''].join('|');}
-function backfillAccountingSignature(){return JSON.stringify({portfolio:S.portfolio||[],accounts:S.accounts||[],txns:S.txns||[],people:S.people||[],gamble:S.gamble||[],physicalAssets:S.physicalAssets||[],debts:S.debts||[],privateLoans:S.privateLoans||[]});}
-function storePnlBackfillBatch(batch){
-  S.pnlBackfills=Array.isArray(S.pnlBackfills)?S.pnlBackfills:[];
-  if(!batch||!batch.key||S.pnlBackfills.some(b=>b&&(b.key===batch.key||String(b.positionId||'')===String(batch.positionId||''))))return false;
-  S.pnlBackfills.push(batch);return true;
-}
-function dropPnlBackfillBatch(id){const before=(S.pnlBackfills||[]).length;S.pnlBackfills=(S.pnlBackfills||[]).filter(b=>String(b&&b.id)!==String(id));return S.pnlBackfills.length<before;}
-function pnlBackfillEvents(){
-  const rows=[];(S.pnlBackfills||[]).forEach(batch=>(batch&&Array.isArray(batch.daily)?batch.daily:[]).forEach(e=>{if(e&&e.date&&Number.isFinite(Number(e.value)))rows.push({...e,batchId:batch.id,source:'backfill'});}));return rows;
-}
-async function fetchTwelveDataHistory(symbol,start,end){
-  return withQuoteKey('stock',async function(key){
-    const qs=new URLSearchParams({symbol,interval:'1day',start_date:start,end_date:end,adjust:'splits',order:'asc',apikey:key});let r,j;
-    try{r=await fetch('https://api.twelvedata.com/time_series?'+qs.toString());j=await r.json();}catch(e){throw quoteRequestError(e&&e.message||String(e),0,true);}
-    const status=Number(j&&j.code||r.status)||0,msg=j&&j.message||tt('未能取得歷史價格','Historical prices are unavailable'),values=Array.isArray(j&&j.values)?j.values:[];
-    if(!r.ok||!values.length){const retry=/rate|limit|credit|quota|api.?key|authentication/i.test(msg)||[401,403,429].includes(status);throw quoteRequestError(msg,status,retry);}
-    const byDate=new Map();values.forEach(v=>{const date=String(v&&v.datetime||'').slice(0,10),close=Number(v&&v.close);if(/^\d{4}-\d{2}-\d{2}$/.test(date)&&Number.isFinite(close)&&close>0)byDate.set(date,{date,close});});
-    const bars=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));if(!bars.length)throw quoteRequestError(tt('歷史價格格式不完整','Historical price response is incomplete'),0,false);
-    return {bars,currency:j&&j.meta&&j.meta.currency?normaliseBackfillCurrency(j.meta.currency):'',exchange:j&&j.meta&&j.meta.exchange||'',provider:'Twelve Data'};
-  });
-}
-async function fetchPnlBackfillFx(cur,start,end){
-  cur=normaliseBackfillCurrency(cur);if(cur==='HKD')return [{date:start,rate:1}];
-  const from=parseDateOnly(start);from.setDate(from.getDate()-10);
-  const qs=new URLSearchParams({from:ymd(from),to:end,base:cur,quotes:'HKD'});let r,j;
-  try{r=await fetch('https://api.frankfurter.dev/v2/rates?'+qs.toString());j=await r.json();}catch(e){throw new Error(e&&e.message||String(e));}
-  if(!r.ok||!Array.isArray(j)){throw new Error(j&&j.message||tt('未能取得歷史匯率','Historical FX is unavailable'));}
-  const rows=j.filter(x=>x&&x.quote==='HKD'&&normaliseBackfillCurrency(x.base)===cur&&Number(x.rate)>0).map(x=>({date:String(x.date||''),rate:Number(x.rate)})).sort((a,b)=>a.date.localeCompare(b.date));
-  if(!rows.length)throw new Error(tt('歷史匯率回應冇可用資料','Historical FX response has no usable rates'));return rows;
-}
-function renderPnlBackfillBatches(){
-  const el=document.getElementById('pnl-backfill-batches');if(!el)return;const batches=(S.pnlBackfills||[]).slice().reverse();
-  el.innerHTML=batches.length?batches.map(b=>`<div class="pnl-backfill-row"><div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start"><div style="min-width:0"><div style="font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(b.name||b.symbol||tt('歷史回填','Historical backfill'))}</div><div class="msub" style="margin-top:3px">${escapeHtml(b.start||'')} → ${escapeHtml(b.end||'')} · ${Number((b.daily||[]).length)} ${tt('個變動日','change days')}</div><div class="msub" style="margin-top:2px">${escapeHtml(b.provider||'Twelve Data')} · ${escapeHtml(b.confidence||'user-confirmed-ledger')} · ${Number((b.ledger||[]).length)} lots</div></div><button type="button" onclick="removePnlBackfill(${inlineJsString(String(b.id))})" style="border:0;background:var(--r2);color:var(--r3);border-radius:10px;padding:7px 9px;font-weight:800;cursor:pointer">${tt('撤銷','Remove')}</button></div></div>`).join(''):`<div class="msub" style="padding:12px 4px">${tt('未有回填批次','No imported batches')}</div>`;
-}
-function renderPnlLotDraft(){
-  const el=document.getElementById('pnl-backfill-ledger'),start=document.getElementById('pnl-backfill-start');if(!el)return;const escAttr=v=>escapeHtml(String(v==null?'':v));
-  el.innerHTML=_pnlLotDraft.length?_pnlLotDraft.map((r,i)=>`<div class="pnl-lot-row"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px"><strong style="font-size:12px">#${i+1} · ${r.action==='sell'?tt('賣出','Sell'):tt('買入','Buy')}</strong><button type="button" onclick="removePnlLotRow(${i})" aria-label="Remove lot" style="border:0;background:none;color:var(--r3);font-size:17px">×</button></div><div class="pnl-lot-grid"><label>${tt('類型','Action')}</label><select onchange="updatePnlLotRow(${i},'action',this.value)"><option value="buy"${r.action!=='sell'?' selected':''}>${tt('買入','Buy')}</option><option value="sell"${r.action==='sell'?' selected':''}>${tt('賣出','Sell')}</option></select><label>${tt('日期','Date')}</label><input type="date" value="${escAttr(r.date)}" onchange="updatePnlLotRow(${i},'date',this.value)"><label>${tt('數量','Quantity')}</label><input type="number" inputmode="decimal" value="${escAttr(r.qty)}" onchange="updatePnlLotRow(${i},'qty',this.value)"><label>${tt('每股價格','Unit price')}</label><input type="number" inputmode="decimal" value="${escAttr(r.price)}" onchange="updatePnlLotRow(${i},'price',this.value)">${r.action==='sell'?'':`<label>${tt('總成本 HKD','Total cost HKD')}</label><input type="number" inputmode="decimal" placeholder="${tt('留空＝歷史匯率','blank = historical FX')}" value="${escAttr(r.costHKD)}" onchange="updatePnlLotRow(${i},'costHKD',this.value)">`}</div></div>`).join(''):`<div class="msub" style="padding:12px 4px">${tt('請加入至少一行買入記錄','Add at least one buy row')}</div>`;
-  if(start)start.value=pnlBackfillLedgerStart(_pnlLotDraft);
-}
-function updatePnlLotRow(i,key,value){const r=_pnlLotDraft[i];if(!r)return;r[key]=['qty','price'].includes(key)?Number(value):(key==='costHKD'?(value===''?'':Number(value)):value);if(key==='costHKD')r.costSource=value===''?'':'manual';_pnlBackfillPreview=null;renderPnlLotDraft();if(key==='date'||key==='action')renderPnlBackfillRangeNote();}
-function setPnlBackfillStart(value){
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(String(value||'')))return;
-  let index=-1;_pnlLotDraft.forEach((r,i)=>{if(r&&r.action!=='sell'&&(index<0||String(r.date||'')<String(_pnlLotDraft[index].date||'')))index=i;});
-  if(index<0)_pnlLotDraft.unshift({id:'draft_'+Date.now(),date:value,action:'buy',qty:'',price:'',costHKD:'',costSource:''});else _pnlLotDraft[index].date=value;
-  _pnlBackfillPreview=null;renderPnlLotDraft();renderPnlBackfillRangeNote();
-}
-function addPnlLotRow(action){_pnlLotDraft.push({id:'draft_'+Date.now()+'_'+_pnlLotDraft.length,date:today(),action:action==='sell'?'sell':'buy',qty:'',price:'',costHKD:'',costSource:''});_pnlBackfillPreview=null;renderPnlLotDraft();renderPnlBackfillRangeNote();}
-function removePnlLotRow(i){_pnlLotDraft.splice(i,1);_pnlBackfillPreview=null;renderPnlLotDraft();renderPnlBackfillRangeNote();}
-function renderPnlBackfillRangeNote(extra){
-  const list=document.getElementById('pnl-backfill-position'),note=document.getElementById('pnl-backfill-position-note'),startEl=document.getElementById('pnl-backfill-start'),p=list&&(S.portfolio||[]).find(x=>String(x.id)===String(list.value));if(!note)return;
-  if(!p){note.textContent=extra||tt('請先選擇持倉。','Select a position first.');return;}
-  const range=pnlBackfillRangeState(p,_pnlLotDraft);if(startEl){startEl.max=range.end;startEl.setAttribute('aria-describedby','pnl-backfill-position-note');}
-  if(extra){note.textContent=extra;return;}
-  note.textContent=range.hasGap?tt('可回填 '+range.start+' 至 '+range.end+'；只會建立 lot metadata 同日曆資料，唔會改盤數。','Can backfill '+range.start+' through '+range.end+'. Only lot metadata and calendar data will be created; accounting is unchanged.'):tt('App 已由呢個持倉加入當日開始記錄，所以暫時冇歷史空窗。如果實際買入更早，請將上面「Ledger 開始」改到 '+range.end+' 或之前。','The app already records from the day this position was added, so there is no historical gap. If the real acquisition was earlier, change “Ledger starts” above to '+range.end+' or earlier.');
-}
-function renderPnlBackfillUiText(){
-  const text={
-    'pnl-backfill-title':['歷史未實現損益回填','Historical unrealised P&L backfill'],'pnl-backfill-intro':['Stage 3：支援多次買入同部分賣出，以平均成本重建；只寫入可撤銷嘅日曆資料。','Stage 3: reconstruct multiple buys and partial sells using average cost; only reversible calendar data is written.'],'pnl-backfill-position-label':['持倉','Position'],'pnl-backfill-symbol-label':['市場代碼','Market symbol'],'pnl-backfill-start-label':['Ledger 開始','Ledger starts'],'pnl-backfill-end-label':['回填至','Backfill through'],'pnl-backfill-ledger-label':['買賣 Ledger','Trade ledger'],'pnl-backfill-align-label':['如全部買入成本由歷史匯率推算，而差異不多於 5%，對齊現時剩餘成本。','If every buy cost is FX-derived and the gap is within 5%, align to the current remaining cost.'],'pnl-backfill-confirm-label':['我已核對完整買入及賣出紀錄、日期、數量同成本。','I verified the complete buy/sell ledger, dates, quantities, and costs.'],'pnl-backfill-history-label':['已匯入批次','Imported batches']
-  };Object.entries(text).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.textContent=S.lang==='en'?v[1]:v[0];});
-  const preview=document.getElementById('pnl-backfill-preview-btn'),save=document.getElementById('pnl-backfill-save-btn');if(preview)preview.textContent=tt('建立預覽','Build preview');if(save)save.textContent=tt('確認匯入日曆','Import into calendar');
-}
-function openPnlBackfill(){
-  _pnlBackfillPreview=null;renderPnlBackfillUiText();const list=document.getElementById('pnl-backfill-position'),rows=pnlBackfillCandidates(),eligible=rows.filter(r=>r.eligible),rejected=rows.filter(r=>!r.eligible),ordered=eligible.concat(rejected);
-  list.innerHTML=ordered.length?ordered.map(r=>`<option value="${escapeHtml(String(r.position.id))}"${r.eligible?'':' disabled'}>${escapeHtml(r.position.name||'')} · ${escapeHtml(r.position.cur||'HKD')} ${escapeHtml(String(r.position.qty||0))}${r.eligible?'':' · '+escapeHtml(r.issues.join(' / '))}</option>`).join(''):`<option value="">${tt('未有股票／ETF持倉','No stock / ETF positions')}</option>`;if(eligible.length)list.value=String(eligible[0].position.id);
-  syncPnlBackfillPosition();renderPnlBackfillBatches();const wrap=document.getElementById('m-pnl-backfill'),modal=wrap&&wrap.querySelector('.modal');wrap.classList.add('open');if(modal){modal.scrollTop=0;requestAnimationFrame(()=>{modal.scrollTop=0;});}
-}
-function syncPnlBackfillPosition(){
-  _pnlBackfillPreview=null;const id=document.getElementById('pnl-backfill-position').value,p=(S.portfolio||[]).find(x=>String(x.id)===String(id)),symbol=document.getElementById('pnl-backfill-symbol'),end=document.getElementById('pnl-backfill-end'),confirm=document.getElementById('pnl-backfill-confirm');if(symbol)symbol.value=p?(p.apiSymbol||p.name||''):'';if(end)end.textContent=p?pnlBackfillCutoffDate(p):'—';if(confirm)confirm.checked=false;const inferred=p?inferPnlLotLedger(p):{rows:[],warnings:[]};_pnlLotDraft=inferred.rows.map(x=>({...x}));renderPnlLotDraft();renderPnlBackfillRangeNote(inferred.warnings.length?inferred.warnings.join(' '):'');const status=document.getElementById('pnl-backfill-status'),preview=document.getElementById('pnl-backfill-preview'),save=document.getElementById('pnl-backfill-save-btn');if(status)status.style.display='none';if(preview)preview.style.display='none';if(save)save.style.display='none';}
-async function previewPnlBackfill(){
-  const btn=document.getElementById('pnl-backfill-preview-btn'),status=document.getElementById('pnl-backfill-status'),preview=document.getElementById('pnl-backfill-preview'),save=document.getElementById('pnl-backfill-save-btn'),id=document.getElementById('pnl-backfill-position').value,p=(S.portfolio||[]).find(x=>String(x.id)===String(id)),symbol=document.getElementById('pnl-backfill-symbol').value.trim(),start=pnlBackfillLedgerStart(_pnlLotDraft),end=pnlBackfillCutoffDate(p);
-  function fail(msg){_pnlBackfillPreview=null;status.className='pnl-backfill-status err';status.textContent=msg;status.style.display='block';preview.style.display='none';save.style.display='none';}
-  if(!p)return fail(tt('請選擇合資格持倉','Select an eligible position'));if(!pnlBackfillEligibility(p).eligible)return fail(tt('持倉狀態已改變，請重新開啟','Position state changed; reopen this tool'));if(!document.getElementById('pnl-backfill-confirm').checked)return fail(tt('請先確認完整 Ledger','Confirm the complete ledger first'));if(!symbol)return fail(tt('請輸入市場代碼','Enter a market symbol'));if(!_pnlLotDraft.length||!start)return fail(tt('請輸入有效嘅第一筆買入日期','Enter a valid first acquisition date'));if(start>end)return fail(tt('呢個持倉暫時冇歷史空窗；如實際買入更早，請將「Ledger 開始」改到 '+end+' 或之前。','There is no historical gap for this position. If it was actually acquired earlier, change “Ledger starts” to '+end+' or earlier.'));
-  btn.disabled=true;btn.textContent=tt('取得歷史資料中…','Fetching history…');status.className='pnl-backfill-status';status.textContent=tt('只建立預覽，暫時未儲存。','Preview only; nothing has been saved.');status.style.display='block';preview.style.display='none';save.style.display='none';
-  try{
-    const history=await fetchTwelveDataHistory(symbol,start,end),positionCur=normaliseBackfillCurrency(p.cur),apiCur=normaliseBackfillCurrency(history.currency||p.cur);if(apiCur&&apiCur!==positionCur)throw new Error(tt('市場資料貨幣係 '+apiCur+'，但持倉設定係 '+positionCur+'。請先修正持倉貨幣。','Market data currency is '+apiCur+', but the position uses '+positionCur+'. Correct the position currency first.'));
-    const fx=await fetchPnlBackfillFx(positionCur,start,end),ledger=reconcilePnlLotLedger(p,_pnlLotDraft,fx,document.getElementById('pnl-backfill-align').checked),calc=buildPnlMultiLotDaily(p,history.bars,fx,ledger.rows,pnlSecForPort(p)),key=pnlBackfillBatchKey(p,symbol,start,end);if(!calc.daily.length)throw new Error(tt('範圍內未有可用損益變動','No usable P&L changes in this range'));
-    _pnlBackfillPreview={positionId:String(p.id),fingerprint:pnlBackfillFingerprint(p),key,name:p.name||symbol,symbol,start,end,currency:positionCur,qty:Number(p.qty),costHKD:Number(p.costHKD),provider:history.provider,exchange:history.exchange||'',daily:calc.daily,lastUnrealised:calc.lastUnrealised,ledger:ledger.rows,confidence:ledger.confidence,aligned:ledger.aligned,createdAt:Date.now()};
-    const first=history.bars[0],last=history.bars[history.bars.length-1];status.className='pnl-backfill-status ok';status.textContent=tt('對盤完成，仍未寫入。請核對後先確認。','Reconciliation ready and still unsaved. Review before importing.');preview.innerHTML=`<div class="pnl-backfill-row"><div style="font-size:14px;font-weight:850">${escapeHtml(p.name||symbol)} · ${escapeHtml(symbol.toUpperCase())}</div><div class="msub" style="margin-top:5px">${escapeHtml(first.date)} → ${escapeHtml(last.date)} · ${history.bars.length} ${tt('個交易日','trading days')} · ${ledger.rows.length} lots</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px"><div><div class="mlabel">${tt('對盤數量','Reconciled qty')}</div><strong>${escapeHtml(String(ledger.endingQty))}</strong></div><div><div class="mlabel">${tt('剩餘成本','Remaining cost')}</div><strong>${fmt(ledger.endingCost)}</strong></div><div><div class="mlabel">${tt('最後估計未實現','Ending unrealised')}</div><strong style="color:${calc.lastUnrealised>=0?'var(--g3)':'var(--r3)'}">${calc.lastUnrealised>=0?'+':'−'}${fmt(Math.abs(calc.lastUnrealised))}</strong></div><div><div class="mlabel">${tt('可信度','Confidence')}</div><strong>${escapeHtml(ledger.confidence)}</strong></div></div><div class="msub" style="margin-top:9px">${ledger.aligned?tt('已在 5% 容差內對齊現時成本 · ','Aligned to current cost within 5% · '):''}${escapeHtml(history.provider)}${history.exchange?' · '+escapeHtml(history.exchange):''} · ${tt('拆股調整收市價','split-adjusted close')}</div></div>`;preview.style.display='block';save.style.display='block';
-  }catch(e){fail((e&&e.message)||String(e));}
-  finally{btn.disabled=false;btn.textContent=tt('重新建立預覽','Rebuild preview');}
-}
-function commitPnlBackfill(){
-  const p=_pnlBackfillPreview&&(S.portfolio||[]).find(x=>String(x.id)===String(_pnlBackfillPreview.positionId)),status=document.getElementById('pnl-backfill-status');if(!_pnlBackfillPreview||!p){if(status){status.className='pnl-backfill-status err';status.textContent=tt('預覽已失效，請重新建立','Preview expired; rebuild it');status.style.display='block';}return;}if(pnlBackfillFingerprint(p)!==_pnlBackfillPreview.fingerprint){_pnlBackfillPreview=null;status.className='pnl-backfill-status err';status.textContent=tt('持倉喺預覽後有改動，請重新建立','Position changed after preview; rebuild it');return;}
-  const before=backfillAccountingSignature(),oldLedgers=(S.pnlLotLedgers||[]).map(x=>({...x,rows:(x.rows||[]).map(r=>({...r}))})),batch={..._pnlBackfillPreview,id:'pbf_'+Date.now()+'_'+Math.random().toString(36).slice(2,7),daily:_pnlBackfillPreview.daily.map(x=>({...x})),ledger:_pnlBackfillPreview.ledger.map(x=>({...x}))},ledger={positionId:String(p.id),identityKey:pnlBackfillPositionKey(p),updatedAt:Date.now(),source:'stage3-user-confirmed',rows:_pnlBackfillPreview.ledger.map(x=>({...x}))};if(!storePnlBackfillBatch(batch)){status.className='pnl-backfill-status err';status.textContent=tt('相同回填批次已經存在','This backfill batch already exists');return;}storePnlLotLedger(ledger);if(backfillAccountingSignature()!==before){dropPnlBackfillBatch(batch.id);S.pnlLotLedgers=oldLedgers;status.className='pnl-backfill-status err';status.textContent=tt('安全檢查失敗，未有儲存','Safety check failed; nothing was saved');return;}if(!saveS()){dropPnlBackfillBatch(batch.id);S.pnlLotLedgers=oldLedgers;status.className='pnl-backfill-status err';status.textContent=tt('本機儲存失敗，未有匯入','Local save failed; batch was not imported');return;}_pnlBackfillPreview=null;status.className='pnl-backfill-status ok';status.textContent=tt('已加入日曆；持倉、現金同交易完全冇改動。','Added to the calendar; portfolio, cash, and transactions are unchanged.');document.getElementById('pnl-backfill-preview').style.display='none';document.getElementById('pnl-backfill-save-btn').style.display='none';renderPnlBackfillBatches();renderPnlCalendar();showToast(tt('Stage 3 歷史損益已回填','Stage 3 historical P&L backfilled'));
-}
-function removePnlBackfill(id){if(!confirm(tt('撤銷呢個回填批次？只會移除日曆資料。','Remove this backfill batch? Only calendar data will be removed.')))return;const before=backfillAccountingSignature();if(!dropPnlBackfillBatch(id))return;if(backfillAccountingSignature()!==before){showToast(tt('安全檢查失敗','Safety check failed'),1);return;}saveS();renderPnlBackfillBatches();renderPnlCalendar();showToast(tt('已撤銷回填','Backfill removed'));}
 function pnlCalendarEvents(){
-  const rows=pnlUnrealizedEvents().concat(pnlBackfillEvents());
-  (S.portfolio||[]).filter(p=>p.exitPrice).forEach(p=>rows.push({date:p.exitDate||p.date||today(),value:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),kind:acctIsPhysical(p.acctId)?'physical':(p.secId||p.type||'stock'),label:(p.name||t('position'))+' · '+t('realisedpnl')}));
-  (S.gamble||[]).filter(g=>!g.open).forEach(g=>rows.push({date:g.date||today(),value:(Number(g.cashoutHKD)||0)-(Number(g.buyinHKD)||0),kind:acctIsPhysical(g.acctId)?'physical':(g.secId||'poker'),label:g.venue||t('poker')}));
+  const rows=pnlUnrealizedEvents();
+  // Money+ source names remain recoverable in acctLabel/_mpKey. Route reliable
+  // Poker and Polymarket P&L into separate filters without rewriting raw data.
+  (S.portfolio||[]).filter(p=>p.exitPrice).forEach(p=>rows.push({date:p.exitDate||p.date||today(),value:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),kind:acctIsPhysical(p.acctId)?'physical':pnlCalendarRecordKind(p,p.type||'stock'),label:(p.name||t('position'))+' · '+t('realisedpnl')}));
+  (S.gamble||[]).filter(g=>!g.open).forEach(g=>rows.push({date:g.date||today(),value:(Number(g.cashoutHKD)||0)-(Number(g.buyinHKD)||0),kind:acctIsPhysical(g.acctId)?'physical':pnlCalendarRecordKind(g,'poker'),label:g.venue||t('poker')}));
   (S.privateLoans||[]).forEach(l=>loanPayments(l).forEach(p=>{const value=Number(p.interestHKD)||0;if(value)rows.push({date:p.date||today(),value,kind:'loan',label:l.borrower||t('privatedebt')});}));
   (S.physicalAssets||[]).filter(a=>!a.excluded).forEach(a=>{const hist=ensurePhysicalAssetHistory(a);for(let i=1;i<hist.length;i++){const value=toHKD((Number(hist[i].value)||0)-(Number(hist[i-1].value)||0),a.cur||'HKD');if(Math.abs(value)>0.004)rows.push({date:hist[i].date||today(),value,kind:'physical',label:a.name||assetLabel('fixed')});}});
+  (S.pnlImports||[]).filter(b=>b&&b.active).forEach(b=>(b.rows||[]).forEach(r=>rows.push({...r,kind:r.kind||b.kind||'stock',importBatch:b.id})));
+  const sectionRows=rows.filter(r=>pnlCalendarSectionEnabled(r.kind));
   const filters=Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[];
-  return filters.length?rows.filter(r=>filters.includes(r.kind)):rows;
+  return filters.length?sectionRows.filter(r=>filters.includes(r.kind)):sectionRows;
 }
-function shiftPnlCalendar(delta){if(!_pnlCalMonth){const n=new Date();_pnlCalMonth={y:n.getFullYear(),m:n.getMonth()};}let m=_pnlCalMonth.m+delta,y=_pnlCalMonth.y;if(m<0){m=11;y--;}if(m>11){m=0;y++;}_pnlCalMonth={y,m};_pnlCalSelected=null;renderPnlCalendar();}
+function setPnlCalendarMode(mode){_pnlCalMode=mode==='year'?'year':'month';_pnlCalSelected=null;renderPnlCalendar();}
+function openPnlCalendarMonth(month){_pnlCalMonth.m=month;_pnlCalMode='month';_pnlCalSelected=null;renderPnlCalendar();}
+function shiftPnlCalendar(delta){if(!_pnlCalMonth){const n=new Date();_pnlCalMonth={y:n.getFullYear(),m:n.getMonth()};}if(_pnlCalMode==='year')_pnlCalMonth.y+=delta;else{let m=_pnlCalMonth.m+delta,y=_pnlCalMonth.y;if(m<0){m=11;y--;}if(m>11){m=0;y++;}_pnlCalMonth={y,m};}_pnlCalSelected=null;renderPnlCalendar();}
 function togglePnlCalendarDay(day){_pnlCalSelected=_pnlCalSelected===day?null:day;renderPnlCalendar();}
 function renderPnlCalendar(){
-  const grid=document.getElementById('pnl-cal-grid');if(!grid)return;
-  if(!_pnlCalMonth){const n=new Date();_pnlCalMonth={y:n.getFullYear(),m:n.getMonth()};}
-  const {y,m}=_pnlCalMonth,events=pnlCalendarEvents().filter(e=>{const d=parseDateOnly(e.date);return !Number.isNaN(d.getTime())&&d.getFullYear()===y&&d.getMonth()===m;}),daily={};
-  events.forEach(e=>{const day=parseDateOnly(e.date).getDate();(daily[day]=daily[day]||[]).push(e);});
-  const monthName=S.lang==='en'?['January','February','March','April','May','June','July','August','September','October','November','December'][m]:(m+1)+'月';
-  const title=document.getElementById('pnl-cal-title');if(title)title.textContent=monthName+' '+y;
-  const label=document.getElementById('pnl-cal-label');if(label)label.textContent=tt('每日損益日曆','Daily P&L calendar');
-  const hint=document.getElementById('pnl-cal-hint');if(hint)hint.textContent=tt('按已記錄嘅已實現、未實現損益及估值變動顯示','Based on recorded realised, unrealised and valuation P&L changes');
-  const backfillLabel=document.getElementById('pnl-backfill-label');if(backfillLabel)backfillLabel.textContent=tt('歷史回填','Historical backfill');
-  const filterLabel=document.getElementById('pnl-filter-label');if(filterLabel)filterLabel.textContent=tt('篩選','Filter');
-  const filterHint=document.getElementById('pnl-filter-hint');if(filterHint)filterHint.textContent=tt('同一組篩選會套用到資產圓形圖同每日損益日曆。','The same filters apply to both allocation and the daily P&L calendar.');
-  const dow=S.lang==='en'?['S','M','T','W','T','F','S']:['日','一','二','三','四','五','六'];let html=dow.map(d=>`<div style="text-align:center;font-size:10px;color:var(--ink3);font-weight:800;padding:3px 0">${d}</div>`).join('');
-  const first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++)html+='<div></div>';
-  for(let day=1;day<=dim;day++){const v=(daily[day]||[]).reduce((n,e)=>n+e.value,0),has=Math.abs(v)>0.004,cls=has?(v>=0?' pos':' neg'):'',sel=_pnlCalSelected===day?' sel':'';html+=`<button type="button" class="pnl-cal-day${cls}${sel}" onclick="togglePnlCalendarDay(${day})"><span style="font-size:11px;font-weight:700">${day}</span>${has?`<span class="amt">${v>=0?'+':'−'}${escapeHtml(numStr(Math.abs((S.dispCur||'HKD')==='HKD'?v:v/(FX[S.dispCur]||1))))}</span>`:''}</button>`;}
-  grid.innerHTML=html;
-  const profit=events.filter(e=>e.value>0).reduce((n,e)=>n+e.value,0),loss=events.filter(e=>e.value<0).reduce((n,e)=>n+Math.abs(e.value),0),net=profit-loss,summary=document.getElementById('pnl-cal-summary');if(summary)summary.innerHTML=`${tt('本月收入／盈利','Month gains')} <strong style="color:var(--g3)">+${fmt(profit)}</strong> · ${tt('損失','losses')} <strong style="color:var(--r3)">−${fmt(loss)}</strong> · ${tt('淨額','net')} <strong style="color:${net>=0?'var(--g3)':'var(--r3)'}">${net>=0?'+':'−'}${fmt(Math.abs(net))}</strong>`;
-  const detail=document.getElementById('pnl-cal-detail');if(!detail)return;if(!_pnlCalSelected){detail.innerHTML='';return;}const dayRows=daily[_pnlCalSelected]||[],ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(_pnlCalSelected).padStart(2,'0');detail.innerHTML=`<div style="font-size:12px;font-weight:800;margin:9px 2px 5px">${ds}</div>`+(dayRows.length?dayRows.map(e=>`<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-top:.5px solid var(--bdr);font-size:12px"><span>${escapeHtml((pnlPieFilterMeta()[e.kind]||['',e.kind])[0])} ${escapeHtml(e.label)}</span><strong style="color:${e.value>=0?'var(--g3)':'var(--r3)'}">${e.value>=0?'+':'−'}${fmt(Math.abs(e.value))}</strong></div>`).join(''):`<div class="msub" style="padding:8px 2px">${tt('未有損益變動','No P&L changes')}</div>`);
+  const grid=document.getElementById('pnl-cal-grid');if(!grid)return;if(!_pnlCalMonth){const n=new Date();_pnlCalMonth={y:n.getFullYear(),m:n.getMonth()};}
+  const {y,m}=_pnlCalMonth,all=pnlCalendarEvents(),title=document.getElementById('pnl-cal-title'),detail=document.getElementById('pnl-cal-detail'),summary=document.getElementById('pnl-cal-summary');
+  document.getElementById('pnl-cal-mode-month').classList.toggle('active',_pnlCalMode==='month');document.getElementById('pnl-cal-mode-year').classList.toggle('active',_pnlCalMode==='year');grid.classList.toggle('year',_pnlCalMode==='year');
+  const label=document.getElementById('pnl-cal-label');if(label)label.textContent=tt('損益日曆','P&L calendar');const hint=document.getElementById('pnl-cal-hint');if(hint)hint.textContent=tt('股票按美股收市日；紅綠顯示損益，金色代表估算或實際追蹤分界','Stocks use the US market close date; red/green show P&L and gold marks estimates or the live-tracking boundary');
+  const filterLabel=document.getElementById('pnl-filter-label');if(filterLabel)filterLabel.textContent=tt('篩選','Filter');const filterHint=document.getElementById('pnl-filter-hint');if(filterHint)filterHint.textContent=tt('同一組篩選會套用到資產圓形圖同損益日曆。','The same filters apply to both allocation and the P&L calendar.');
+  if(_pnlCalMode==='year'){
+    if(title)title.textContent=String(y);const months=Array.from({length:12},()=>[]);all.forEach(e=>{const d=parseDateOnly(e.date);if(!Number.isNaN(d.getTime())&&d.getFullYear()===y)months[d.getMonth()].push(e);});const names=S.lang==='en'?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']:Array.from({length:12},(_,i)=>(i+1)+'月');
+    grid.innerHTML=months.map((rows,i)=>{const v=rows.reduce((n,e)=>n+pnlEventDisplayValue(e),0),has=Math.abs(v)>0.004,estimated=rows.some(e=>e.estimated||e.boundary);return `<button type="button" class="pnl-cal-month${has?(v>=0?' pos':' neg'):''}${estimated?' estimated':''}" onclick="openPnlCalendarMonth(${i})"><strong>${names[i]}</strong>${has?`<span class="amt" style="color:${v>=0?'var(--g3)':'var(--r3)'}">${v>=0?'+':'−'}${escapeHtml(pnlDisplayAmount(v))}</span>`:'<span class="amt" style="color:var(--ink3)">—</span>'}${estimated?'<span class="pnl-quality" style="margin-top:6px">◆</span>':''}</button>`;}).join('');
+    const vals=months.flat().map(pnlEventDisplayValue),gain=vals.filter(v=>v>0).reduce((a,b)=>a+b,0),loss=vals.filter(v=>v<0).reduce((a,b)=>a+Math.abs(b),0),net=gain-loss;if(summary)summary.innerHTML=`${tt('全年盈利','Year gains')} <strong style="color:var(--g3)">+${pnlDisplayAmount(gain)}</strong> · ${tt('損失','losses')} <strong style="color:var(--r3)">−${pnlDisplayAmount(loss)}</strong> · ${tt('淨額','net')} <strong style="color:${net>=0?'var(--g3)':'var(--r3)'}">${net>=0?'+':'−'}${pnlDisplayAmount(net)}</strong>`;if(detail)detail.innerHTML='';return;
+  }
+  const events=all.filter(e=>{const d=parseDateOnly(e.date);return !Number.isNaN(d.getTime())&&d.getFullYear()===y&&d.getMonth()===m;}),daily={};events.forEach(e=>{const day=parseDateOnly(e.date).getDate();(daily[day]=daily[day]||[]).push(e);});const monthName=S.lang==='en'?['January','February','March','April','May','June','July','August','September','October','November','December'][m]:(m+1)+'月';if(title)title.textContent=monthName+' '+y;
+  const dow=S.lang==='en'?['S','M','T','W','T','F','S']:['日','一','二','三','四','五','六'];let html=dow.map(d=>`<div style="text-align:center;font-size:10px;color:var(--ink3);font-weight:800;padding:3px 0">${d}</div>`).join('');const first=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate();for(let i=0;i<first;i++)html+='<div></div>';
+  for(let day=1;day<=dim;day++){const rows=daily[day]||[],v=rows.reduce((n,e)=>n+pnlEventDisplayValue(e),0),has=Math.abs(v)>0.004,estimated=rows.some(e=>e.estimated),boundary=rows.some(e=>e.boundary),cls=has?(v>=0?' pos':' neg'):'',sel=_pnlCalSelected===day?' sel':'';html+=`<button type="button" class="pnl-cal-day${cls}${sel}${estimated?' estimated':''}${boundary?' boundary':''}" onclick="togglePnlCalendarDay(${day})"><span style="font-size:11px;font-weight:700">${day}${estimated||boundary?' <span style="color:#b7791f">◆</span>':''}</span>${has?`<span class="amt">${v>=0?'+':'−'}${escapeHtml(pnlDisplayAmount(v))}</span>`:''}</button>`;}grid.innerHTML=html;
+  const vals=events.map(pnlEventDisplayValue),profit=vals.filter(v=>v>0).reduce((a,b)=>a+b,0),loss=vals.filter(v=>v<0).reduce((a,b)=>a+Math.abs(b),0),net=profit-loss;if(summary)summary.innerHTML=`${tt('本月盈利','Month gains')} <strong style="color:var(--g3)">+${pnlDisplayAmount(profit)}</strong> · ${tt('損失','losses')} <strong style="color:var(--r3)">−${pnlDisplayAmount(loss)}</strong> · ${tt('淨額','net')} <strong style="color:${net>=0?'var(--g3)':'var(--r3)'}">${net>=0?'+':'−'}${pnlDisplayAmount(net)}</strong>`;
+  if(!detail)return;if(!_pnlCalSelected){detail.innerHTML='';return;}const dayRows=daily[_pnlCalSelected]||[],ds=y+'-'+String(m+1).padStart(2,'0')+'-'+String(_pnlCalSelected).padStart(2,'0');detail.innerHTML=`<div style="font-size:12px;font-weight:800;margin:9px 2px 5px">${ds}</div>`+(dayRows.length?dayRows.map(e=>{const v=pnlEventDisplayValue(e),badge=e.boundary?tt('實際追蹤開始','live tracking starts'):e.estimated?tt('估算','estimated'):'';return `<div style="display:flex;justify-content:space-between;gap:10px;padding:7px 2px;border-top:.5px solid var(--bdr);font-size:12px"><span>${escapeHtml((pnlPieFilterMeta()[e.kind]||['',e.kind])[0])} ${escapeHtml(e.label)} ${badge?`<span class="pnl-quality">${escapeHtml(badge)}</span>`:''}</span><strong style="color:${v>=0?'var(--g3)':'var(--r3)'}">${v>=0?'+':'−'}${pnlDisplayAmount(v)}</strong></div>`;}).join(''):`<div class="msub" style="padding:8px 2px">${tt('未有損益變動','No P&L changes')}</div>`);
 }
 function pokerRowHTML(g){
   const sp=g.open?0:((g.cashoutHKD||0)-(g.buyinHKD||0));
@@ -5252,7 +5120,7 @@ function renderSettings(){
   const cc=(typeof cloudCfg==='function')?cloudCfg():null;const cu=document.getElementById('cloud-url');
   if(cc&&cu){cu.value=cc.url||'';document.getElementById('cloud-key').value=cc.key||'';document.getElementById('cloud-pass').value=cc.pass||'';document.getElementById('cloud-on').classList.toggle('on',!!cc.on);if(typeof setCloudStatus==='function')setCloudStatus(cc.on?(cc.pending?'pending':(cc.ver?'ok':'')):'');}
   const dc=document.getElementById('disp-cur');if(dc)dc.value=S.dispCur||'HKD';
-  renderPnlSecMgr();renderAssetLabelSettings();renderQuoteApiSettings();renderAiSettings();renderCredit();renderBudgetSettings();renderTaxSettings();renderNotifySettings();
+  renderPnlSecMgr();renderPnlImportBatches();renderAssetLabelSettings();renderQuoteApiSettings();renderAiSettings();renderCredit();renderBudgetSettings();renderTaxSettings();renderNotifySettings();
   document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme===(S.theme||'auto')));
   document.querySelectorAll('.motion-btn').forEach(b=>b.classList.toggle('active',b.dataset.motion===(S.motionMode||'dance')));
   document.querySelectorAll('.numfmt-btn').forEach(b=>b.classList.toggle('active',b.dataset.numfmt===(S.numFmt||'full')));
@@ -5361,6 +5229,34 @@ function restoreFromFile(input){
   r.onload=function(){let obj;try{obj=JSON.parse(String(r.result));}catch(e){showToast(t('restorebad'),1);return;}applyBackupObj(obj);};
   r.readAsText(f);
 }
+// ─── STANDALONE P&L CALENDAR IMPORT ───────────────────────
+function pnlImportDate(v){
+  if(v instanceof Date&&!Number.isNaN(v.getTime()))return ymd(v);
+  if(typeof v==='number'&&typeof XLSX!=='undefined'){const d=XLSX.SSF.parse_date_code(v);if(d)return d.y+'-'+String(d.m).padStart(2,'0')+'-'+String(d.d).padStart(2,'0');}
+  const s=String(v||'').trim(),iso=s.match(/^(\d{4})[-\/]([01]?\d)[-\/]([0-3]?\d)/);if(iso)return iso[1]+'-'+String(iso[2]).padStart(2,'0')+'-'+String(iso[3]).padStart(2,'0');
+  const d=new Date(s);return Number.isNaN(d.getTime())?'':ymd(d);
+}
+function pnlImportBatchSignature(rows){let h=2166136261;const s=rows.map(r=>[r.date,r.kind,r.nativeAmount,r.currency].join('|')).join(';');for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return 'pnl_'+(h>>>0).toString(16)+'_'+rows.length;}
+function importPnlExcel(input){
+  const f=input.files&&input.files[0];if(!f)return;if(typeof XLSX==='undefined'){showToast('Excel library still loading',1);return;}
+  const st=document.getElementById('pnl-import-status');if(st)st.textContent=tt('讀取中…','Reading…');const reader=new FileReader();
+  reader.onload=function(ev){try{
+    const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array',cellDates:true});const ws=wb.Sheets['P&L Import'];if(!ws)throw new Error('Missing sheet: P&L Import');
+    const raw=XLSX.utils.sheet_to_json(ws,{raw:true,defval:'',range:3});const required=['Date','Section_ID','Amount_USD','Currency'];if(!raw.length||required.some(k=>!Object.prototype.hasOwnProperty.call(raw[0],k)))throw new Error('Invalid P&L Import headers');
+    const validSections=new Set(['poker','stock','crypto','pe','physical','loan','debt',...(S.customSections||[]).map(c=>c.id)]);const rows=raw.map((x,i)=>{const date=pnlImportDate(x.Date),amount=Number(x.Amount_USD),currency=String(x.Currency||'USD').trim().toUpperCase(),kind=String(x.Section_ID||'').trim(),fx={HKD:Number(x.USD_to_HKD)||null,CNY:Number(x.USD_to_CNY)||null,JPY:Number(x.USD_to_JPY)||null};if(!date||!validSections.has(kind)||!Number.isFinite(amount)||(currency==='USD'&&(!fx.HKD||!fx.CNY||!fx.JPY)))throw new Error('Invalid row '+(i+5));return {date,kind,label:String(x.Section_Name||kind),nativeAmount:amount,currency,returnPct:x.Daily_Return_Pct===''?null:Number(x.Daily_Return_Pct),fx,estimated:String(x.Is_Estimated||'').toLowerCase()==='true'||x.Is_Estimated===true,quality:String(x.Quality||''),sourceRef:String(x.Source_Ref||''),boundary:false};});
+    const sig=pnlImportBatchSignature(rows);if((S.pnlImports||[]).some(b=>b.signature===sig))throw new Error(tt('呢一批資料已經匯入','This batch is already imported'));
+    const months=[...new Set(rows.map(r=>r.date.slice(0,7)))],sum=rows.reduce((n,r)=>n+r.nativeAmount,0);if(!confirm(tt(`預覽：${rows.length} 日、${months.length} 個月、USD 淨額 ${sum.toFixed(2)}。匯入為草稿？`,`Preview: ${rows.length} days, ${months.length} months, USD net ${sum.toFixed(2)}. Import as draft?`)))return;
+    const kinds=[...new Set(rows.map(r=>r.kind))];S.pnlImports=S.pnlImports||[];S.pnlImports.push({id:'pi_'+Date.now(),signature:sig,name:f.name,createdAt:Date.now(),active:false,kind:kinds[0],kinds,rows});saveS();renderPnlImportBatches();if(st)st.textContent=tt('已匯入草稿，未加入日曆。','Draft imported; not yet in calendar.');
+  }catch(e){if(st)st.textContent='';showToast(tt('P&L 匯入失敗：','P&L import failed: ')+((e&&e.message)||e),1);}finally{input.value='';}};reader.readAsArrayBuffer(f);
+}
+function togglePnlImportBatch(id){const b=(S.pnlImports||[]).find(x=>x.id===id);if(!b)return;b.active=!b.active;if(b.active){S.pnlCalendarSections=S.pnlCalendarSections||{};(b.kinds||[b.kind||'stock']).forEach(k=>{S.pnlCalendarSections[k]=true;});}saveS();renderPnlImportBatches();renderPnlSecMgr();if(S.activeTab==='gamble')renderPnlCalendar();}
+function removePnlImportBatch(id){const b=(S.pnlImports||[]).find(x=>x.id===id);if(!b||!confirm(tt('移除呢一批 P&L 日曆資料？原生帳目唔會受影響。','Remove this P&L calendar batch? Native records are unaffected.')))return;S.pnlImports=(S.pnlImports||[]).filter(x=>x.id!==id);saveS();renderPnlImportBatches();if(S.activeTab==='gamble')renderPnlCalendar();}
+function renderPnlImportBatches(){const el=document.getElementById('pnl-import-batches');if(!el)return;const rows=S.pnlImports||[];el.innerHTML=rows.length?rows.slice().reverse().map(b=>{const id=inlineJsString(b.id),count=(b.rows||[]).length,active=!!b.active,kinds=(b.kinds||[b.kind||'stock']).map(secName).join('、');return `<div style="padding:10px 0;border-top:.5px solid var(--bdr)"><div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(b.name||'P&L import')}</div><div class="msub">${count} ${tt('日','days')} · ${escapeHtml(kinds)} · ${active?tt('已加入日曆','in calendar'):tt('草稿','draft')}</div></div><button onclick="togglePnlImportBatch(${id})" style="border:1px solid ${active?'var(--bdr2)':'#c88a22'};border-radius:9px;background:${active?'var(--surf2)':'#fff4cf'};color:${active?'var(--ink2)':'#8b5b0b'};padding:7px 9px;font-size:11px;font-weight:800">${active?tt('移出日曆','Remove'):tt('加入日曆','Add')}</button><button onclick="removePnlImportBatch(${id})" style="border:none;background:none;color:var(--r3);font-size:17px"><i class="ti ti-trash"></i></button></div></div>`;}).join(''):`<div class="msub">${tt('未有 P&L 匯入批次','No P&L import batches')}</div>`;}
+function pnlHistoricalFxForDate(date){for(const batch of (S.pnlImports||[])){for(const row of (batch.rows||[])){if(row.date===date&&row.fx&&Number(row.fx.HKD)>0)return {HKD:Number(row.fx.HKD),CNY:Number(row.fx.CNY)||null,JPY:Number(row.fx.JPY)||null};}}return null;}
+function cryptoEstimatePositions(){return (S.portfolio||[]).filter(p=>!p.exitPrice&&(p.type==='crypto'||((S.customSections||[]).find(c=>c.id===p.secId)||{}).base==='crypto'));}
+function updateCryptoEstimatePreview(){const s=document.getElementById('crypto-est-start'),v=document.getElementById('crypto-est-total'),el=document.getElementById('crypto-est-preview');if(!s||!v||!el)return;const start=parseDateOnly(s.value),end=parseDateOnly('2026-08-22'),days=Math.floor((end-start)/86400000)+1,total=Number(v.value);el.textContent=days>0&&Number.isFinite(total)?tt(`${days} 個曆日（包括週末）· 每日約 ${fmt(total/days)} · 2026-08-23 轉為實際追蹤`,`${days} calendar days incl. weekends · about ${fmt(total/days)} daily · live tracking from 2026-08-23`):tt('請輸入有效日期同金額','Enter a valid date and amount');}
+function openCryptoEstimate(){const ps=cryptoEstimatePositions(),dates=ps.map(p=>p.date).filter(Boolean).sort(),start=dates[0]||'2026-08-22',total=ps.reduce((n,p)=>n+(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),0);document.getElementById('crypto-est-start').value=start;document.getElementById('crypto-est-total').value=total.toFixed(2);document.getElementById('crypto-est-start').oninput=updateCryptoEstimatePreview;document.getElementById('crypto-est-total').oninput=updateCryptoEstimatePreview;updateCryptoEstimatePreview();document.getElementById('m-crypto-est').classList.add('open');}
+function createCryptoEstimateBatch(){const startStr=document.getElementById('crypto-est-start').value,total=Number(document.getElementById('crypto-est-total').value),start=parseDateOnly(startStr),end=parseDateOnly('2026-08-22'),days=Math.floor((end-start)/86400000)+1;if(!startStr||!Number.isFinite(total)||days<1){showToast(tt('估算日期或金額無效','Invalid estimate date or amount'),1);return;}const daily=total/days,rows=[];for(let i=0;i<days;i++){const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i),date=ymd(d),value=i===days-1?total-daily*(days-1):daily,fx=pnlHistoricalFxForDate(date);rows.push({date,kind:'crypto',label:tt('Crypto 歷史平均估算','Crypto evenly spread estimate'),nativeAmount:fx?value/fx.HKD:value,currency:fx?'USD':'HKD',fx:fx||undefined,estimated:true,quality:fx?'estimated · evenly spread calendar days · historical FX':'estimated · evenly spread calendar days · current FX fallback',boundary:false});}const boundaryFx=pnlHistoricalFxForDate('2026-08-23');rows.push({date:'2026-08-23',kind:'crypto',label:tt('實際追蹤由此開始','Actual tracking starts here'),nativeAmount:0,currency:boundaryFx?'USD':'HKD',fx:boundaryFx||undefined,estimated:false,quality:'tracking boundary',boundary:true});const sig='crypto_est_'+startStr+'_'+total.toFixed(2);if((S.pnlImports||[]).some(b=>b.signature===sig)){showToast(tt('相同估算草稿已存在','The same estimate draft already exists'),1);return;}S.pnlImports=S.pnlImports||[];S.pnlImports.push({id:'pi_'+Date.now(),signature:sig,name:tt('Crypto 歷史估算至 2026-08-22','Crypto estimate through 2026-08-22'),createdAt:Date.now(),active:false,kind:'crypto',kinds:['crypto'],rows});saveS();closeM('m-crypto-est');renderPnlImportBatches();showToast(tt('已建立草稿；請再按「加入日曆」','Draft created; press Add to calendar when ready'));}
 // ─── IMPORT MONEY+ EXCEL (income/expense only, history-only/excluded, dedup, reversible) ───
 const MP_CAT={'飲食':'food','交通':'transport','日用':'daily','娛樂':'entertainment','旅行':'travel','醫療':'health','健身':'fitness','服飾':'clothing','住房物業':'housing','美容':'beauty','教育':'education','通信':'telecom','社交':'social','大宗消費':'bigitem','shopping':'shopping','賭':'gambling','gamble':'gambling','理財投資':'invest','主工':'income','freelance':'freelance','other':'other'};
 // Currency per Money+ account: USD (Futu/MetaMask/MEXC/Polymarket), JPY (JPY/JP AR), RMB (China card/WeChat), else HKD

@@ -10,6 +10,9 @@ function declaration(name){const start=html.indexOf(`function ${name}(`);assert.
 
 assert.doesNotMatch(html,/<canvas id="trend-chart"/);
 assert.match(html,/id="pnl-calendar-card"/);
+assert.match(html,/id="pnl-cal-mode-year"/);
+assert.match(html,/id="pnl-import-file"/);
+assert.match(html,/id="m-crypto-est"/);
 assert.match(html,/id="pnl-filter-drawer"/);
 assert.match(html,/\.pnl-sec-body\.collapsed>:not\(:first-child\)\{display:none!important\}/);
 assert.doesNotMatch(html,/\.pnl-sec-body\.collapsed\{display:none\}/);
@@ -19,19 +22,25 @@ assert.match(html,/body\{[\s\S]*?-webkit-user-select:none;user-select:none;/);
 assert.match(html,/input,textarea,select,\[contenteditable="true"\]\{-webkit-user-select:text;user-select:text\}/);
 
 const code=`
+${declaration('pnlUsMarketCloseDate')}
+${declaration('pnlSnapshotUsesUsMarketClose')}
+${declaration('pnlSnapshotCalendarDate')}
 ${declaration('pnlUnrealizedEvents')}
-${declaration('pnlBackfillEvents')}
+${declaration('pnlCalendarSectionEnabled')}
+${declaration('pnlCalendarRecordKind')}
 ${declaration('pnlCalendarEvents')}
 const S={
   pnlPieFilters:[],
-  pnlBackfills:[],
+  pnlCalendarSections:{},
+  pnlImports:[],
+  customSections:[],
   accounts:[],
   priceHist:[
-    {t:new Date(2026,7,1,12).getTime(),p:{stock:10,crypto:-5}},
-    {t:new Date(2026,7,2,12).getTime(),p:{stock:25,crypto:5}}
+    {t:Date.parse('2026-08-03T19:00:00Z'),p:{stock:10,crypto:-5}},
+    {t:Date.parse('2026-08-03T20:05:00Z'),p:{stock:25,crypto:5}}
   ],
-  portfolio:[{name:'Stock gain',exitPrice:12,exitDate:'2026-08-03',valueHKD:120,costHKD:100,type:'stock'}],
-  gamble:[{venue:'Game',open:false,date:'2026-08-04',cashoutHKD:80,buyinHKD:100}],
+  portfolio:[{name:'Stock gain',exitPrice:12,exitDate:'2026-08-03',valueHKD:120,costHKD:100,type:'stock'},{name:'Legacy import',exitPrice:1,exitDate:'2026-08-03',valueHKD:999,costHKD:0,type:'crypto',acctLabel:'N8 polymarket',imported:'mp'}],
+  gamble:[{venue:'Game',open:false,date:'2026-08-04',cashoutHKD:80,buyinHKD:100},{venue:'14',open:false,date:'2026-08-04',cashoutHKD:999,buyinHKD:0,imported:'mp',_mpKey:'mp|2026-08-04|income|999|賭|HSBC|14'}],
   privateLoans:[{borrower:'Alex',payments:[{date:'2026-08-05',interestHKD:30}]}],
   physicalAssets:[{name:'Watch',cur:'HKD',valuationHistory:[{date:'2026-01-01',value:500},{date:'2026-08-06',value:600}]}]
 };
@@ -47,12 +56,38 @@ globalThis.all=pnlCalendarEvents();
 globalThis.unreal=pnlUnrealizedEvents();
 S.pnlPieFilters=['physical'];
 globalThis.physical=pnlCalendarEvents();
+S.pnlPieFilters=[];
+S.pnlImports=[{id:'draft',active:false,kind:'stock',rows:[{date:'2026-08-07',kind:'stock',nativeAmount:99,currency:'HKD'}]},{id:'live',active:true,kind:'stock',rows:[{date:'2026-08-08',kind:'stock',nativeAmount:12,currency:'HKD'}]}];
+globalThis.withImports=pnlCalendarEvents();
+S.pnlPieFilters=['polymarket'];globalThis.polymarket=pnlCalendarEvents();S.pnlPieFilters=['poker'];globalThis.poker=pnlCalendarEvents();S.pnlPieFilters=[];
+S.customSections=[{id:'cs_test',base:'stock'}];S.pnlImports=[{id:'custom',active:true,kind:'cs_test',rows:[{date:'2026-08-09',kind:'cs_test',nativeAmount:50,currency:'HKD'}]}];
+globalThis.customOff=pnlCalendarEvents();S.pnlCalendarSections.cs_test=true;globalThis.customOn=pnlCalendarEvents();
 `;
 const context={};vm.createContext(context);vm.runInContext(code,context);
-assert.equal(context.all.length,6);
-assert.equal(context.all.reduce((n,e)=>n+e.value,0),155);
-assert.deepEqual([...context.unreal].map(e=>[e.date,e.kind,e.value]),[['2026-08-02','stock',15],['2026-08-02','crypto',10]]);
+assert.equal(context.all.length,8);
+assert.equal(context.all.reduce((n,e)=>n+(e.value||0),0),2153);
+assert.deepEqual([...context.unreal].map(e=>[e.date,e.kind,e.value]),[['2026-08-03','stock',15],['2026-08-04','crypto',10]]);
 assert.deepEqual([...context.physical].map(e=>e.value),[100]);
+assert.equal(context.withImports.length,9);
+assert.deepEqual([...context.polymarket].map(e=>e.value),[999]);
+assert.deepEqual([...context.poker].map(e=>e.value),[-20,999]);
+assert.equal(context.customOff.length,8);
+assert.equal(context.customOn.length,9);
+
+const marketDateCode=`
+${declaration('pnlUsMarketCloseDate')}
+globalThis.beforeSummerClose=pnlUsMarketCloseDate(Date.parse('2026-08-03T19:59:00Z'));
+globalThis.atSummerClose=pnlUsMarketCloseDate(Date.parse('2026-08-03T20:00:00Z'));
+globalThis.beforeWinterClose=pnlUsMarketCloseDate(Date.parse('2026-01-05T20:59:00Z'));
+globalThis.atWinterClose=pnlUsMarketCloseDate(Date.parse('2026-01-05T21:00:00Z'));
+globalThis.weekend=pnlUsMarketCloseDate(Date.parse('2026-08-09T22:00:00Z'));
+`;
+const marketDateContext={Date,Intl,Number,String};vm.createContext(marketDateContext);vm.runInContext(marketDateCode,marketDateContext);
+assert.equal(marketDateContext.beforeSummerClose,'2026-07-31');
+assert.equal(marketDateContext.atSummerClose,'2026-08-03');
+assert.equal(marketDateContext.beforeWinterClose,'2026-01-02');
+assert.equal(marketDateContext.atWinterClose,'2026-01-05');
+assert.equal(marketDateContext.weekend,'2026-08-07');
 
 const snapshotCode=`
 ${declaration('portfolioUnrealizedSnapshot')}
