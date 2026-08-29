@@ -58,6 +58,7 @@ const S={
   physicalAssets:[{name:'Watch',cur:'HKD',valuationHistory:[{date:'2026-01-01',value:500},{date:'2026-08-06',value:600}]}]
 };
 function acctIsPhysical(){return false;}
+function recordUsesPhysicalAccount(){return false;}
 function loanPayments(l){return l.payments||[];}
 function ensurePhysicalAssetHistory(a){return a.valuationHistory||[];}
 function toHKD(v){return Number(v)||0;}
@@ -125,7 +126,7 @@ ${declaration('portfolioUnrealizedSnapshot')}
 ${declaration('recordPriceSnapshot')}
 const S={accounts:[{id:'regular',secondaryKind:'none'},{id:'mpf',secondaryKind:'physical'}],portfolio:[{type:'stock',acctId:'regular',costHKD:100,valueHKD:110},{type:'crypto',acctId:'mpf',costHKD:100,valueHKD:80}],priceHist:[]};
 function acctIsPhysical(id){return id==='mpf';}
-function pnlSecForPort(p){return p.secId||p.type;}
+function pnlSecForPort(p){return p.acctId==='mpf'?'physical':(p.secId||p.type);}
 recordPriceSnapshot(100000);
 recordPriceSnapshot(110000);
 S.portfolio[0].valueHKD=115;

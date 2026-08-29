@@ -26,7 +26,7 @@ assert.match(declaration('renderHome'),/eye-off/);
 const code=`
 const ACCT_SECONDARY_KINDS=['none','retirement','locked','physical','emergency','business'];
 let calls={save:0,home:0,wallet:0,gamble:0,settings:0};
-const S={activeTab:'home',accounts:[{id:'mpf',kind:'invest',secondaryKind:'retirement'}],portfolio:[{acctId:'mpf',type:'stock',valueHKD:200,costHKD:150}],gamble:[],pnlNetHidden:{},physicalAssets:[]};
+const S={activeTab:'home',accounts:[{id:'mpf',label:'MPF',labelEn:'MPF',kind:'invest',secondaryKind:'retirement'}],portfolio:[{acctId:'mpf',type:'stock',valueHKD:200,costHKD:150}],gamble:[],pnlNetHidden:{},physicalAssets:[]};
 function saveS(){calls.save++;}
 function renderSettings(){calls.settings++;}
 function renderHome(){calls.home++;}
@@ -45,6 +45,12 @@ function acctMarginDebt(){return 50;}
 function longDebtCountsInNet(){return !pnlNetExcluded('debt');}
 function debtsOutstanding(){return 400;}
 function pnlNetExcluded(kind){return !!S.pnlNetHidden[kind];}
+${declaration('_normName')}
+${declaration('accountForRecord')}
+${declaration('recordUsesPhysicalAccount')}
+${declaration('recordBelongsToAccount')}
+${declaration('pnlBaseSecForPort')}
+${declaration('pnlBaseSecForGamble')}
 ${declaration('pnlSecForPort')}
 ${declaration('pnlSecForGamble')}
 ${declaration('acctIsPhysical')}
@@ -72,6 +78,15 @@ globalThis.hiddenDebtBalance=balanceSheetBreakdown();
 toggleHomeLongDebt();
 globalThis.afterDebtShow=S.pnlNetHidden.debt;
 globalThis.shownDebtBalance=balanceSheetBreakdown();
+const legacyPosition={acctId:'old-deleted-id',acctLabel:'MPF',type:'stock',valueHKD:70,costHKD:50};
+const legacyGamble={acctLabel:'MPF',open:true,buyinHKD:30};
+S.portfolio.push(legacyPosition);
+S.gamble.push(legacyGamble);
+globalThis.legacyPortKind=pnlSecForPort(legacyPosition);
+globalThis.legacyGambleKind=pnlSecForGamble(legacyGamble);
+globalThis.legacyPhysicalRecorded=physicalAccountAssetRecorded('mpf');
+globalThis.moneyPlusKind=pnlSecForPort({acctLabel:'MPF',type:'stock',imported:'mp'});
+globalThis.moneyPlusAccount=accountForRecord({acctLabel:'MPF',type:'stock',imported:'mp'});
 globalThis.calls=calls;
 `;
 const context={};
@@ -98,6 +113,11 @@ assert.equal(context.hiddenDebtBalance.longDebt,50);
 assert.equal(context.shownDebtBalance.longDebt,450);
 assert.equal(context.shownDebtBalance.netWorth,150);
 assert.equal(context.hiddenDebtBalance.netWorth,550);
+assert.equal(context.legacyPortKind,'physical');
+assert.equal(context.legacyGambleKind,'physical');
+assert.equal(context.legacyPhysicalRecorded,400);
+assert.equal(context.moneyPlusKind,'stock');
+assert.equal(context.moneyPlusAccount,null);
 assert.equal(context.calls.save,6);
 assert.equal(context.calls.home,6);
 assert.equal(context.calls.wallet,6);

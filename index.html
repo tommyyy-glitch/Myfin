@@ -2100,6 +2100,20 @@ function fillInvestSelect(selId,selectedId){
   el.innerHTML=accts.map(a=>`<option value="${escapeHtml(a.id)}"${a.id===selectedId?' selected':''}>${escapeHtml(a.icon)} ${escapeHtml(acctLabel(a))}</option>`).join('');
 }
 function _normName(x){return String(x||'').toLowerCase().replace(/\s+/g,'').trim();}
+// Resolve the account behind an app-created position. Current records carry an
+// account id; older records may only retain the account label after an account
+// was renamed/re-created. Money+ imports deliberately stay unlinked because
+// their historical labels must not silently change account balances/categories.
+function accountForRecord(record){
+  if(!record)return null;
+  const id=String(record.acctId||'');
+  const direct=id?(S.accounts||[]).find(a=>String(a.id)===id):null;
+  if(direct||record.imported==='mp')return direct||null;
+  const key=_normName(record.acctLabel);if(!key)return null;
+  return (S.accounts||[]).find(a=>_normName(a.label)===key||_normName(a.labelEn)===key)||null;
+}
+function recordUsesPhysicalAccount(record){return acctIsPhysical(accountForRecord(record));}
+function recordBelongsToAccount(record,acctId){const ac=accountForRecord(record);return !!ac&&String(ac.id)===String(acctId);}
 function sectionObj(secId){return (S.customSections||[]).find(c=>String(c.id)===String(secId));}
 function accountForSection(secId){const cs=sectionObj(secId);if(!cs)return null;const key=_normName(cs.name);if(!key)return null;return (S.accounts||[]).find(a=>_normName(a.label)===key||_normName(a.labelEn)===key)||null;}
 function defaultAcctForSection(secId,fallbackId){const match=accountForSection(secId);return (match&&match.isInvest)?match.id:(fallbackId||investAccts()[0]?.id||'');}
@@ -2385,6 +2399,13 @@ function txSortStamp(tx){const d=tx.date||'';const n=Number(String(tx.id||'').re
 function walletTxnRows(){
   return [...(S.txns||[]),...realisedPnlTxnRows()].sort((a,b)=>{const A=txSortStamp(a),B=txSortStamp(b);if(A.d!==B.d)return A.d<B.d?1:-1;return B.n-A.n;});
 }
+// Home recent activity is a calendar window, not an arbitrary row limit:
+// today plus the previous six dates. Future-dated planned entries stay in the
+// wallet record but never leak into Home's recent list.
+function homeRecentTxnRows(base){
+  const end=dateOnly(base instanceof Date?base:new Date()),start=new Date(end);start.setDate(start.getDate()-6);
+  return walletTxnRows().filter(tx=>{const raw=String(tx&&tx.date||'');if(!/^\d{4}-\d{2}-\d{2}$/.test(raw))return false;const d=parseDateOnly(raw);return !Number.isNaN(d.getTime())&&ymd(d)===raw&&d>=start&&d<=end;});
+}
 function syncAutoPayFromTxn(tx){if(!tx||!tx.autoPayId)return;const ap=(S.autopay||[]).find(a=>String(a.id)===String(tx.autoPayId));if(!ap)return;ap.name=tx.note||ap.name;ap.amount=tx.amount;ap.cur=tx.cur;ap.catId=tx.catId||ap.catId;ap.acctId=tx.acctId||'';ap.acct=tx.acctLabel||'';ap.acctIcon=tx.acctIcon||'';}
 function refreshAllViews(){renderHome();if(S.activeTab==='gamble')renderGamble();refreshWallet();if(S.activeTab==='settings'){renderAutopay();renderAutoincome();}}
 // Cash component of an account = opening + income in − expense out + transfers in − transfers out
@@ -2435,10 +2456,15 @@ function acctCash(acctId){
 }
 // P&L sections can stay visible in cashflow/history while being excluded from net assets.
 function pnlNetExcluded(id){return !!(S.pnlNetHidden&&S.pnlNetHidden[id]);}
-function pnlSecForPort(p){return p.secId||(p.type==='stock'?'stock':p.type==='crypto'?'crypto':p.type==='pe'?'pe':p.type||'stock');}
-function pnlSecForGamble(g){return g.secId||'poker';}
-function portCountsInNet(p){const ac=(S.accounts||[]).find(a=>String(a.id)===String(p&&p.acctId));return !pnlNetExcluded(pnlSecForPort(p))&&(!ac||acctCountsInNet(ac));}
-function gambleCountsInNet(g){const ac=(S.accounts||[]).find(a=>String(a.id)===String(g&&g.acctId));return !pnlNetExcluded(pnlSecForGamble(g))&&(!ac||acctCountsInNet(ac));}
+function pnlBaseSecForPort(p){return p.secId||(p.type==='stock'?'stock':p.type==='crypto'?'crypto':p.type==='pe'?'pe':p.type||'stock');}
+function pnlBaseSecForGamble(g){return g.secId||'poker';}
+// The account's secondary label is an accounting classification override. A
+// position held in a physical/fixed-asset account therefore belongs to that
+// category everywhere, including existing label-only app records.
+function pnlSecForPort(p){return recordUsesPhysicalAccount(p)?'physical':pnlBaseSecForPort(p);}
+function pnlSecForGamble(g){return recordUsesPhysicalAccount(g)?'physical':pnlBaseSecForGamble(g);}
+function portCountsInNet(p){const ac=accountForRecord(p);return !pnlNetExcluded(pnlSecForPort(p))&&(!ac||acctCountsInNet(ac));}
+function gambleCountsInNet(g){const ac=accountForRecord(g);return !pnlNetExcluded(pnlSecForGamble(g))&&(!ac||acctCountsInNet(ac));}
 function longDebtCountsInNet(){return !pnlNetExcluded('debt');}
 // Outstanding margin debt = borrowed principal still owed on OPEN margin positions of this account
 function acctMarginDebt(acctId){
@@ -2524,8 +2550,8 @@ function acctAsset(acctId){
 function physicalAccountAssetRecorded(acctId){
   const cash=acctCash(acctId);
   let asset=cash>0?cash:0;
-  (S.portfolio||[]).forEach(p=>{if(p.acctId===acctId&&!p.exitPrice&&!pnlNetExcluded(pnlSecForPort(p)))asset+=Number(p.valueHKD)||0;});
-  (S.gamble||[]).forEach(g=>{if(g.acctId===acctId&&g.open&&!pnlNetExcluded(pnlSecForGamble(g)))asset+=Number(g.buyinHKD)||0;});
+  (S.portfolio||[]).forEach(p=>{const base=pnlBaseSecForPort(p);if(recordBelongsToAccount(p,acctId)&&!p.exitPrice&&(base==='physical'||!pnlNetExcluded(base)))asset+=Number(p.valueHKD)||0;});
+  (S.gamble||[]).forEach(g=>{const base=pnlBaseSecForGamble(g);if(recordBelongsToAccount(g,acctId)&&g.open&&(base==='physical'||!pnlNetExcluded(base)))asset+=Number(g.buyinHKD)||0;});
   return asset;
 }
 // Global totals across all accounts (excluded accounts are skipped)
@@ -4070,7 +4096,7 @@ function renderHome(){
   // Transfers are internal account moves now; no A/R resolver needed
   document.getElementById('resolver-zone').innerHTML='';
   // recent
-  document.getElementById('h-recent').innerHTML=dayGroupedTxnHTML(walletTxnRows().slice(0,12),`<div style="text-align:center;padding:28px 20px"><div style="color:var(--ink3);font-size:14px;margin-bottom:14px">${t('notxn')}</div><button onclick="fabAction()" style="padding:11px 22px;background:var(--hero-grad);color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer">＋ ${t('newtxn')}</button></div>`,'home');
+  document.getElementById('h-recent').innerHTML=dayGroupedTxnHTML(homeRecentTxnRows(),`<div style="text-align:center;padding:28px 20px"><div style="color:var(--ink3);font-size:14px;margin-bottom:14px">${t('notxn')}</div><button onclick="fabAction()" style="padding:11px 22px;background:var(--hero-grad);color:#fff;border:none;border-radius:20px;font-size:14px;font-weight:700;cursor:pointer">＋ ${t('newtxn')}</button></div>`,'home');
 }
 function weekdayLabel(dateStr){
   const d=new Date(dateStr);const z=S.lang==='en'?['Sun','Mon','Tue','Wed','Thu','Fri','Sat']:['週日','週一','週二','週三','週四','週五','週六'];
@@ -4626,8 +4652,8 @@ function pnlCalendarEvents(){
   // Existing Money+ rows stay untouched, but only the explicitly trusted N8 /
   // Natural 8 and Polymarket sources may feed this calendar. Stock history such
   // as Futu comes through the standalone reviewed Excel import instead.
-  (S.portfolio||[]).filter(p=>p.exitPrice&&pnlCalendarAllowsMoneyPlus(p)).forEach(p=>rows.push({date:p.exitDate||p.date||today(),value:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),kind:acctIsPhysical(p.acctId)?'physical':pnlCalendarRecordKind(p,p.type||'stock'),label:(p.name||t('position'))+' · '+t('realisedpnl')}));
-  (S.gamble||[]).filter(g=>!g.open&&pnlCalendarAllowsMoneyPlus(g)).forEach(g=>rows.push({date:g.date||today(),value:(Number(g.cashoutHKD)||0)-(Number(g.buyinHKD)||0),kind:acctIsPhysical(g.acctId)?'physical':pnlCalendarRecordKind(g,'poker'),label:g.venue||t('poker')}));
+  (S.portfolio||[]).filter(p=>p.exitPrice&&pnlCalendarAllowsMoneyPlus(p)).forEach(p=>rows.push({date:p.exitDate||p.date||today(),value:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0),kind:recordUsesPhysicalAccount(p)?'physical':pnlCalendarRecordKind(p,p.type||'stock'),label:(p.name||t('position'))+' · '+t('realisedpnl')}));
+  (S.gamble||[]).filter(g=>!g.open&&pnlCalendarAllowsMoneyPlus(g)).forEach(g=>rows.push({date:g.date||today(),value:(Number(g.cashoutHKD)||0)-(Number(g.buyinHKD)||0),kind:recordUsesPhysicalAccount(g)?'physical':pnlCalendarRecordKind(g,'poker'),label:g.venue||t('poker')}));
   (S.privateLoans||[]).forEach(l=>loanPayments(l).forEach(p=>{const value=Number(p.interestHKD)||0;if(value)rows.push({date:p.date||today(),value,kind:'loan',label:l.borrower||t('privatedebt')});}));
   (S.physicalAssets||[]).filter(a=>!a.excluded).forEach(a=>{const hist=ensurePhysicalAssetHistory(a);for(let i=1;i<hist.length;i++){const value=toHKD((Number(hist[i].value)||0)-(Number(hist[i-1].value)||0),a.cur||'HKD');if(Math.abs(value)>0.004)rows.push({date:hist[i].date||today(),value,kind:'physical',label:a.name||assetLabel('fixed')});}});
   importRows.forEach(r=>rows.push(r));
@@ -4831,8 +4857,8 @@ function renderGamble(){
   let pieRaw=[];
   // margin positions: only the equity (value minus the borrowed cost) belongs to the user, so the
   // slice reconciles with totalWorth (which already subtracts margin debt) instead of overstating exposure
-  S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0&&portCountsInNet(p)).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v,_kind:acctIsPhysical(p.acctId)?'physical':(p.secId||p.type||'stock')});});
-  S.gamble.filter(g=>g.open&&g.buyinHKD>0&&gambleCountsInNet(g)).forEach(g=>pieRaw.push({label:g.venue,val:g.buyinHKD,_kind:acctIsPhysical(g.acctId)?'physical':(g.secId||'poker')}));
+  S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0&&portCountsInNet(p)).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v,_kind:pnlSecForPort(p)});});
+  S.gamble.filter(g=>g.open&&g.buyinHKD>0&&gambleCountsInNet(g)).forEach(g=>pieRaw.push({label:g.venue,val:g.buyinHKD,_kind:pnlSecForGamble(g)}));
   (S.privateLoans||[]).forEach(l=>{const v=loanOutstandingPrincipal(l)+loanAccruedOutstanding(l);if(v>0)pieRaw.push({label:'🤝 '+l.borrower,val:v,_kind:'loan'});});
   if(!pnlNetExcluded('physical'))(S.physicalAssets||[]).filter(a=>!a.excluded&&!a.soldAt).forEach(a=>{const v=physicalAssetValue(a);if(v>0)pieRaw.push({label:'🧰 '+a.name,val:v,_kind:'physical'});});
   const allCash=netAccts.filter(ac=>ac.kind==='invest'&&!acctIsPhysical(ac)).reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
@@ -5439,7 +5465,7 @@ let _refreshing=false;
 // The P&L map is section-aware, so calendar filters can show the correct asset class.
 function portfolioUnrealizedSnapshot(){
   const out={};
-  (S.portfolio||[]).filter(p=>!p.exitPrice).forEach(p=>{const kind=acctIsPhysical(p.acctId)?'physical':pnlSecForPort(p);out[kind]=(out[kind]||0)+(Number(p.valueHKD)||0)-(Number(p.costHKD)||0);});
+  (S.portfolio||[]).filter(p=>!p.exitPrice).forEach(p=>{const kind=pnlSecForPort(p);out[kind]=(out[kind]||0)+(Number(p.valueHKD)||0)-(Number(p.costHKD)||0);});
   Object.keys(out).forEach(k=>out[k]=parseFloat(out[k].toFixed(2)));
   return out;
 }
