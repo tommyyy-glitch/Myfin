@@ -121,3 +121,55 @@ assert.equal(context.moneyPlusAccount,null);
 assert.equal(context.calls.save,6);
 assert.equal(context.calls.home,6);
 assert.equal(context.calls.wallet,6);
+
+// Reproduce the real account flow: money moves from an online bank into a
+// non-withdrawable wallet whose primary type is Other and second label is
+// Fixed / locked asset. The fixed-asset net-worth switch must control it.
+const transferCode=`
+const S={activeTab:'home',accounts:[
+  {id:'online_bank',label:'Online bank',kind:'bank',secondaryKind:'none',cur:'HKD',opening:1000},
+  {id:'mainland_wallet',label:'Mainland wallet card',kind:'other',secondaryKind:'locked',cur:'HKD',opening:0}
+],txns:[{id:1,type:'transfer',acctId:'online_bank',toAcctId:'mainland_wallet',amtHKD:300}],portfolio:[],gamble:[],physicalAssets:[],pnlNetHidden:{}};
+function toHKD(v){return Number(v)||0;}
+function acctPositionsCash(){return 0;}
+function acctLiquidAssetValue(){return 0;}
+function acctInvestmentAssetValue(){return 0;}
+function privateLoanAssetTotal(){return 0;}
+function physicalAssetsStats(){return {value:0};}
+function rpAssetTotal(){return 0;}
+function rpDebtTotal(){return 0;}
+function acctMarginDebt(){return 0;}
+function debtsOutstanding(){return 0;}
+function longDebtCountsInNet(){return true;}
+function saveS(){}
+function renderHome(){}
+function refreshWallet(){}
+function renderGamble(){}
+function renderPnlSecMgr(){}
+${declaration('pnlNetExcluded')}
+${declaration('acctCashTxns')}
+${declaration('acctCash')}
+${declaration('acctIsPhysical')}
+${declaration('acctCountsInNet')}
+function physicalAccountAssetRecorded(acctId){return Math.max(acctCash(acctId),0);}
+${declaration('balanceSheetBreakdown')}
+${declaration('toggleHomeFixedAssets')}
+globalThis.sourceCash=acctCash('online_bank');
+globalThis.walletCash=acctCash('mainland_wallet');
+globalThis.lockedUsesFixedFilter=acctIsPhysical(S.accounts[1]);
+globalThis.visible=balanceSheetBreakdown();
+toggleHomeFixedAssets();
+globalThis.hidden=balanceSheetBreakdown();
+`;
+const transferContext={};
+vm.createContext(transferContext);
+vm.runInContext(transferCode,transferContext);
+assert.equal(transferContext.sourceCash,700);
+assert.equal(transferContext.walletCash,300);
+assert.equal(transferContext.lockedUsesFixedFilter,true);
+assert.equal(transferContext.visible.quickAsset,700);
+assert.equal(transferContext.visible.fixedAsset,300);
+assert.equal(transferContext.visible.assets,1000);
+assert.equal(transferContext.hidden.quickAsset,700);
+assert.equal(transferContext.hidden.fixedAsset,0);
+assert.equal(transferContext.hidden.assets,700);

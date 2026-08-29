@@ -1917,12 +1917,12 @@ Object.assign(LANGS.en,{
   rpamountbelowpaid:'The new total cannot be below the amount already paid',rppaymentlock:'Direction, type, and currency cannot change after a payment',settleoverdue:'Amount cannot exceed the selected record balance'
 });
 Object.assign(LANGS.zh,{
-  acctsecondary:'第二標籤',kind2none:'無第二標籤',kind2retirement:'退休／MPF（鎖定）',kind2locked:'固定／鎖定資產',kind2physical:'實體固定資產相關（可排除）',kind2emergency:'緊急備用金',kind2business:'公司／業務',
-  fixedshowhome:'計入實體固定資產',fixedhidehome:'從總資產及淨資產排除實體固定資產',debtshowhome:'計入已記錄的長期負債',debthidehome:'從總負債及淨資產排除已記錄的長期負債'
+  acctsecondary:'第二標籤',kind2none:'無第二標籤',kind2retirement:'退休／MPF（鎖定）',kind2locked:'固定／鎖定資產（可排除）',kind2physical:'實體固定資產（可排除）',kind2emergency:'緊急備用金',kind2business:'公司／業務',
+  fixedshowhome:'計入固定／鎖定資產',fixedhidehome:'從總資產及淨資產排除固定／鎖定資產',debtshowhome:'計入已記錄的長期負債',debthidehome:'從總負債及淨資產排除已記錄的長期負債'
 });
 Object.assign(LANGS.en,{
-  acctsecondary:'Second label',kind2none:'No second label',kind2retirement:'Retirement / MPF (locked)',kind2locked:'Fixed / locked asset',kind2physical:'Physical-asset related (excludable)',kind2emergency:'Emergency fund',kind2business:'Business',
-  fixedshowhome:'Include physical fixed assets',fixedhidehome:'Exclude physical fixed assets from total assets and net worth',debtshowhome:'Include recorded long-term liabilities',debthidehome:'Exclude recorded long-term liabilities from total debt and net worth'
+  acctsecondary:'Second label',kind2none:'No second label',kind2retirement:'Retirement / MPF (locked)',kind2locked:'Fixed / locked asset (excludable)',kind2physical:'Physical fixed asset (excludable)',kind2emergency:'Emergency fund',kind2business:'Business',
+  fixedshowhome:'Include fixed / locked assets',fixedhidehome:'Exclude fixed / locked assets from total assets and net worth',debtshowhome:'Include recorded long-term liabilities',debthidehome:'Exclude recorded long-term liabilities from total debt and net worth'
 });
 
 const DEF_CATS=[
@@ -2090,7 +2090,9 @@ function setNumFmt(m){S.numFmt=m;saveS();document.querySelectorAll('.numfmt-btn'
 function getCat(id){return S.cats.find(c=>c.id===id)||S.cats[S.cats.length-1];}
 function getAcct(id){return (S.accounts||[]).find(a=>a.id===id)||(S.accounts||[])[0];}
 function acctLabel(a){return a?(S.lang==='en'?(a.labelEn||a.label):a.label):'';}
-function acctIsPhysical(acctOrId){const ac=typeof acctOrId==='object'?acctOrId:(S.accounts||[]).find(a=>String(a.id)===String(acctOrId));return !!ac&&ac.secondaryKind==='physical';}
+// Historical name retained for compatibility: both physical assets and
+// non-withdrawable fixed/locked accounts use the same fixed-asset filter.
+function acctIsPhysical(acctOrId){const ac=typeof acctOrId==='object'?acctOrId:(S.accounts||[]).find(a=>String(a.id)===String(acctOrId));return !!ac&&(ac.secondaryKind==='physical'||ac.secondaryKind==='locked');}
 function acctCountsInNet(ac){return !!ac&&!ac.excluded&&(!acctIsPhysical(ac)||!pnlNetExcluded('physical'));}
 function investAccts(){return (S.accounts||[]).filter(a=>a.isInvest);}
 function fillInvestSelect(selId,selectedId){
