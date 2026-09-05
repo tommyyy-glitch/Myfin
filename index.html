@@ -80,6 +80,7 @@ input,textarea,select,[contenteditable="true"]{-webkit-user-select:text;user-sel
   transition:transform 0.1s,opacity 0.1s;
 }
 .nav-btn:active{transform:scale(0.95);opacity:0.85}
+#backup-preview .nav-btn,#backup-automation,#backup-private .nav-btn{min-height:44px}
 /* Motion layer: tactile and visible. Mobile Safari needs real ripple nodes; CSS :active alone is too quiet. */
 @keyframes btnGlowPulse{0%,100%{box-shadow:0 0 0 rgba(29,158,117,0),0 0 0 rgba(29,158,117,0)}50%{box-shadow:0 0 22px rgba(29,158,117,.42),0 0 0 6px rgba(29,158,117,.08)}}
 @keyframes activeIconBob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.13)}}
@@ -1284,20 +1285,34 @@ img,canvas,svg{max-width:100%;}
 
     <div class="set-group" data-i="sg6"></div>
     <div class="slbl" data-i="cloudsync"></div>
-    <div class="glass-card" style="padding:15px;margin-bottom:12px">
-      <div class="msub" data-i="cloudhint" style="margin-bottom:12px;line-height:1.6"></div>
-      <input id="cloud-url" placeholder="https://xxxx.supabase.co" autocomplete="off" style="width:100%;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:13px;margin-bottom:8px">
-      <input id="cloud-key" placeholder="anon public key (eyJ...)" autocomplete="off" style="width:100%;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:13px;margin-bottom:8px">
-      <input id="cloud-pass" type="password" data-ph="cloudpassph" autocomplete="off" style="width:100%;border:1px solid var(--bdr2);border-radius:12px;padding:11px;background:var(--bg2);color:var(--ink);font-size:13px;margin-bottom:12px">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
-        <button class="toggle" id="cloud-on" onclick="this.classList.toggle('on')"></button>
-        <span style="font-size:14px;color:var(--ink2)" data-i="cloudenable"></span>
+    <div class="glass-card cloud-panel" style="padding:15px;margin-bottom:12px">
+      <style>.cloud-panel label{display:block;font-size:13px;color:var(--ink2);margin:12px 0 5px}.cloud-panel input{box-sizing:border-box;width:100%;padding:12px;border:1px solid var(--bdr2);border-radius:12px;background:var(--bg2);color:var(--ink);font:inherit;font-size:16px}.cloud-panel button{min-height:44px;padding:11px 14px;border:1px solid var(--bdr2);border-radius:12px;background:var(--surf2);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}.cloud-panel button:disabled{opacity:.5;cursor:wait}.cloud-panel .cloud-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.cloud-panel .cloud-primary{background:var(--hero-grad);color:white}.cloud-panel [hidden]{display:none!important}.cloud-panel summary{cursor:pointer;min-height:44px;line-height:44px}.cloud-panel input:focus-visible,.cloud-panel button:focus-visible{outline:2px solid var(--g3);outline-offset:2px}</style>
+      <div style="font-weight:700;font-size:17px;margin-bottom:8px">Myfin 個人登入 <span class="msub">（可選）</span></div>
+      <p class="msub" style="line-height:1.7;margin:0">未登入也能記帳。登入只驗證身份，不會自動搬移資料。首次同步先預覽，再由你確認。</p>
+      <div id="cloud-auth-state" role="status" style="margin:12px 0;font-size:13px;color:var(--g3)">未登入 · 本機記帳照常使用</div>
+      <details id="cloud-service-settings">
+        <summary class="msub">進階：同步服務設定</summary>
+        <label for="cloud-url">服務網址</label><input id="cloud-url" placeholder="https://xxxx.supabase.co" autocomplete="off" inputmode="url" spellcheck="false">
+        <label for="cloud-key">公開金鑰（publishable／anon）</label><input id="cloud-key" placeholder="sb_publishable_… 或 anon 公開金鑰" autocomplete="off" spellcheck="false">
+        <p class="msub">不要填 secret／service-role 金鑰。服務管理員登入與 Myfin 個人登入不同。</p>
+      </details>
+      <form id="cloud-login-form" onsubmit="event.preventDefault();cloudLoginAction(false)">
+        <label for="cloud-email">電郵</label><input id="cloud-email" type="email" autocomplete="username" required placeholder="you@example.com">
+        <label for="cloud-password">登入密碼</label><input id="cloud-password" type="password" autocomplete="current-password" required placeholder="由你自己輸入">
+        <div class="cloud-buttons"><button class="cloud-primary" type="submit" data-cloud-login>登入 Myfin</button><button type="button" onclick="cloudLoginAction(true)" data-cloud-login>建立 Myfin 帳戶</button></div>
+      </form>
+      <button id="cloud-signout" onclick="cloudLogoutAction()" hidden>登出（保留本機帳目）</button>
+      <p class="msub" style="line-height:1.6">登入只保留於本分頁。重新開啟後需再確認啟用同步；本機帳目不會刪除。</p>
+      <label for="cloud-vault">雲端帳本代號</label><input id="cloud-vault" value="main" autocomplete="off" spellcheck="false" maxlength="100">
+      <label for="cloud-pass">帳本加密密語（不是登入密碼）</label><input id="cloud-pass" type="password" autocomplete="off" placeholder="至少 12 個字元，兩部裝置使用同一密語">
+      <p class="msub" style="line-height:1.6">密語用來加密帳目，不能由伺服器重設。請自行妥善保存；不要在對話中提供密碼或密語。</p>
+      <div class="cloud-buttons"><button onclick="cloudSaveCfg()">儲存設定（不傳送帳目）</button></div>
+      <div id="cloud-first-actions" hidden>
+        <div class="cloud-buttons"><button onclick="cloudPreviewFirst('upload')">預覽：本機 → 新雲端副本</button><button onclick="cloudPreviewFirst('download')">預覽：雲端 → 另一份本機帳本</button></div>
+        <div class="cloud-buttons"><button id="cloud-resume" onclick="cloudResumeSession()">啟用已連結帳本的同步</button><button onclick="cloudPull(true)">立即同步</button></div>
       </div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <button onclick="cloudSaveCfg()" style="flex:1;min-width:100px;padding:11px;background:var(--hero-grad);color:#fff;border:none;border-radius:12px;font-size:13px;font-weight:700;cursor:pointer" data-i="cloudsave"></button>
-        <button onclick="cloudPull(true)" style="flex:1;min-width:100px;padding:11px;border:1.5px solid var(--bdr2);border-radius:12px;background:var(--surf2);color:var(--ink2);font-size:13px;font-weight:700;cursor:pointer" data-i="cloudnow"></button>
-        <button onclick="cloudCopySql()" style="flex:1;min-width:100px;padding:11px;border:1.5px solid var(--bdr2);border-radius:12px;background:var(--surf2);color:var(--ink2);font-size:13px;font-weight:700;cursor:pointer" data-i="cloudsql"></button>
-      </div>
+      <div id="cloud-preview" hidden style="padding:14px;background:var(--bg2);border-radius:12px;margin-top:14px"><div id="cloud-preview-summary" style="font-size:13px;line-height:1.8;white-space:pre-line"></div><div class="cloud-buttons"><button id="cloud-first-confirm" class="cloud-primary" onclick="cloudConfirmFirst()">確認</button><button onclick="cloudPauseSession();renderCloudAuth();cloudMessage('已取消，沒有搬移帳目。')">取消</button></div></div>
+      <div id="cloud-auth-message" role="status" aria-live="polite" class="msub" style="margin-top:12px;line-height:1.7"></div>
       <div id="cloud-status" class="msub" style="margin-top:10px"></div>
     </div>
     <div class="slbl" data-i="dataexport"></div>
@@ -1312,6 +1327,7 @@ img,canvas,svg{max-width:100%;}
       <button onclick="exportBackup()" style="width:100%;padding:13px;background:var(--hero-grad);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><i class="ti ti-download" style="font-size:18px"></i><span data-i="copybackup"></span></button>
       <textarea id="backup-out" readonly onclick="this.select()" style="display:none;width:100%;height:74px;margin-top:9px;border:1px solid var(--bdr2);border-radius:10px;padding:9px;background:var(--bg2);color:var(--ink);font-size:11px;font-family:monospace;resize:vertical"></textarea>
       <div id="backup-status" style="font-size:12px;color:var(--g3);margin-top:7px;font-weight:600"></div>
+      <details id="backup-private" style="margin-top:12px;font-size:12px;color:var(--ink3)"><summary style="cursor:pointer;padding:8px 0">私人備份 / 復原 · Advanced recovery</summary><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="nav-btn" onclick="exportBackup(true)">完整私人備份（含密鑰）</button><button class="nav-btn" onclick="previewCloudRecovery()">預覽同步前副本</button></div></details>
       <div style="height:1px;background:var(--bdr);margin:14px 0"></div>
       <div style="font-size:13px;color:var(--ink3);margin-bottom:9px" data-i="restorehint"></div>
       <textarea id="backup-in" data-i-ph="restoreph" style="width:100%;height:74px;border:1px solid var(--bdr2);border-radius:10px;padding:9px;background:var(--bg2);color:var(--ink);font-size:11px;font-family:monospace;resize:vertical"></textarea>
@@ -1319,6 +1335,8 @@ img,canvas,svg{max-width:100%;}
         <button onclick="restoreBackup()" style="flex:1;padding:12px;background:none;border:1.5px solid var(--g);color:var(--g3);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer" data-i="restorebackup"></button>
         <label style="flex-shrink:0;padding:12px 14px;background:var(--surf2);border:1.5px solid var(--bdr2);color:var(--ink2);border-radius:12px;font-size:14px;font-weight:700;cursor:pointer"><i class="ti ti-folder"></i> <span data-i="pickfile"></span><input type="file" accept="application/json,.json" onchange="restoreFromFile(this)" style="display:none"></label>
       </div>
+      <div id="backup-preview" aria-live="polite"></div>
+      <button id="backup-automation" hidden class="nav-btn" style="margin-top:12px;width:100%;white-space:normal" onclick="resumeImportedAutomation()"></button>
     </div>
 
     <div class="slbl">P&amp;L 日曆資料</div>
@@ -1335,6 +1353,10 @@ img,canvas,svg{max-width:100%;}
       <div class="msub" data-i="mpimporthint" style="margin-bottom:12px"></div>
       <label style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;background:var(--hero-grad);color:#fff;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer"><i class="ti ti-file-import" style="font-size:18px"></i><span data-i="mppick"></span><input type="file" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onchange="importMoneyPlus(this)" style="display:none"></label>
       <div id="mp-status" style="font-size:13px;margin-top:10px;font-weight:600;color:var(--g3)"></div>
+      <div style="margin-top:14px;padding:12px;border:1px solid var(--bdr);border-radius:12px">
+        <div id="mp-id-hint" class="msub">修復舊匯入紀錄的編號衝突，不刪除交易或改動金額；修復前先儲存復原副本。</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button id="mp-id-repair" class="nav-btn" style="min-height:44px" onclick="repairMoneyPlusRecordIds()">檢查／修復 Money+ 編號</button><button id="mp-id-recovery" class="nav-btn" style="min-height:44px" onclick="previewMoneyPlusIdRecovery()">預覽修復前副本</button></div>
+      </div>
       <button onclick="undoMpImport()" style="width:100%;margin-top:10px;padding:11px;background:none;border:1.5px solid var(--r3);color:var(--r3);border-radius:12px;font-size:13px;font-weight:700;cursor:pointer" data-i="mpundo"></button>
     </div>
   </div>
@@ -1847,6 +1869,8 @@ img,canvas,svg{max-width:100%;}
 <!-- (auto-pay modal removed: bills are now created via the recurring toggle in the new-transaction modal) -->
 
 
+<script src="./cloud-auth.js?v=1"></script>
+<script src="./cloud-ui.js?v=1"></script>
 <script>
 // ─── THEME ───────────────────────────────────────────────────
 // Respects a saved preference ('light'|'dark'); 'auto' (or unset) follows time of day.
@@ -1888,8 +1912,8 @@ const CB={food:'#FAECE7',transport:'#E6F1FB',daily:'#FAEEDA',entertainment:'#EEE
 const PIE_COLORS=['#1D9E75','#D85A30','#185FA5','#534AB7','#BA7517','#2E86AB','#E84855','#6B4226','#7C3AED','#059669'];
 
 const LANGS={
-  zh:{home:'主頁',txns:'記錄',auto:'自動',settings:'設定',networth:'淨資產',cashflow:'現金流',arowed:'應收',payable:'應付',dirrecv:'應收 · 人欠我',dirpay:'應付 · 我欠人',settlepay:'還清 ✓',week:'本週',month:'本月',year:'今年',alltime:'全部',totalspend:'總支出',income:'收入',spendbycat:'支出分類',wealthtrend:'資產趨勢',granday:'日',granweek:'週',granmonth:'月',recallbtn:'撤回',recent:'最近記錄',argroup:'應收 + 埋單',splitbill:'分帳',outstanding:'未收回',gamblepnl:'投資損益',addsession:'+ 記錄',alltimepnl:'累計損益 (HKD)',totalbuyin:'總投入',totalcashout:'總收回',byvenue:'按場所',sessions:'記錄',autopay:'自動繳費',addbill:'+ 賬單',monthlytotal:'每月總額',activebills:'啟用中',upcoming:'即將到期',allbills:'所有賬單',language:'語言',mergecats:'合併類別',mergehint:'選擇2個或以上類別→合併',addalias:'新增別名',addcat:'新增類別',allcats:'所有類別',newtxn:'新增記錄',expense:'支出',transfer:'轉帳',note:'備註',currency:'貨幣',date:'日期',person:'對象',oneofflbl:'單次消費 — 排除月均計算',save:'儲存',addar:'新增應收 / 應付',name:'姓名',amount:'金額',for:'用途',title:'標題',totalHKD:'總額 (HKD)',peopleinclme:'參與者',mechip:'我',mehint:'計我一份',helponly:'只代付（無我份）',addperson:'+ 加人',creategroup:'建立分帳',splitbillhint:'你墊付全數 — 平均分攤',venue:'場所',buyin:'投入',cashout:'收回',notes:'備註',savesession:'儲存記錄',newsession:'新增德州撲克記錄',newautopay:'新增自動賬單',autopayhint:'每月指定日期自動記帳',billname:'賬單名稱',payday:'扣款日',account:'帳戶',saveautopay:'儲存',mergebtn:'合併所選',savealias:'儲存別名',add:'新增',pending:'未付',group:'群組',settled:'已結清',all:'全部',oneoff:'單次',mergenameph:'新類別名稱',aliasph:'別名（如 賭, N8）',catnameph:'類別名稱',noteph:'如 港鐵, 午飯...',personph:'姓名（→ 應收帳款）',forph:'如 晚飯, 演唱會...',billtitleph:'如 Megan家晚飯',cashoutph:'空白代表仍開局',notesph:'MTT, 現金局...',billnameph:'如 健身會籍',accountph:'如 HSBC, Hang, 八達通',autopaydue:'自動繳費即將到期',transferresolver:'轉帳 → 應收帳款',addtoar:'加入應收',skip:'跳過',groupunpaid:'個群組未收回',nothisperiod:'此期間暫無支出',notxn:'暫無記錄',noar:'暫無記錄',nosessions:'暫無記錄',nobills:'暫無賬單',openstr:'開局中',closedstr:'已結算',awaitcashout:'等待收回金額',activebadge:'啟用中',pausedbadge:'已暫停',pause:'暫停',resume:'恢復',yourshare:'你的份額',eachowes:'每人應付',totalar:'總應收',people:'人',nameph:'朋友姓名',addstock:'新增股票',addcrypto:'新增加密貨幣',ticker:'代碼',entryprice:'入場價',exitprice:'離場價(選填)',qty:'數量',budgetprice:'目標價',currentprice:'現價',portpnllabel:'投資組合損益分佈',nostockyet:'未有股票倉位',nocryptoyet:'未有加密貨幣倉位',quickemoji:'快速選擇表情',deletepos:'刪除',editpos:'編輯',acctfrom:'資金來源 / 戶口',accounts:'戶口管理',addacct:'新增戶口',acctnameph:'戶口名稱（如 滙豐卡, 現金）',allaccts:'所有戶口',toexcel:'匯出 Excel',dataexport:'資料匯出',exporthint:'將所有記錄匯出成 Excel 檔案',databackup:'資料備份 / 還原',backuphint:'換 icon／換機前先匯出備份。會複製到剪貼簿並下載 JSON，貼去備忘錄保存。',copybackup:'匯出備份（複製 + 下載）',restorehint:'還原：貼上之前嘅備份 JSON，或揀檔案。',restoreph:'喺呢度貼上備份 JSON…',restorebackup:'還原',pickfile:'揀檔',backupcopied:'✅ 已複製到剪貼簿並下載，貼去備忘錄自己保存。',restoreok:'✅ 已還原，重新載入中…',restorebad:'備份格式無效',restoreconfirm:'用呢個備份覆蓋目前所有資料？',mpimport:'匯入 Money+ 記錄',mpimporthint:'由 Money+ 匯出嘅 Excel 匯入收入／支出，按帳戶自動判斷幣值（USD/JPY/RMB，其餘 HKD）並計入收支統計／圓餅圖／趨勢（按日期）。唔會刪你現有記錄、自動去重、可一鍵還原。轉帳唔會匯入。',mppick:'揀 Money+ Excel 檔',mpundo:'移除所有匯入記錄',account_col:'戶口',acctto:'轉入 / 目標戶口',transferhint:'戶口之間調動資金（如 現金 → 銀行卡）',sametransfererr:'轉出與轉入戶口不能相同',addacctchip:'新增戶口',recurlbl:'設為自動每月扣款',recurday:'每月扣款日',wallet:'錢包',fundaccts:'資金戶口',acctbalance:'戶口結餘',totalbalance:'總結餘 (HKD)',openingbal:'初始結餘',setopening:'設定初始結餘',balancehint:'結餘 = 初始 + 收入 − 支出 ± 轉帳',inflow:'流入',outflow:'流出',single:'單次',editbalance:'調整初始結餘',saveopening:'儲存',noacctyet:'未有戶口',investacct:'投資資金戶口',isinvestq:'這是投資戶口嗎？',isinvesthint:'投資戶口可連接 P&L 持倉（股票 / 加密貨幣 / 撲克）',yes:'是，投資戶口',no:'否，普通戶口',noinvestacct:'未有投資戶口 — 請先在資金戶口建立一個',positioncash:'現金',deployed:'已投入',connectacct:'連接投資戶口',deltxnq:'確定刪除此記錄？',portfvalue:'持倉市值',totaltrend:'總計',usemargin:'使用孖展 (Margin)？',marginhint:'戶口現金不足時，可用孖展借入買入',insufficient:'戶口現金不足。開啟孖展或減少金額。',marginbadge:'孖展',endpos:'平倉',endposq:'以現價平倉？將持倉按現價轉為現金。',totalworth:'總市值',marginused:'已用孖展',pnlbreakdown:'損益',totalasset:'總資產',fixedasset:'固定資產',quickasset:'速動資產 / 現金',totaldebt:'總負債',shortdebt:'短期負債',longdebt:'長期負債',netbalance:'戶口淨結餘',debtbadge:'負債',longdebt:'長期負債',adddebt:'新增負債',debtoutstanding:'未償還',debtinterest:'累計利息',debtmonthly:'每月供款',debtpaid:'已還',debtbalance:'目前欠款',debtapr:'年利率 %',debtcompound:'計息方式',debtcmonthly:'月複利',debtcannual:'年複利',debtcsimple:'單利（本金）',debtnointerest:'停止計息',debtpaused:'已暫停',debtrepay:'還款',mo:'個月',incomebycat:'收入分類',customrange:'自訂',rangeto:'至',apply:'套用',nothisincome:'此期間暫無收入',theme:'主題',themelight:'淺色',themedark:'深色',themeauto:'自動',numfmt:'數字顯示',numfull:'完整 (1,000)',numabbr:'簡寫 (1K / 1M)',numfmthint:'數字太長時用簡寫慳位（1,000→1K、1,000,000→1M）',motionmode:'動畫模式',motiondance:'動感',motionquiet:'安靜',motionhint:'安靜模式會停止長期跳動、光圈及按壓縮放。',refreshprices:'更新報價',pricesupdated:'已更新',pricesfail:'更新失敗（用上次報價）',stockapi:'股票報價 API',stockapihint:'貼上 Twelve Data 免費 API key 以自動更新股票價格（留空則手動輸入）。',savekey:'儲存',stockapinote:'在 twelvedata.com 免費註冊（免信用卡）。Key 只儲存在此裝置，不會寫入程式碼。',keysaved:'已儲存 API key',keycleared:'已清除 API key',apisym:'API 代碼',apisymph:'美股留空；港股如 0700:XHKG',excluded:'已排除',exclude:'排除',included:'計入',excludetip:'從總額中排除 / 重新計入',dispcur:'預設貨幣',privacyon:'顯示金額',privacyoff:'隱藏金額',calendar:'每日結餘',caltitle:'每日現金流',calhint:'綠色＝當日淨流入；紅色＝淨流出',live:'即時',sell:'賣出',sellpos:'部分賣出',sellqty:'賣出數量',sellprice:'賣出價',sellavail:'可賣',soldlot:'已賣出',sellerr:'數量或價格無效',privateequity:'未上市股權',pctowned:'持股 %',invested:'投入成本',valuation:'目前估值',holdings:'項目',pnlsections:'損益分頁（顯示 / 排序）',aiassist:'AI 助手',aiprovider:'AI 供應商',aikey:'AI API Key',aimodel:'模型（選填）',aiask:'問 AI',aiph:'問關於你財務的問題…',aithinking:'思考中…',ainokey:'請先在設定加入 AI API key',aierr:'AI 呼叫失敗',credit:'信用評分 (TU)',addscore:'記錄分數',estscore:'推算分數',creditlimit:'信用卡總額度',creditdisc:'此為粗略推算，非官方分數',utilisation:'信用卡使用率',officialscore:'官方分數',friends:'朋友',browse:'瀏覽',browsetitle:'瀏覽可用標的',search:'搜尋代碼 / 名稱…',noresults:'沒有結果',notonplan:'此市場在你的 API 方案未必提供 — 仍可手動新增。',loadingdata:'載入中…',addmanual:'手動新增',poker:'撲克',stocks:'股票',crypto:'加密貨幣',sessionspnl:'場次損益',unrealisedpnl:'未實現損益',realisedpnl:'已實現',costlbl:'成本',valuelbl:'市值',position:'持倉',positionslbl:'倉位',unitslbl:'股',entrylbl:'入場',exitlbl:'離場',targetlbl:'目標',txnsunit:'筆',tickerph:'TSLA、BTC、0700…',penotesph:'輪次、條款…',portnotesph:'交易所、錢包…',tuscoreph:'TU 分數',penameph:'如 FWP',calc:'試算',calctitle:'複利 / 定投試算',initialamt:'初始本金',dcaamt:'定投金額',growthrate:'預期增長 %',permonth:'每月',peryear:'每年',years:'年期',compound:'複利',continuous:'連續增長',calculate:'計算',futurevalue:'未來價值',contributed:'總投入',totalgrowth:'總增長',sectionnameph:'分頁名稱（如 物業投資）',pokerdetail:'牌局細節（選填）',blinds:'盲注',blindsph:'如 1/2',maxplayers:'最大人數',bbsize:'每個 BB 金額',resultbb:'輸贏 (BB)',resultbbph:'贏 +、輸 −',autoincome:'自動收入',addincome:'新增收入',incomename:'收入名稱',frequency:'頻率',freqnone:'單次',freqday:'每日',freqmonth:'每月',freqquarter:'每 3 個月',freqhalf:'每 6 個月',freqyear:'每年',peryearshort:'/年',linkposition:'連結持倉（選填）',dividendhint:'股息 / 利息等定期收入',accttype:'戶口類型',kindcash:'現金',kinddebit:'扣賬卡',kindcredit:'信用卡',kindbank:'銀行戶口',kindewallet:'電子錢包',kindinvest:'投資戶口',kindother:'其他',dividend:'股息 / 利息',divamount:'股息金額',divyield:'股息率 %',divnone:'不自動',recordnow:'立即記錄一次',budget:'預算成本',record:'記錄',history:'變動記錄',nohistory:'暫無記錄',act_add:'新增',act_edit:'修改',act_sell:'賣出',act_delete:'刪除',attachment:'附件',aifiletoobig:'檔案太大（最多 4MB，不會寫入本機歷史）',aideepseeknovision:'DeepSeek 暫未支援圖片/vision，請移除附件後再問',fxrates:'匯率',usedrates:'目前使用匯率',lastupdated:'最後更新',fallbackrate:'使用內置備用匯率',hkdperunit:'HKD / 每 1 單位',mybillrecord:'我的消費記錄',billrecordhint:'會自動加入 Wallet 支出 / 支出分類',aropen:'R/P 開單',arsettle:'R/P 結清',debtopen:'開立負債',showhide:'顯示 / 隱藏',netassettip:'關閉後不計入淨資產，只保留現金流',settleamt:'結清金額',settleamthint:'金額少於總欠款 = 部分結清，餘額留返未結清',acctnethint:'只計戶口＋持倉結餘，唔包長期負債 — 主頁「淨資產」先係全口徑',txnsearchph:'搜尋備註 / 類別 / 金額…',deleted:'已刪除',undo:'撤銷',negcashwarn:'現金為負',sg1:'外觀 · 一般',sg2:'損益 · 自動化',sg3:'類別',sg4:'戶口',sg5:'工具',sg6:'資料',cloudsync:'雲同步',cloudenable:'啟用自動同步',cloudhint:'用你自己嘅免費 Supabase 做加密備份＋跨裝置同步。資料上傳前先喺部機用你嘅密碼 AES-256 加密，雲端只見到密文。首次設定：撳「複製建表 SQL」→ 去 Supabase SQL Editor 貼上執行 → 返嚟貼 Project URL 同 anon key。',cloudpassph:'端對端加密密碼（雲端永遠唔知）',cloudsave:'儲存設定',cloudnow:'立即同步',cloudsql:'複製建表 SQL'},
-  en:{home:'Home',txns:'Record',auto:'Auto',settings:'Settings',networth:'Net worth',cashflow:'Cash flow',arowed:'Receivable',payable:'Payable',dirrecv:'Receivable · owed to me',dirpay:'Payable · I owe',settlepay:'Settle ✓',week:'Week',month:'Month',year:'Year',alltime:'All time',totalspend:'Total spend',income:'Income',spendbycat:'Spend by category',wealthtrend:'Wealth trend',granday:'Day',granweek:'Week',granmonth:'Month',recallbtn:'Recall',recent:'Recent',argroup:'A/R + Group Bills',splitbill:'Split bill',outstanding:'Outstanding',gamblepnl:'Invest P&L',addsession:'+ Session',alltimepnl:'All-time P&L (HKD)',totalbuyin:'Total buy-in',totalcashout:'Total cashout',byvenue:'By venue',sessions:'Sessions',autopay:'Auto-pay',addbill:'+ Bill',monthlytotal:'Monthly total',activebills:'Active bills',upcoming:'Upcoming',allbills:'All recurring bills',language:'Language',mergecats:'Merge categories',mergehint:'Tap 2+ categories → merge',addalias:'Add alias',addcat:'Add category',allcats:'All categories',newtxn:'New transaction',expense:'Expense',income:'Income',transfer:'Transfer',note:'Note',currency:'Currency',date:'Date',person:'Person',oneofflbl:'One-off — exclude from monthly avg',save:'Save',addar:'Add R/P entry',name:'Name',amount:'Amount',for:'For',title:'Title',totalHKD:'Total (HKD)',peopleinclme:'Participants',mechip:'Me',mehint:'count my share',helponly:'I only front (no share)',addperson:'+ Person',creategroup:'Create group bill',splitbillhint:'You paid full — split equally',venue:'Venue',buyin:'Buy-in',cashout:'Cashout',notes:'Notes',savesession:'Save session',newsession:'New poker session',newautopay:'New auto-pay bill',autopayhint:'Auto-records as expense monthly',billname:'Bill name',payday:'Pay on day',account:'Account',saveautopay:'Save auto-pay',mergebtn:'Merge selected',savealias:'Save alias',add:'Add',pending:'Pending',group:'Group',settled:'Settled',all:'All',oneoff:'One-off',mergenameph:'New category name',aliasph:'Alias (e.g. 賭, N8)',catnameph:'Category name',noteph:'e.g. MTR, lunch...',personph:'Name (→ A/R)',forph:'e.g. dinner, concert...',billtitleph:"e.g. dinner at Megan's",cashoutph:'leave blank if still open',notesph:'MTT, cash game...',billnameph:"e.g. Gold's Gym",accountph:'e.g. HSBC, Hang, Octopus',autopaydue:'Auto-pay due soon',transferresolver:'Transfer → A/R resolver',addtoar:'Add to A/R',skip:'Skip',groupunpaid:' group unpaid',nothisperiod:'No expenses this period',notxn:'No transactions yet',noar:'No entries yet',nosessions:'No sessions yet',nobills:'No bills yet',openstr:'open',closedstr:'closed',awaitcashout:'awaiting cashout',activebadge:'active',pausedbadge:'paused',pause:'Pause',resume:'Resume',yourshare:'Your share',eachowes:'Each owes you',totalar:'Total A/R',people:'people',nameph:"Friend's name",addstock:'Add Stock',addcrypto:'Add Crypto',ticker:'Ticker / Name',entryprice:'Entry price',exitprice:'Exit price (opt.)',qty:'Qty / Units',budgetprice:'Target price',currentprice:'Current price',portpnllabel:'Portfolio P&L breakdown',nostockyet:'No stock positions yet',nocryptoyet:'No crypto positions yet',quickemoji:'Quick emoji',deletepos:'Delete',editpos:'Edit',acctfrom:'From account',accounts:'Accounts',addacct:'Add account',acctnameph:'Account name (e.g. HSBC card, Cash)',allaccts:'All accounts',toexcel:'Export to Excel',dataexport:'Data export',exporthint:'Export all your records to an Excel file',databackup:'Backup / Restore',backuphint:'Export a backup before re-adding the icon or switching device. It copies to the clipboard and downloads a JSON — paste it into Notes to keep it safe.',copybackup:'Export backup (copy + download)',restorehint:'Restore: paste a previous backup JSON, or pick a file.',restoreph:'Paste backup JSON here…',restorebackup:'Restore',pickfile:'Pick file',backupcopied:'✅ Copied to clipboard and downloaded. Save it in Notes.',restoreok:'✅ Restored. Reloading…',restorebad:'Invalid backup data',restoreconfirm:'Overwrite ALL current data with this backup?',mpimport:'Import Money+ records',mpimporthint:'Import income/expenses from a Money+ Excel export. Currency is auto-detected per account (USD/JPY/RMB, else HKD) and the records count in your spend/income totals, pie charts and trend (by date). Existing records are untouched; duplicates skipped; reversible. Transfers are not imported.',mppick:'Pick Money+ Excel file',mpundo:'Remove all imported records',account_col:'Account',acctto:'To account',transferhint:'Move money between your accounts (e.g. Cash → Bank card)',sametransfererr:'From and To accounts must differ',addacctchip:'Add account',recurlbl:'Make this a monthly auto-payment',recurday:'Auto-pay on day',wallet:'Wallet',fundaccts:'Accounts',acctbalance:'Account balance',totalbalance:'Total balance (HKD)',openingbal:'Opening balance',setopening:'Set opening balance',balancehint:'Balance = opening + income − expense ± transfers',inflow:'In',outflow:'Out',single:'One-off',editbalance:'Adjust opening balance',saveopening:'Save',noacctyet:'No accounts yet',investacct:'Investment account',isinvestq:'Is this an investment account?',isinvesthint:'Investment accounts can fund P&L positions (stocks / crypto / poker)',yes:'Yes, investment',no:'No, regular',noinvestacct:'No investment account yet — create one in Accounts first',positioncash:'Cash',deployed:'Deployed',connectacct:'Connect investment account',deltxnq:'Delete this record?',portfvalue:'Portfolio value',totaltrend:'Total',usemargin:'Use margin?',marginhint:'If account cash is short, borrow on margin to enter',insufficient:'Not enough cash in account. Turn on margin or lower the amount.',marginbadge:'margin',endpos:'End position',endposq:'End at current price? Converts the position to cash at its current price.',totalworth:'Total worth',marginused:'Margin used',pnlbreakdown:'P&L',totalasset:'Total assets',fixedasset:'Fixed assets',quickasset:'Quick assets / cash',totaldebt:'Total debt',shortdebt:'Short debt',longdebt:'Long-term debt',netbalance:'Account net balance',debtbadge:'debt',longdebt:'Long-term debt',adddebt:'Add debt',debtoutstanding:'Outstanding',debtinterest:'Interest',debtmonthly:'Monthly',debtpaid:'Repaid',debtbalance:'Current balance',debtapr:'APR %',debtcompound:'Interest type',debtcmonthly:'Monthly compound',debtcannual:'Annual compound',debtcsimple:'Simple (on principal)',debtnointerest:'Stop counting interest',debtpaused:'Paused',debtrepay:'Repayment',mo:'mo',incomebycat:'Income by category',customrange:'Custom',rangeto:'to',apply:'Apply',nothisincome:'No income this period',theme:'Theme',themelight:'Light',themedark:'Dark',themeauto:'Auto',numfmt:'Number format',numfull:'Full (1,000)',numabbr:'Short (1K / 1M)',numfmthint:'Abbreviate long numbers to save space (1,000→1K, 1,000,000→1M)',motionmode:'Motion mode',motiondance:'Lively',motionquiet:'Quiet',motionhint:'Quiet mode stops constant bouncing, pulses, and press scaling.',refreshprices:'Refresh prices',pricesupdated:'Updated',pricesfail:'Update failed (using last prices)',stockapi:'Stock price API',stockapihint:'Paste a free Twelve Data API key to auto-update stock prices (leave blank to keep stocks manual).',savekey:'Save',stockapinote:'Sign up free at twelvedata.com (no credit card). The key is stored only on this device, never written into the code.',keysaved:'API key saved',keycleared:'API key cleared',apisym:'API symbol',apisymph:'US: leave blank; HK e.g. 0700:XHKG',excluded:'Excluded',exclude:'Exclude',included:'Include',excludetip:'Exclude from / include in totals',dispcur:'Default currency',privacyon:'Show amounts',privacyoff:'Hide amounts',calendar:'Daily balance',caltitle:'Daily cash flow',calhint:'Green = net in that day, red = net out',live:'live',sell:'Sell',sellpos:'Sell position',sellqty:'Sell qty',sellprice:'Sell price',sellavail:'Avail',soldlot:'Sold',sellerr:'Invalid quantity or price',privateequity:'Private equity',pctowned:'% owned',invested:'Invested',valuation:'Valuation',holdings:'Holdings',pnlsections:'P&L sections (show / order)',aiassist:'AI assistant',aiprovider:'AI provider',aikey:'AI API key',aimodel:'Model (optional)',aiask:'Ask AI',aiph:'Ask about your finances…',aithinking:'Thinking…',ainokey:'Add an AI API key in Settings first',aierr:'AI request failed',credit:'Credit score (TU)',addscore:'Log score',estscore:'Estimated score',creditlimit:'Total card limit',creditdisc:'Rough estimate, not an official score',utilisation:'Card utilisation',officialscore:'Official score',friends:'Friends',browse:'Browse',browsetitle:'Browse available instruments',search:'Search ticker / name…',noresults:'No results',notonplan:'This market may not be available on your API plan — you can still add it manually.',loadingdata:'Loading…',addmanual:'Add manually',poker:'Poker',stocks:'Stocks',crypto:'Crypto',sessionspnl:'Sessions P&L',unrealisedpnl:'Unrealised P&L',realisedpnl:'Realised',costlbl:'Cost',valuelbl:'Value',position:'Position',positionslbl:'Positions',unitslbl:'units',entrylbl:'Entry',exitlbl:'Exit',targetlbl:'Target',txnsunit:'txns',tickerph:'TSLA, BTC, 0700…',penotesph:'Round, terms…',portnotesph:'Exchange, wallet…',tuscoreph:'TU score',penameph:'e.g. FWP',calc:'Project',calctitle:'Compound & DCA calculator',initialamt:'Initial',dcaamt:'DCA amount',growthrate:'Expected growth %',permonth:'per month',peryear:'per year',years:'Years',compound:'Compound',continuous:'Continuous',calculate:'Calculate',futurevalue:'Future value',contributed:'Total contributed',totalgrowth:'Total growth',sectionnameph:'Section name (e.g. Housing investment)',pokerdetail:'Hand details (optional)',blinds:'Blinds',blindsph:'e.g. 1/2',maxplayers:'Max players',bbsize:'Value per BB',resultbb:'Result (BB)',resultbbph:'win +, lose −',autoincome:'Auto income',addincome:'Add income',incomename:'Income name',frequency:'Frequency',freqnone:'One-off',freqday:'Daily',freqmonth:'Monthly',freqquarter:'Every 3 months',freqhalf:'Every 6 months',freqyear:'Yearly',peryearshort:'/yr',linkposition:'Link position (optional)',dividendhint:'Recurring income like dividends / interest',accttype:'Account type',kindcash:'Cash',kinddebit:'Debit card',kindcredit:'Credit card',kindbank:'Bank account',kindewallet:'E-wallet',kindinvest:'Investment',kindother:'Other',dividend:'Dividend / interest',divamount:'Dividend amount',divyield:'Dividend yield %',divnone:'No auto',recordnow:'Record one now',budget:'Budget cost',record:'Record',history:'Change history',nohistory:'No records yet',act_add:'Added',act_edit:'Edited',act_sell:'Sold',act_delete:'Deleted',attachment:'Attach',aifiletoobig:'File too large (max 4MB, not saved to local history)',aideepseeknovision:'DeepSeek has no vision support here. Remove the attachment and ask again.',fxrates:'Currency rates',usedrates:'Current app rates',lastupdated:'Last updated',fallbackrate:'Using fallback rates',hkdperunit:'HKD per 1 unit',mybillrecord:'My spending record',billrecordhint:'Auto-adds a Wallet expense / spending category',aropen:'R/P opened',arsettle:'R/P settled',debtopen:'Debt opened',showhide:'Show / hide',netassettip:'Off = exclude from net assets, keep cash flow only',settleamt:'Amount to settle',settleamthint:'Less than the full amount = partial settle, the rest stays outstanding',acctnethint:'Accounts + holdings only — excludes long-term debt; Home "Net worth" is the full picture',txnsearchph:'Search note / category / amount…',deleted:'Deleted',undo:'Undo',negcashwarn:'negative cash',sg1:'Appearance & general',sg2:'P&L & automation',sg3:'Categories',sg4:'Accounts',sg5:'Tools',sg6:'Data',cloudsync:'Cloud sync',cloudenable:'Enable auto sync',cloudhint:'Encrypted backup + cross-device sync on your own free Supabase. Data is AES-256 encrypted on-device with your passphrase before upload — the cloud only ever sees ciphertext. First time: tap "Copy table SQL" → run it in the Supabase SQL Editor → paste your Project URL and anon key here.',cloudpassph:'End-to-end passphrase (never leaves your device in plain text)',cloudsave:'Save settings',cloudnow:'Sync now',cloudsql:'Copy table SQL'}
+  zh:{home:'主頁',txns:'記錄',auto:'自動',settings:'設定',networth:'淨資產',cashflow:'現金流',arowed:'應收',payable:'應付',dirrecv:'應收 · 人欠我',dirpay:'應付 · 我欠人',settlepay:'還清 ✓',week:'本週',month:'本月',year:'今年',alltime:'全部',totalspend:'總支出',income:'收入',spendbycat:'支出分類',wealthtrend:'資產趨勢',granday:'日',granweek:'週',granmonth:'月',recallbtn:'撤回',recent:'最近記錄',argroup:'應收 + 埋單',splitbill:'分帳',outstanding:'未收回',gamblepnl:'投資損益',addsession:'+ 記錄',alltimepnl:'累計損益 (HKD)',totalbuyin:'總投入',totalcashout:'總收回',byvenue:'按場所',sessions:'記錄',autopay:'自動繳費',addbill:'+ 賬單',monthlytotal:'每月總額',activebills:'啟用中',upcoming:'即將到期',allbills:'所有賬單',language:'語言',mergecats:'合併類別',mergehint:'選擇2個或以上類別→合併',addalias:'新增別名',addcat:'新增類別',allcats:'所有類別',newtxn:'新增記錄',expense:'支出',transfer:'轉帳',note:'備註',currency:'貨幣',date:'日期',person:'對象',oneofflbl:'單次消費 — 排除月均計算',save:'儲存',addar:'新增應收 / 應付',name:'姓名',amount:'金額',for:'用途',title:'標題',totalHKD:'總額 (HKD)',peopleinclme:'參與者',mechip:'我',mehint:'計我一份',helponly:'只代付（無我份）',addperson:'+ 加人',creategroup:'建立分帳',splitbillhint:'你墊付全數 — 平均分攤',venue:'場所',buyin:'投入',cashout:'收回',notes:'備註',savesession:'儲存記錄',newsession:'新增德州撲克記錄',newautopay:'新增自動賬單',autopayhint:'每月指定日期自動記帳',billname:'賬單名稱',payday:'扣款日',account:'帳戶',saveautopay:'儲存',mergebtn:'合併所選',savealias:'儲存別名',add:'新增',pending:'未付',group:'群組',settled:'已結清',all:'全部',oneoff:'單次',mergenameph:'新類別名稱',aliasph:'別名（如 賭, N8）',catnameph:'類別名稱',noteph:'如 港鐵, 午飯...',personph:'姓名（→ 應收帳款）',forph:'如 晚飯, 演唱會...',billtitleph:'如 Megan家晚飯',cashoutph:'空白代表仍開局',notesph:'MTT, 現金局...',billnameph:'如 健身會籍',accountph:'如 HSBC, Hang, 八達通',autopaydue:'自動繳費即將到期',transferresolver:'轉帳 → 應收帳款',addtoar:'加入應收',skip:'跳過',groupunpaid:'個群組未收回',nothisperiod:'此期間暫無支出',notxn:'暫無記錄',noar:'暫無記錄',nosessions:'暫無記錄',nobills:'暫無賬單',openstr:'開局中',closedstr:'已結算',awaitcashout:'等待收回金額',activebadge:'啟用中',pausedbadge:'已暫停',pause:'暫停',resume:'恢復',yourshare:'你的份額',eachowes:'每人應付',totalar:'總應收',people:'人',nameph:'朋友姓名',addstock:'新增股票',addcrypto:'新增加密貨幣',ticker:'代碼',entryprice:'入場價',exitprice:'離場價(選填)',qty:'數量',budgetprice:'目標價',currentprice:'現價',portpnllabel:'投資組合損益分佈',nostockyet:'未有股票倉位',nocryptoyet:'未有加密貨幣倉位',quickemoji:'快速選擇表情',deletepos:'刪除',editpos:'編輯',acctfrom:'資金來源 / 戶口',accounts:'戶口管理',addacct:'新增戶口',acctnameph:'戶口名稱（如 滙豐卡, 現金）',allaccts:'所有戶口',toexcel:'匯出 Excel',dataexport:'資料匯出',exporthint:'將所有記錄匯出成 Excel 檔案',databackup:'資料備份 / 還原',backuphint:'手機資料最多？在手機匯出帳目副本，再用 AirDrop／檔案傳到 Mac。不含設定密鑰，但仍有私人財務資料；請自行保管。',copybackup:'下載帳目副本（不含設定密鑰）',restorehint:'選取手機副本或舊版備份，先預覽，再另存為獨立帳本；不覆蓋電腦資料。',restoreph:'喺呢度貼上備份 JSON…',restorebackup:'預覽副本',pickfile:'揀檔',backupcopied:'✅ 已複製到剪貼簿並下載，貼去備忘錄自己保存。',restoreok:'✅ 已還原，重新載入中…',restorebad:'備份格式無效',restoreconfirm:'用呢個備份覆蓋目前所有資料？',mpimport:'匯入 Money+ 記錄',mpimporthint:'由 Money+ 匯出嘅 Excel 匯入收入／支出，按帳戶自動判斷幣值（USD/JPY/RMB，其餘 HKD）並計入收支統計／圓餅圖／趨勢（按日期）。唔會刪你現有記錄、自動去重、可一鍵還原。轉帳唔會匯入。',mppick:'揀 Money+ Excel 檔',mpundo:'移除所有匯入記錄',account_col:'戶口',acctto:'轉入 / 目標戶口',transferhint:'戶口之間調動資金（如 現金 → 銀行卡）',sametransfererr:'轉出與轉入戶口不能相同',addacctchip:'新增戶口',recurlbl:'設為自動每月扣款',recurday:'每月扣款日',wallet:'錢包',fundaccts:'資金戶口',acctbalance:'戶口結餘',totalbalance:'總結餘 (HKD)',openingbal:'初始結餘',setopening:'設定初始結餘',balancehint:'結餘 = 初始 + 收入 − 支出 ± 轉帳',inflow:'流入',outflow:'流出',single:'單次',editbalance:'調整初始結餘',saveopening:'儲存',noacctyet:'未有戶口',investacct:'投資資金戶口',isinvestq:'這是投資戶口嗎？',isinvesthint:'投資戶口可連接 P&L 持倉（股票 / 加密貨幣 / 撲克）',yes:'是，投資戶口',no:'否，普通戶口',noinvestacct:'未有投資戶口 — 請先在資金戶口建立一個',positioncash:'現金',deployed:'已投入',connectacct:'連接投資戶口',deltxnq:'確定刪除此記錄？',portfvalue:'持倉市值',totaltrend:'總計',usemargin:'使用孖展 (Margin)？',marginhint:'戶口現金不足時，可用孖展借入買入',insufficient:'戶口現金不足。開啟孖展或減少金額。',marginbadge:'孖展',endpos:'平倉',endposq:'以現價平倉？將持倉按現價轉為現金。',totalworth:'總市值',marginused:'已用孖展',pnlbreakdown:'損益',totalasset:'總資產',fixedasset:'固定資產',quickasset:'速動資產 / 現金',totaldebt:'總負債',shortdebt:'短期負債',longdebt:'長期負債',netbalance:'戶口淨結餘',debtbadge:'負債',longdebt:'長期負債',adddebt:'新增負債',debtoutstanding:'未償還',debtinterest:'累計利息',debtmonthly:'每月供款',debtpaid:'已還',debtbalance:'目前欠款',debtapr:'年利率 %',debtcompound:'計息方式',debtcmonthly:'月複利',debtcannual:'年複利',debtcsimple:'單利（本金）',debtnointerest:'停止計息',debtpaused:'已暫停',debtrepay:'還款',mo:'個月',incomebycat:'收入分類',customrange:'自訂',rangeto:'至',apply:'套用',nothisincome:'此期間暫無收入',theme:'主題',themelight:'淺色',themedark:'深色',themeauto:'自動',numfmt:'數字顯示',numfull:'完整 (1,000)',numabbr:'簡寫 (1K / 1M)',numfmthint:'數字太長時用簡寫慳位（1,000→1K、1,000,000→1M）',motionmode:'動畫模式',motiondance:'動感',motionquiet:'安靜',motionhint:'安靜模式會停止長期跳動、光圈及按壓縮放。',refreshprices:'更新報價',pricesupdated:'已更新',pricesfail:'更新失敗（用上次報價）',stockapi:'股票報價 API',stockapihint:'貼上 Twelve Data 免費 API key 以自動更新股票價格（留空則手動輸入）。',savekey:'儲存',stockapinote:'在 twelvedata.com 免費註冊（免信用卡）。Key 只儲存在此裝置，不會寫入程式碼。',keysaved:'已儲存 API key',keycleared:'已清除 API key',apisym:'API 代碼',apisymph:'美股留空；港股如 0700:XHKG',excluded:'已排除',exclude:'排除',included:'計入',excludetip:'從總額中排除 / 重新計入',dispcur:'預設貨幣',privacyon:'顯示金額',privacyoff:'隱藏金額',calendar:'每日結餘',caltitle:'每日現金流',calhint:'綠色＝當日淨流入；紅色＝淨流出',live:'即時',sell:'賣出',sellpos:'部分賣出',sellqty:'賣出數量',sellprice:'賣出價',sellavail:'可賣',soldlot:'已賣出',sellerr:'數量或價格無效',privateequity:'未上市股權',pctowned:'持股 %',invested:'投入成本',valuation:'目前估值',holdings:'項目',pnlsections:'損益分頁（顯示 / 排序）',aiassist:'AI 助手',aiprovider:'AI 供應商',aikey:'AI API Key',aimodel:'模型（選填）',aiask:'問 AI',aiph:'問關於你財務的問題…',aithinking:'思考中…',ainokey:'請先在設定加入 AI API key',aierr:'AI 呼叫失敗',credit:'信用評分 (TU)',addscore:'記錄分數',estscore:'推算分數',creditlimit:'信用卡總額度',creditdisc:'此為粗略推算，非官方分數',utilisation:'信用卡使用率',officialscore:'官方分數',friends:'朋友',browse:'瀏覽',browsetitle:'瀏覽可用標的',search:'搜尋代碼 / 名稱…',noresults:'沒有結果',notonplan:'此市場在你的 API 方案未必提供 — 仍可手動新增。',loadingdata:'載入中…',addmanual:'手動新增',poker:'撲克',stocks:'股票',crypto:'加密貨幣',sessionspnl:'場次損益',unrealisedpnl:'未實現損益',realisedpnl:'已實現',costlbl:'成本',valuelbl:'市值',position:'持倉',positionslbl:'倉位',unitslbl:'股',entrylbl:'入場',exitlbl:'離場',targetlbl:'目標',txnsunit:'筆',tickerph:'TSLA、BTC、0700…',penotesph:'輪次、條款…',portnotesph:'交易所、錢包…',tuscoreph:'TU 分數',penameph:'如 FWP',calc:'試算',calctitle:'複利 / 定投試算',initialamt:'初始本金',dcaamt:'定投金額',growthrate:'預期增長 %',permonth:'每月',peryear:'每年',years:'年期',compound:'複利',continuous:'連續增長',calculate:'計算',futurevalue:'未來價值',contributed:'總投入',totalgrowth:'總增長',sectionnameph:'分頁名稱（如 物業投資）',pokerdetail:'牌局細節（選填）',blinds:'盲注',blindsph:'如 1/2',maxplayers:'最大人數',bbsize:'每個 BB 金額',resultbb:'輸贏 (BB)',resultbbph:'贏 +、輸 −',autoincome:'自動收入',addincome:'新增收入',incomename:'收入名稱',frequency:'頻率',freqnone:'單次',freqday:'每日',freqmonth:'每月',freqquarter:'每 3 個月',freqhalf:'每 6 個月',freqyear:'每年',peryearshort:'/年',linkposition:'連結持倉（選填）',dividendhint:'股息 / 利息等定期收入',accttype:'戶口類型',kindcash:'現金',kinddebit:'扣賬卡',kindcredit:'信用卡',kindbank:'銀行戶口',kindewallet:'電子錢包',kindinvest:'投資戶口',kindother:'其他',dividend:'股息 / 利息',divamount:'股息金額',divyield:'股息率 %',divnone:'不自動',recordnow:'立即記錄一次',budget:'預算成本',record:'記錄',history:'變動記錄',nohistory:'暫無記錄',act_add:'新增',act_edit:'修改',act_sell:'賣出',act_delete:'刪除',attachment:'附件',aifiletoobig:'檔案太大（最多 4MB，不會寫入本機歷史）',aideepseeknovision:'DeepSeek 暫未支援圖片/vision，請移除附件後再問',fxrates:'匯率',usedrates:'目前使用匯率',lastupdated:'最後更新',fallbackrate:'使用內置備用匯率',hkdperunit:'HKD / 每 1 單位',mybillrecord:'我的消費記錄',billrecordhint:'會自動加入 Wallet 支出 / 支出分類',aropen:'R/P 開單',arsettle:'R/P 結清',debtopen:'開立負債',showhide:'顯示 / 隱藏',netassettip:'關閉後不計入淨資產，只保留現金流',settleamt:'結清金額',settleamthint:'金額少於總欠款 = 部分結清，餘額留返未結清',acctnethint:'只計戶口＋持倉結餘，唔包長期負債 — 主頁「淨資產」先係全口徑',txnsearchph:'搜尋備註 / 類別 / 金額…',deleted:'已刪除',undo:'撤銷',negcashwarn:'現金為負',sg1:'外觀 · 一般',sg2:'損益 · 自動化',sg3:'類別',sg4:'戶口',sg5:'工具',sg6:'資料',cloudsync:'雲同步',cloudenable:'啟用自動同步',cloudhint:'舊版同步會傳送整份帳本，不會逐筆合併；加密並不代表已設好帳戶存取權限。新裝置請先用下方帳目副本核對資料，切勿用空白帳本取代手機。',cloudpassph:'端對端加密密碼（雲端永遠唔知）',cloudsave:'儲存設定',cloudnow:'立即同步',cloudsql:'安全設定說明'},
+  en:{home:'Home',txns:'Record',auto:'Auto',settings:'Settings',networth:'Net worth',cashflow:'Cash flow',arowed:'Receivable',payable:'Payable',dirrecv:'Receivable · owed to me',dirpay:'Payable · I owe',settlepay:'Settle ✓',week:'Week',month:'Month',year:'Year',alltime:'All time',totalspend:'Total spend',income:'Income',spendbycat:'Spend by category',wealthtrend:'Wealth trend',granday:'Day',granweek:'Week',granmonth:'Month',recallbtn:'Recall',recent:'Recent',argroup:'A/R + Group Bills',splitbill:'Split bill',outstanding:'Outstanding',gamblepnl:'Invest P&L',addsession:'+ Session',alltimepnl:'All-time P&L (HKD)',totalbuyin:'Total buy-in',totalcashout:'Total cashout',byvenue:'By venue',sessions:'Sessions',autopay:'Auto-pay',addbill:'+ Bill',monthlytotal:'Monthly total',activebills:'Active bills',upcoming:'Upcoming',allbills:'All recurring bills',language:'Language',mergecats:'Merge categories',mergehint:'Tap 2+ categories → merge',addalias:'Add alias',addcat:'Add category',allcats:'All categories',newtxn:'New transaction',expense:'Expense',income:'Income',transfer:'Transfer',note:'Note',currency:'Currency',date:'Date',person:'Person',oneofflbl:'One-off — exclude from monthly avg',save:'Save',addar:'Add R/P entry',name:'Name',amount:'Amount',for:'For',title:'Title',totalHKD:'Total (HKD)',peopleinclme:'Participants',mechip:'Me',mehint:'count my share',helponly:'I only front (no share)',addperson:'+ Person',creategroup:'Create group bill',splitbillhint:'You paid full — split equally',venue:'Venue',buyin:'Buy-in',cashout:'Cashout',notes:'Notes',savesession:'Save session',newsession:'New poker session',newautopay:'New auto-pay bill',autopayhint:'Auto-records as expense monthly',billname:'Bill name',payday:'Pay on day',account:'Account',saveautopay:'Save auto-pay',mergebtn:'Merge selected',savealias:'Save alias',add:'Add',pending:'Pending',group:'Group',settled:'Settled',all:'All',oneoff:'One-off',mergenameph:'New category name',aliasph:'Alias (e.g. 賭, N8)',catnameph:'Category name',noteph:'e.g. MTR, lunch...',personph:'Name (→ A/R)',forph:'e.g. dinner, concert...',billtitleph:"e.g. dinner at Megan's",cashoutph:'leave blank if still open',notesph:'MTT, cash game...',billnameph:"e.g. Gold's Gym",accountph:'e.g. HSBC, Hang, Octopus',autopaydue:'Auto-pay due soon',transferresolver:'Transfer → A/R resolver',addtoar:'Add to A/R',skip:'Skip',groupunpaid:' group unpaid',nothisperiod:'No expenses this period',notxn:'No transactions yet',noar:'No entries yet',nosessions:'No sessions yet',nobills:'No bills yet',openstr:'open',closedstr:'closed',awaitcashout:'awaiting cashout',activebadge:'active',pausedbadge:'paused',pause:'Pause',resume:'Resume',yourshare:'Your share',eachowes:'Each owes you',totalar:'Total A/R',people:'people',nameph:"Friend's name",addstock:'Add Stock',addcrypto:'Add Crypto',ticker:'Ticker / Name',entryprice:'Entry price',exitprice:'Exit price (opt.)',qty:'Qty / Units',budgetprice:'Target price',currentprice:'Current price',portpnllabel:'Portfolio P&L breakdown',nostockyet:'No stock positions yet',nocryptoyet:'No crypto positions yet',quickemoji:'Quick emoji',deletepos:'Delete',editpos:'Edit',acctfrom:'From account',accounts:'Accounts',addacct:'Add account',acctnameph:'Account name (e.g. HSBC card, Cash)',allaccts:'All accounts',toexcel:'Export to Excel',dataexport:'Data export',exporthint:'Export all your records to an Excel file',databackup:'Backup / Restore',backuphint:'Export on the phone holding your latest data, then AirDrop the account copy to your Mac. Credential settings are omitted; financial data is still private.',copybackup:'Download account copy (no credentials)',restorehint:'Select a device copy or legacy backup to preview, then add separate profiles. Existing computer data will not be replaced.',restoreph:'Paste backup JSON here…',restorebackup:'Preview copy',pickfile:'Pick file',backupcopied:'✅ Copied to clipboard and downloaded. Save it in Notes.',restoreok:'✅ Restored. Reloading…',restorebad:'Invalid backup data',restoreconfirm:'Overwrite ALL current data with this backup?',mpimport:'Import Money+ records',mpimporthint:'Import income/expenses from a Money+ Excel export. Currency is auto-detected per account (USD/JPY/RMB, else HKD) and the records count in your spend/income totals, pie charts and trend (by date). Existing records are untouched; duplicates skipped; reversible. Transfers are not imported.',mppick:'Pick Money+ Excel file',mpundo:'Remove all imported records',account_col:'Account',acctto:'To account',transferhint:'Move money between your accounts (e.g. Cash → Bank card)',sametransfererr:'From and To accounts must differ',addacctchip:'Add account',recurlbl:'Make this a monthly auto-payment',recurday:'Auto-pay on day',wallet:'Wallet',fundaccts:'Accounts',acctbalance:'Account balance',totalbalance:'Total balance (HKD)',openingbal:'Opening balance',setopening:'Set opening balance',balancehint:'Balance = opening + income − expense ± transfers',inflow:'In',outflow:'Out',single:'One-off',editbalance:'Adjust opening balance',saveopening:'Save',noacctyet:'No accounts yet',investacct:'Investment account',isinvestq:'Is this an investment account?',isinvesthint:'Investment accounts can fund P&L positions (stocks / crypto / poker)',yes:'Yes, investment',no:'No, regular',noinvestacct:'No investment account yet — create one in Accounts first',positioncash:'Cash',deployed:'Deployed',connectacct:'Connect investment account',deltxnq:'Delete this record?',portfvalue:'Portfolio value',totaltrend:'Total',usemargin:'Use margin?',marginhint:'If account cash is short, borrow on margin to enter',insufficient:'Not enough cash in account. Turn on margin or lower the amount.',marginbadge:'margin',endpos:'End position',endposq:'End at current price? Converts the position to cash at its current price.',totalworth:'Total worth',marginused:'Margin used',pnlbreakdown:'P&L',totalasset:'Total assets',fixedasset:'Fixed assets',quickasset:'Quick assets / cash',totaldebt:'Total debt',shortdebt:'Short debt',longdebt:'Long-term debt',netbalance:'Account net balance',debtbadge:'debt',longdebt:'Long-term debt',adddebt:'Add debt',debtoutstanding:'Outstanding',debtinterest:'Interest',debtmonthly:'Monthly',debtpaid:'Repaid',debtbalance:'Current balance',debtapr:'APR %',debtcompound:'Interest type',debtcmonthly:'Monthly compound',debtcannual:'Annual compound',debtcsimple:'Simple (on principal)',debtnointerest:'Stop counting interest',debtpaused:'Paused',debtrepay:'Repayment',mo:'mo',incomebycat:'Income by category',customrange:'Custom',rangeto:'to',apply:'Apply',nothisincome:'No income this period',theme:'Theme',themelight:'Light',themedark:'Dark',themeauto:'Auto',numfmt:'Number format',numfull:'Full (1,000)',numabbr:'Short (1K / 1M)',numfmthint:'Abbreviate long numbers to save space (1,000→1K, 1,000,000→1M)',motionmode:'Motion mode',motiondance:'Lively',motionquiet:'Quiet',motionhint:'Quiet mode stops constant bouncing, pulses, and press scaling.',refreshprices:'Refresh prices',pricesupdated:'Updated',pricesfail:'Update failed (using last prices)',stockapi:'Stock price API',stockapihint:'Paste a free Twelve Data API key to auto-update stock prices (leave blank to keep stocks manual).',savekey:'Save',stockapinote:'Sign up free at twelvedata.com (no credit card). The key is stored only on this device, never written into the code.',keysaved:'API key saved',keycleared:'API key cleared',apisym:'API symbol',apisymph:'US: leave blank; HK e.g. 0700:XHKG',excluded:'Excluded',exclude:'Exclude',included:'Include',excludetip:'Exclude from / include in totals',dispcur:'Default currency',privacyon:'Show amounts',privacyoff:'Hide amounts',calendar:'Daily balance',caltitle:'Daily cash flow',calhint:'Green = net in that day, red = net out',live:'live',sell:'Sell',sellpos:'Sell position',sellqty:'Sell qty',sellprice:'Sell price',sellavail:'Avail',soldlot:'Sold',sellerr:'Invalid quantity or price',privateequity:'Private equity',pctowned:'% owned',invested:'Invested',valuation:'Valuation',holdings:'Holdings',pnlsections:'P&L sections (show / order)',aiassist:'AI assistant',aiprovider:'AI provider',aikey:'AI API key',aimodel:'Model (optional)',aiask:'Ask AI',aiph:'Ask about your finances…',aithinking:'Thinking…',ainokey:'Add an AI API key in Settings first',aierr:'AI request failed',credit:'Credit score (TU)',addscore:'Log score',estscore:'Estimated score',creditlimit:'Total card limit',creditdisc:'Rough estimate, not an official score',utilisation:'Card utilisation',officialscore:'Official score',friends:'Friends',browse:'Browse',browsetitle:'Browse available instruments',search:'Search ticker / name…',noresults:'No results',notonplan:'This market may not be available on your API plan — you can still add it manually.',loadingdata:'Loading…',addmanual:'Add manually',poker:'Poker',stocks:'Stocks',crypto:'Crypto',sessionspnl:'Sessions P&L',unrealisedpnl:'Unrealised P&L',realisedpnl:'Realised',costlbl:'Cost',valuelbl:'Value',position:'Position',positionslbl:'Positions',unitslbl:'units',entrylbl:'Entry',exitlbl:'Exit',targetlbl:'Target',txnsunit:'txns',tickerph:'TSLA, BTC, 0700…',penotesph:'Round, terms…',portnotesph:'Exchange, wallet…',tuscoreph:'TU score',penameph:'e.g. FWP',calc:'Project',calctitle:'Compound & DCA calculator',initialamt:'Initial',dcaamt:'DCA amount',growthrate:'Expected growth %',permonth:'per month',peryear:'per year',years:'Years',compound:'Compound',continuous:'Continuous',calculate:'Calculate',futurevalue:'Future value',contributed:'Total contributed',totalgrowth:'Total growth',sectionnameph:'Section name (e.g. Housing investment)',pokerdetail:'Hand details (optional)',blinds:'Blinds',blindsph:'e.g. 1/2',maxplayers:'Max players',bbsize:'Value per BB',resultbb:'Result (BB)',resultbbph:'win +, lose −',autoincome:'Auto income',addincome:'Add income',incomename:'Income name',frequency:'Frequency',freqnone:'One-off',freqday:'Daily',freqmonth:'Monthly',freqquarter:'Every 3 months',freqhalf:'Every 6 months',freqyear:'Yearly',peryearshort:'/yr',linkposition:'Link position (optional)',dividendhint:'Recurring income like dividends / interest',accttype:'Account type',kindcash:'Cash',kinddebit:'Debit card',kindcredit:'Credit card',kindbank:'Bank account',kindewallet:'E-wallet',kindinvest:'Investment',kindother:'Other',dividend:'Dividend / interest',divamount:'Dividend amount',divyield:'Dividend yield %',divnone:'No auto',recordnow:'Record one now',budget:'Budget cost',record:'Record',history:'Change history',nohistory:'No records yet',act_add:'Added',act_edit:'Edited',act_sell:'Sold',act_delete:'Deleted',attachment:'Attach',aifiletoobig:'File too large (max 4MB, not saved to local history)',aideepseeknovision:'DeepSeek has no vision support here. Remove the attachment and ask again.',fxrates:'Currency rates',usedrates:'Current app rates',lastupdated:'Last updated',fallbackrate:'Using fallback rates',hkdperunit:'HKD per 1 unit',mybillrecord:'My spending record',billrecordhint:'Auto-adds a Wallet expense / spending category',aropen:'R/P opened',arsettle:'R/P settled',debtopen:'Debt opened',showhide:'Show / hide',netassettip:'Off = exclude from net assets, keep cash flow only',settleamt:'Amount to settle',settleamthint:'Less than the full amount = partial settle, the rest stays outstanding',acctnethint:'Accounts + holdings only — excludes long-term debt; Home "Net worth" is the full picture',txnsearchph:'Search note / category / amount…',deleted:'Deleted',undo:'Undo',negcashwarn:'negative cash',sg1:'Appearance & general',sg2:'P&L & automation',sg3:'Categories',sg4:'Accounts',sg5:'Tools',sg6:'Data',cloudsync:'Cloud sync',cloudenable:'Enable auto sync',cloudhint:'Legacy sync transfers the entire profile, without record-level merging. Encryption alone does not establish account access controls. Compare a device copy below before connecting a new device.',cloudpassph:'End-to-end passphrase (never leaves your device in plain text)',cloudsave:'Save settings',cloudnow:'Sync now',cloudsql:'Security setup info'}
 };
 
 Object.assign(LANGS.zh,{
@@ -2008,6 +2032,13 @@ function saveProfilesMeta(m){localStorage.setItem('fos_profiles',JSON.stringify(
 function activeProfileId(){return ensureProfiles().active;}
 function profileKey(id){id=id||activeProfileId();return id==='default'?'fos8':'fos8_p_'+id;}
 function resetProfileRuntime(){
+  window._cloudEpoch=(window._cloudEpoch||0)+1;window._cloudOperation=null;
+  window._cloudAuthApproved=false;window._cloudPreview=null;
+  window._backupPreview=null;
+  if(typeof document!=='undefined'){
+    ['backup-out','backup-in'].forEach(id=>{const el=document.getElementById(id);if(el){el.value='';if(id==='backup-out')el.style.display='none';}});
+    ['backup-preview','backup-status','cloud-status'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent='';});
+  }
   clearTimeout(window._cloudT);window._cloudT=null;window._cloudMute=false;window._storageReadOnly=false;
   Object.assign(FX,DEFAULT_FX);
   if(typeof _cloudKey!=='undefined'){_cloudKey=null;_cloudKeyFor='';}
@@ -2026,7 +2057,7 @@ function showStorageError(action,e){
     el=document.createElement('div');el.id='storage-error-banner';
     el.style.cssText='position:fixed;z-index:99999;left:12px;right:12px;top:calc(12px + env(safe-area-inset-top));padding:12px 14px;border-radius:14px;background:#7f1d1d;color:#fff;box-shadow:0 8px 30px rgba(0,0,0,.28);font-size:13px;line-height:1.45;display:flex;align-items:center;gap:10px';
     const msg=document.createElement('span');msg.id='storage-error-message';msg.style.flex='1';el.appendChild(msg);
-    const btn=document.createElement('button');btn.type='button';btn.textContent=tt('下載備份','Download backup');btn.style.cssText='border:1px solid rgba(255,255,255,.65);background:transparent;color:#fff;border-radius:10px;padding:8px 10px;font-weight:700';btn.addEventListener('click',function(){if(typeof exportBackup==='function')exportBackup();});el.appendChild(btn);
+    const btn=document.createElement('button');btn.type='button';btn.textContent=tt('下載私人備份','Private backup');btn.style.cssText='border:1px solid rgba(255,255,255,.65);background:transparent;color:#fff;border-radius:10px;padding:8px 10px;font-weight:700';btn.addEventListener('click',function(){if(typeof exportBackup==='function')exportBackup(true);});el.appendChild(btn);
     document.body.appendChild(el);
   }
   el.dataset.action=action;
@@ -2058,15 +2089,15 @@ if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
 S.notify=notifyCfg();
 if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return c.id===dc.id;});if(!ex){S.cats.push({...dc,aliases:[...dc.aliases]});}else{dc.aliases.forEach(function(a){if((ex.aliases||[]).indexOf(a)<0)ex.aliases=(ex.aliases||[]).concat(a);});}});
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(typeof ensureRPIncomeAccruals==='function'&&ensureRPIncomeAccruals())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));showStorageError('load',e);}}
-function profileSnapshot(){const cloud=S.cloud||{};return {txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},pnlCalendarSections:S.pnlCalendarSections||{},pnlCalendarFilters:Array.isArray(S.pnlCalendarFilters)?S.pnlCalendarFilters:[],pnlImports:Array.isArray(S.pnlImports)?S.pnlImports:[],ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],rpLabels:S.rpLabels||{},customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],fixedAssetReviewedYear:Number(S.fixedAssetReviewedYear)||0,setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:(S.priceHist||[]).slice(-180),acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
+function profileSnapshot(){migrateRecurringRuns(S,localStorage);const cloud=S.cloud||{};return {recurringRuns:S.recurringRuns,recurringLedgerVersion:1,automationPaused:!!S.automationPaused,txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},pnlCalendarSections:S.pnlCalendarSections||{},pnlCalendarFilters:Array.isArray(S.pnlCalendarFilters)?S.pnlCalendarFilters:[],pnlImports:Array.isArray(S.pnlImports)?S.pnlImports:[],ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],rpLabels:S.rpLabels||{},customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],fixedAssetReviewedYear:Number(S.fixedAssetReviewedYear)||0,setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:S.priceHist||[],acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{authVersion:cloud.authVersion||0,linked:!!cloud.linked,userId:cloud.userId||'',vaultId:cloud.vaultId||'',url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
 function saveS(opt){
   opt=opt||{};
   if(window._storageReadOnly&&!opt.force){showStorageError('load',new Error('storage is read-only after load failure'));return false;}
   try{
-    const shouldQueue=!opt.skipCloud&&!window._cloudMute&&S.cloud&&S.cloud.on&&S.cloud.url&&S.cloud.key&&S.cloud.pass;
+    const shouldQueue=!opt.skipCloud&&!window._cloudMute&&S.cloud&&(S.cloud.on||S.cloud.linked)&&S.cloud.url&&S.cloud.key&&S.cloud.pass;
     if(shouldQueue){S.cloud.pending=true;S.cloud._dirty=true;S.cloud.pendingAt=S.cloud.pendingAt||Date.now();S.cloud.lastError='';}
     localStorage.setItem(profileKey(),JSON.stringify(profileSnapshot()));clearStorageError('save');
-    if(shouldQueue){if(typeof setCloudStatus==='function')setCloudStatus('pending');clearTimeout(window._cloudT);window._cloudT=setTimeout(function(){cloudPush();},4000);}
+    if(shouldQueue&&typeof cloudReady==='function'&&cloudReady()){if(typeof setCloudStatus==='function')setCloudStatus('pending');const state=S,key=profileKey();clearTimeout(window._cloudT);window._cloudT=setTimeout(function(){if(S===state&&profileKey()===key)cloudPush();},4000);}
     if(typeof notifySchedule==='function')notifySchedule('save');
     return true;
   }catch(e){showStorageError('save',e);return false;}
@@ -2811,6 +2842,7 @@ function ensureDebtOpenMoves(){let changed=false;S.debts=S.debts||[];S.txns=S.tx
 function estMonths(d){const mr=debtMonthlyRate(d);const M=d.monthly||0;let b=d.balance||0;if(M<=0||b<=0)return null;const im=d.compound==='simple'?(d.principal0||b)*mr:b*mr;if(mr>0&&M<=im)return null;let m=0;while(b>0&&m<1200){b=b+(d.compound==='simple'?(d.principal0||b)*mr:b*mr)-M;m++;}return m;}
 // Accrue interest and (unless paused) post a monthly repayment for every month that has come due
 function checkDebts(){
+  if(S.automationPaused)return;
   const now=new Date();const curYM=ymNum(now);let changed=false;
   (S.debts||[]).forEach(d=>{
     if(d.lastYM==null){d.lastYM=curYM;changed=true;return;}
@@ -2887,16 +2919,39 @@ function saveDebt(){
 function deleteDebt(id){if(!confirm(t('deltxnq')))return;S.debts=(S.debts||[]).filter(x=>String(x.id)!==String(id));S.txns=(S.txns||[]).filter(tx=>!(tx.type==='debt_move'&&String(tx.debtId)===String(id)));saveS();renderDebts();renderHome();refreshWallet();}
 function toggleDebtPause(id){const d=(S.debts||[]).find(x=>String(x.id)===String(id));if(d)d.paused=!d.paused;saveS();renderDebts();}
 // ─── AUTOPAY CHECK ─────────────────────────────────────────
+function recurringRunKey(kind,id,y,m){return kind+':'+encodeURIComponent(String(id))+':'+y+'-'+String(m+1).padStart(2,'0');}
+function migrateRecurringRuns(p,legacy){
+  if(!p.recurringRuns||typeof p.recurringRuns!=='object'||Array.isArray(p.recurringRuns))p.recurringRuns={};
+  const fields={ap:'autoPayId',ai:'autoIncomeId',posdiv:'posDivId'};
+  (p.txns||[]).forEach(tx=>{
+    const date=String(tx.date||'').match(/^(\d{4})-(\d{2})-\d{2}$/);if(!date||+date[2]<1||+date[2]>12)return;
+    Object.keys(fields).forEach(k=>{if(tx[fields[k]]!=null)p.recurringRuns[recurringRunKey(k,tx[fields[k]],+date[1],+date[2]-1)]=true;});
+  });
+  // Import the old device-only flags exactly once, and only for rules in this profile.
+  // Then the ledger travels with the profile, including explicitly deleted occurrences.
+  if(p.recurringLedgerVersion!==1&&legacy){
+    const rules={ap:p.autopay||[],ai:p.autoincome||[],posdiv:p.portfolio||[]};
+    const keys=typeof legacy.key==='function'?Array.from({length:legacy.length||0},(_,i)=>legacy.key(i)):Object.keys(legacy);
+    keys.forEach(key=>{
+      const hit=String(key).match(/^(ap|ai|posdiv)_(.+)_(\d{4})_(\d{1,2})$/);if(!hit||+hit[4]>11)return;
+      const value=typeof legacy.getItem==='function'?legacy.getItem(key):legacy[key];
+      if(value&&rules[hit[1]].some(r=>String(r.id)===hit[2]))p.recurringRuns[recurringRunKey(hit[1],hit[2],+hit[3],+hit[4])]=true;
+    });
+  }
+  p.recurringLedgerVersion=1;return p;
+}
 function checkAutopay(){
+  if(S.automationPaused)return;
+  migrateRecurringRuns(S,localStorage);
   const now=new Date();const[m,y,d]=[now.getMonth(),now.getFullYear(),now.getDate()];
   let fired=false;
   S.autopay.filter(ap=>ap.active).forEach(ap=>{
     const pd=ap.day===31?dimM(y,m):Math.min(ap.day,dimM(y,m));
     if(d>=pd){
-      const key='ap_'+ap.id+'_'+y+'_'+m;
-      if(!localStorage.getItem(key)){
-        S.txns.unshift({id:Date.now()+Math.random(),type:'expense',amount:ap.amount,amtHKD:parseFloat(toHKD(ap.amount,ap.cur).toFixed(2)),cur:ap.cur,catId:ap.catId,catLabel:getCat(ap.catId).label,catIcon:getCat(ap.catId).icon,acctId:ap.acctId||'',acctLabel:ap.acct||'',acctIcon:ap.acctIcon||'',note:ap.name+' (auto)',date:y+'-'+String(m+1).padStart(2,'0')+'-'+String(pd).padStart(2,'0'),oneOff:false,autoPayId:ap.id});
-        localStorage.setItem(key,'1');fired=true;
+      const key=recurringRunKey('ap',ap.id,y,m);
+      if(!S.recurringRuns[key]){
+        S.txns.unshift({id:'auto:'+key,type:'expense',amount:ap.amount,amtHKD:parseFloat(toHKD(ap.amount,ap.cur).toFixed(2)),cur:ap.cur,catId:ap.catId,catLabel:getCat(ap.catId).label,catIcon:getCat(ap.catId).icon,acctId:ap.acctId||'',acctLabel:ap.acct||'',acctIcon:ap.acctIcon||'',note:ap.name+' (auto)',date:y+'-'+String(m+1).padStart(2,'0')+'-'+String(pd).padStart(2,'0'),oneOff:false,autoPayId:ap.id});
+        S.recurringRuns[key]=true;fired=true;
       }
     }
   });
@@ -2907,12 +2962,12 @@ function checkAutopay(){
     if(ms<0||ms%mb!==0)return;
     const day=1,pd=Math.min(day,dimM(y,m));
     if(d>=pd){
-      const key='posdiv_'+p.id+'_'+y+'_'+m;
-      if(!localStorage.getItem(key)){
+      const key=recurringRunKey('posdiv',p.id,y,m);
+      if(!S.recurringRuns[key]){
         const amt=divPerPost(p,y,m);if(amt<=0){return;}
         const cat=getCat('other_inc');const ac=getAcct(p.acctId);
-        S.txns.unshift({id:Date.now()+Math.random(),type:'income',amount:parseFloat(amt.toFixed(2)),amtHKD:parseFloat(toHKD(amt,p.cur).toFixed(2)),cur:p.cur,catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:p.acctId||'',acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:p.name+' '+t('dividend')+' (auto)',date:y+'-'+String(m+1).padStart(2,'0')+'-'+String(pd).padStart(2,'0'),oneOff:false,posDivId:p.id});
-        localStorage.setItem(key,'1');fired=true;
+        S.txns.unshift({id:'auto:'+key,type:'income',amount:parseFloat(amt.toFixed(2)),amtHKD:parseFloat(toHKD(amt,p.cur).toFixed(2)),cur:p.cur,catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:p.acctId||'',acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:p.name+' '+t('dividend')+' (auto)',date:y+'-'+String(m+1).padStart(2,'0')+'-'+String(pd).padStart(2,'0'),oneOff:false,posDivId:p.id});
+        S.recurringRuns[key]=true;fired=true;
       }
     }
   });
@@ -2960,6 +3015,8 @@ function recordDiv(pctId,curId,acctId,nameId){
 }
 // Recurring income (dividends/interest etc). freq = months between payments; 0 = one-off.
 function checkAutoincome(){
+  if(S.automationPaused)return;
+  migrateRecurringRuns(S,localStorage);
   const now=new Date();const[m,y,d]=[now.getMonth(),now.getFullYear(),now.getDate()];
   let fired=false;
   (S.autoincome||[]).filter(a=>a.active).forEach(a=>{
@@ -2971,11 +3028,11 @@ function checkAutoincome(){
     if(!dueThisMonth)return;
     const pd=a.day===31?dimM(y,m):Math.min(a.day||1,dimM(y,m));
     if(d>=pd){
-      const key='ai_'+a.id+'_'+y+'_'+m;
-      if(!localStorage.getItem(key)){
+      const key=recurringRunKey('ai',a.id,y,m);
+      if(!S.recurringRuns[key]){
         const cat=getCat(a.catId||'other_inc');
-        S.txns.unshift({id:Date.now()+Math.random(),type:'income',amount:a.amount,amtHKD:parseFloat(toHKD(a.amount,a.cur).toFixed(2)),cur:a.cur,catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:a.acctId||'',acctLabel:a.acct||'',acctIcon:a.acctIcon||'',note:a.name+(a.posName?' · '+a.posName:'')+' (auto)',date:y+'-'+String(m+1).padStart(2,'0')+'-'+String(pd).padStart(2,'0'),oneOff:false,autoIncomeId:a.id});
-        localStorage.setItem(key,'1');fired=true;
+        S.txns.unshift({id:'auto:'+key,type:'income',amount:a.amount,amtHKD:parseFloat(toHKD(a.amount,a.cur).toFixed(2)),cur:a.cur,catId:cat.id,catLabel:catLabel(cat),catIcon:cat.icon,acctId:a.acctId||'',acctLabel:a.acct||'',acctIcon:a.acctIcon||'',note:a.name+(a.posName?' · '+a.posName:'')+' (auto)',date:y+'-'+String(m+1).padStart(2,'0')+'-'+String(pd).padStart(2,'0'),oneOff:false,autoIncomeId:a.id});
+        S.recurringRuns[key]=true;fired=true;
       }
     }
   });
@@ -3038,16 +3095,16 @@ function installNavSwipe(){
   nav.addEventListener('pointerdown',e=>{
     if(e.button!==undefined&&e.button!==0)return;
     down=true;dragging=false;startX=lastX=e.clientX;startI=activeTabIndex();
-    try{nav.setPointerCapture(e.pointerId);}catch(_e){}
   });
   nav.addEventListener('pointermove',e=>{
     if(!down)return;
     const dx=e.clientX-startX;lastX=e.clientX;
-    if(Math.abs(dx)>7){dragging=true;swallowClick=true;nav.classList.add('nav-dragging');e.preventDefault();}
+    if(Math.abs(dx)>7){if(!dragging){try{nav.setPointerCapture(e.pointerId);}catch(_e){}}dragging=true;swallowClick=true;nav.classList.add('nav-dragging');e.preventDefault();}
     if(dragging){updateNavIsland(clampNavIndex(startI+(dx/tabSpan())));}
   },{passive:false});
   const end=e=>{
     if(!down)return;down=false;
+    if(dragging){try{nav.releasePointerCapture(e.pointerId);}catch(_e){}}
     const dx=(e&&e.clientX!=null?e.clientX:lastX)-startX;
     nav.classList.remove('nav-dragging');
     if(dragging&&Math.abs(dx)>Math.max(34,tabSpan()*0.18)){
@@ -5170,10 +5227,12 @@ function renderAssetLabelSettings(){
 }
 function saveAssetLabel(key,value){ensureAssetLabels();const lang=S.lang==='en'?'en':'zh',v=String(value||'').trim();S.assetLabels[key][lang]=v||PHYSICAL_LABEL_DEFAULTS[key][lang];saveS();renderHome();renderAssetLabelSettings();if(S.activeTab==='gamble')renderGamble();}
 function renderSettings(){
+  renderTransferControls();
+  renderMoneyPlusRepairControls();
   renderAutopay();renderAutoincome();
   const aks=document.getElementById('ai-key-status');if(aks)aks.textContent='';
   const cc=(typeof cloudCfg==='function')?cloudCfg():null;const cu=document.getElementById('cloud-url');
-  if(cc&&cu){cu.value=cc.url||'';document.getElementById('cloud-key').value=cc.key||'';document.getElementById('cloud-pass').value=cc.pass||'';document.getElementById('cloud-on').classList.toggle('on',!!cc.on);if(typeof setCloudStatus==='function')setCloudStatus(cc.on?(cc.pending?'pending':(cc.ver?'ok':'')):'');}
+  if(cc&&cu){const defaults=window.MyfinCloudDefaults||{};cu.value=cc.url||defaults.url||'';document.getElementById('cloud-key').value=cc.key||(!cc.url?defaults.key:'')||'';document.getElementById('cloud-pass').value=cc.pass||'';document.getElementById('cloud-vault').value=cc.vaultId||'main';if(typeof setCloudStatus==='function')setCloudStatus(cloudReady()?(cc.pending?'pending':(cc.ver?'ok':'')):'');if(typeof renderCloudAuth==='function')renderCloudAuth();}
   const dc=document.getElementById('disp-cur');if(dc)dc.value=S.dispCur||'HKD';
   renderPnlSecMgr();renderPnlImportBatches();renderAssetLabelSettings();renderQuoteApiSettings();renderAiSettings();renderCredit();renderBudgetSettings();renderTaxSettings();renderNotifySettings();
   document.querySelectorAll('.theme-btn').forEach(b=>b.classList.toggle('active',b.dataset.theme===(S.theme||'auto')));
@@ -5255,23 +5314,119 @@ function mergeCats(){
 function addAlias(){const alias=document.getElementById('alias-name').value.trim();const tId=document.getElementById('alias-target').value;if(!alias)return;const cat=S.cats.find(c=>c.id===tId);if(cat&&!(cat.aliases||[]).includes(alias))cat.aliases.push(alias);document.getElementById('alias-name').value='';saveS();renderSettings();}
 function addCat(){const icon=document.getElementById('new-cat-icon').value.trim()||'📌';const name=document.getElementById('new-cat-name').value.trim();if(!name)return;const id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!S.cats.find(c=>c.id===id))S.cats.push({id,label:name,labelEn:name,icon,aliases:[]});['new-cat-icon','new-cat-name'].forEach(x=>document.getElementById(x).value='');saveS();renderSettings();}
 
-// ─── FULL DATA BACKUP / RESTORE (localStorage → JSON) ────────
-function exportBackup(){
-  const data={};
-  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.indexOf('fos')===0||k.indexOf('ap_')===0))data[k]=localStorage.getItem(k);}
-  const payload=JSON.stringify({__myfin_backup:1,ts:Date.now(),date:today(),data});
-  const ta=document.getElementById('backup-out');if(ta){ta.style.display='block';ta.value=payload;}
-  let copied=false;
-  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(payload);copied=true;}}catch(e){}
-  if(!copied&&ta){try{ta.focus();ta.select();ta.setSelectionRange(0,payload.length);document.execCommand('copy');copied=true;}catch(e){}}
-  try{const blob=new Blob([payload],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='myfin-backup-'+today()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){try{URL.revokeObjectURL(url);}catch(e){}},4000);}catch(e){}
-  const st=document.getElementById('backup-status');if(st)st.textContent=t('backupcopied');
+// ─── SAFE DEVICE TRANSFER / LOCAL RECOVERY ─────────────────
+function transferProfileData(raw,legacy){
+  validateProfileData(raw);
+  const src=JSON.parse(JSON.stringify(raw)),p={};
+  // Explicit durable-data allowlist: never copy API credentials or runtime fields.
+  const fields='txns people gamble autopay cats accounts lang portfolio physicalAssets assetLabels theme motionMode budget tax notify fx dispCur period privacy pnlOrder pnlHidden pnlNetHidden pnlCalendarSections pnlCalendarFilters pnlImports tuScores creditLimit friends rpLabels customSections autoincome debts privateLoans fixedAssetReviewedYear setCollapsed wealthGran trendGran catMRU acctMRU numFmt priceHist acctFilter pnlPieNoCash pnlPieFilters billMe changelog recurringRuns recurringLedgerVersion'.split(' ');
+  fields.forEach(k=>{if(Object.prototype.hasOwnProperty.call(src,k))p[k]=src[k];});
+  p.ai={provider:String(src.ai?.provider||'gemini'),model:String(src.ai?.model||''),key:''};p.quoteApis=defaultQuoteApis();p.tdKey='';
+  p.cloud={url:'',key:'',pass:'',salt:'',on:false,ver:0,last:0,pending:false,pendingAt:0,lastError:''};
+  p.automationPaused=true;migrateRecurringRuns(p,legacy);return p;
 }
+function buildSafeTransfer(){
+  const meta=profilesMeta()||{active:'default',list:[{id:'default',name:'我的帳戶',emoji:'👤'}]};
+  const profiles=meta.list.map(entry=>{
+    const stored=localStorage.getItem(profileKey(entry.id));
+    const raw=entry.id===meta.active&&!window._storageReadOnly?profileSnapshot():(stored?JSON.parse(stored):createAppState());
+    return {sourceId:entry.id,name:String(entry.name||entry.id),emoji:String(entry.emoji||'👤'),data:transferProfileData(raw,localStorage)};
+  });
+  return {__myfin_transfer:1,createdAt:Date.now(),date:today(),activeSourceId:meta.active,credentialsIncluded:false,profiles};
+}
+function planBackupImport(obj){
+  let profiles=[],activeSourceId='';
+  if(obj&&obj.__myfin_transfer===1&&Array.isArray(obj.profiles)){
+    profiles=obj.profiles;activeSourceId=String(obj.activeSourceId||'');
+  }else if(obj&&obj.__myfin_backup===1&&obj.data&&typeof obj.data==='object'&&!Array.isArray(obj.data)){
+    let meta={list:[]};if(obj.data.fos_profiles){meta=JSON.parse(obj.data.fos_profiles);if(!Array.isArray(meta.list))throw new Error('Invalid profile list');}
+    activeSourceId=String(meta.active||'default');
+    const keys=Object.keys(obj.data).filter(k=>k==='fos8'||/^fos8_p_[A-Za-z0-9_-]+$/.test(k));
+    profiles=keys.map(key=>{
+      const id=key==='fos8'?'default':key.slice(7),entry=meta.list.find(p=>p.id===id)||{};
+      return {sourceId:id,name:String(entry.name||id),emoji:String(entry.emoji||'👤'),data:transferProfileData(JSON.parse(obj.data[key]),obj.data)};
+    });
+  }else throw new Error('Invalid backup format');
+  if(!profiles.length||profiles.length>100)throw new Error('Invalid profile count');
+  const ids=new Set();
+  return {activeSourceId,profiles:profiles.map(entry=>{
+    if(!entry||typeof entry.sourceId!=='string'||!entry.sourceId||ids.has(entry.sourceId))throw new Error('Invalid source profile ID');
+    ids.add(entry.sourceId);
+    return {sourceId:entry.sourceId,name:String(entry.name||entry.sourceId).slice(0,160),emoji:String(entry.emoji||'👤').slice(0,20),data:transferProfileData(entry.data)};
+  })};
+}
+function commitBackupImport(plan,localCloud){
+  if(window._storageReadOnly)throw new Error('Local storage is read-only');
+  // Revalidate even when invoked from the UI preview. No imported key selects its destination.
+  const checked=planBackupImport({__myfin_transfer:1,profiles:plan.profiles,activeSourceId:plan.activeSourceId});
+  const before=localStorage.getItem('fos_profiles'),meta=profilesMeta()||{active:'default',list:[{id:'default',name:'我的帳戶',emoji:'👤'}]};
+  const existing=meta.list.map(entry=>{const str=localStorage.getItem(profileKey(entry.id));return str?JSON.stringify(transferProfileData(JSON.parse(str),localStorage)):'';});
+  const staged=[],newIds=[];
+  try{
+    checked.profiles.forEach((entry,i)=>{
+      const data=JSON.stringify(entry.data);if(existing.includes(data))return;
+      const random=typeof crypto!=='undefined'&&crypto.randomUUID?crypto.randomUUID():Math.random().toString(36).slice(2);
+      const id='import_'+Date.now()+'_'+i+'_'+random,key=profileKey(id);
+      if(localStorage.getItem(key)!==null||meta.list.some(p=>p.id===id))throw new Error('Import ID collision');
+      if(localCloud){if(checked.profiles.length!==1||!localCloud.linked||localCloud.authVersion!==2||!localCloud.userId)throw new Error('Invalid cloud binding');entry.data.cloud=Object.assign({},localCloud,{on:false});}
+      staged.push(key);localStorage.setItem(key,JSON.stringify(entry.data));newIds.push(id);existing.push(data);
+      meta.list.push({id,name:entry.name+' · 匯入副本',emoji:entry.emoji,sourceId:entry.sourceId,importedAt:Date.now()});
+    });
+    if(!newIds.length)throw new Error('Source already imported / 相同帳目副本已存在');
+    if(localStorage.getItem('fos_profiles')!==before)throw new Error('Profile list changed; preview again');
+    // Commit point: publish the new profiles only after every write succeeds.
+    localStorage.setItem('fos_profiles',JSON.stringify(meta));
+  }catch(e){
+    let cleanupFailed=false;staged.forEach(k=>{try{localStorage.removeItem(k);}catch(_e){cleanupFailed=true;}});
+    if(cleanupFailed)throw new Error('Import cancelled; existing profiles unchanged, but some unpublished copies could not be removed');
+    throw e;
+  }
+  return newIds;
+}
+function exportBackup(privateCopy){
+  if(privateCopy&&!confirm(tt('完整私人備份包含同步密碼及 API 密鑰，只可自行離線保管，切勿上傳聊天或分享。繼續下載？','A private backup includes sync passphrases and API keys. Keep it offline; do not upload or share it. Download?')))return;
+  try{
+    let obj;
+    if(privateCopy){
+      const data={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(/^(fos|ap_|ai_|posdiv_)/.test(k)))data[k]=localStorage.getItem(k);}
+      if(!window._storageReadOnly)data[profileKey()]=JSON.stringify(profileSnapshot());
+      obj={__myfin_backup:1,ts:Date.now(),date:today(),data};
+    }else obj=buildSafeTransfer();
+    const payload=JSON.stringify(obj),ta=document.getElementById('backup-out');
+    if(ta){ta.value=privateCopy?'':payload;ta.style.display=privateCopy?'none':'block';}
+    const url=URL.createObjectURL(new Blob([payload],{type:'application/json'})),a=document.createElement('a');
+    a.href=url;a.download=(privateCopy?'myfin-PRIVATE-backup-':'myfin-accounts-')+today()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),4000);
+    const st=document.getElementById('backup-status');if(st)st.textContent=privateCopy?tt('已建立私人備份下載，請確認檔案已保存。','Private download created; confirm the file was saved.'):tt('帳目副本已準備下載（不含設定密鑰）。請確認已保存，再 AirDrop 到 Mac；檔案仍包含私人財務資料。','Account copy ready to download, without credential settings. Confirm it was saved, then AirDrop to your Mac. It still contains private financial data.');
+  }catch(e){showToast(tt('匯出失敗：','Export failed: ')+String(e.message||e),1);}
+}
+function cancelBackupImport(){window._backupPreview=null;const el=document.getElementById('backup-preview');if(el)el.innerHTML='';}
 function applyBackupObj(obj){
-  if(!obj||obj.__myfin_backup!==1||!obj.data||typeof obj.data!=='object'){showToast(t('restorebad'),1);return;}
-  if(!confirm(t('restoreconfirm')))return;
-  try{Object.keys(obj.data).forEach(function(k){localStorage.setItem(k,obj.data[k]);});}catch(e){showToast(t('restorebad'),1);return;}
-  alert(t('restoreok'));location.reload();
+  cancelBackupImport();
+  try{
+    const plan=planBackupImport(obj);window._backupPreview={plan,state:S,key:profileKey()};
+    const el=document.getElementById('backup-preview');if(!el)throw new Error('Preview unavailable');
+    el.innerHTML=`<div style="padding:14px;border:1px solid var(--bdr2);border-radius:14px;margin-top:12px;line-height:1.6"><strong>${tt('先核對手機副本','Review the device copy')}</strong><div class="msub">${tt('只新增獨立帳本，電腦原有資料保持不變。未合併、未連接雲端；自動入帳會暫停。數量核對不代表金額已核實。','Adds separate profiles. Existing computer data stays unchanged. No merge or cloud connection; automatic posting is paused. Counts do not verify balances.')}</div>${plan.profiles.map(p=>`<div style="padding:10px 0;border-top:1px solid var(--bdr);overflow-wrap:anywhere"><b>${escapeHtml(p.name)}</b>${p.sourceId===plan.activeSourceId?' · '+tt('來源裝置使用中','active on source'):''}<div class="msub">${p.data.accounts.length} ${tt('個戶口','accounts')} · ${p.data.txns.length} ${tt('筆記錄','records')} · ${(p.data.portfolio||[]).length} ${tt('項持倉','positions')} · ${(p.data.privateLoans||[]).length} ${tt('項私人借款','private loans')}</div></div>`).join('')}<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="nav-btn" onclick="confirmBackupImport()">${tt('核對後新增副本','Add reviewed copies')}</button><button class="nav-btn" onclick="cancelBackupImport()">${tt('取消','Cancel')}</button></div></div>`;
+  }catch(e){showToast(tt('無法預覽：','Cannot preview: ')+String(e.message||e),1);}
+}
+function confirmBackupImport(){
+  const pending=window._backupPreview;if(!pending)return;
+  if(pending.state!==S||pending.key!==profileKey()){cancelBackupImport();showToast(tt('帳本已切換，請重新預覽','Profile changed; preview again'),1);return;}
+  try{
+    if(!saveS({skipCloud:true}))throw new Error(tt('請先處理本機儲存問題','Resolve the local save problem first'));
+    const ids=commitBackupImport(pending.plan);cancelBackupImport();renderProfileChip();
+    const el=document.getElementById('backup-preview');if(el)el.innerHTML=`<div style="margin-top:12px;line-height:1.6">${tt('已新增副本；原有帳本未被覆蓋。你可先切換帳本核對，暫時不要啟用雲端同步。','Copies added; existing profiles were not replaced. Switch profiles to compare before enabling cloud sync.')}<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px">${ids.map((id,i)=>`<button class="nav-btn" onclick="switchProfile(${inlineJsString(id)})">${tt('查看副本','View copy')} ${i+1}</button>`).join('')}</div></div>`;
+  }catch(e){showToast(tt('未匯入：','Not imported: ')+String(e.message||e),1);}
+}
+function previewCloudRecovery(){
+  try{const saved=JSON.parse(localStorage.getItem('myfin.recovery.v1.'+profileKey())||'null');if(!saved)throw new Error(tt('未有同步前復原副本','No pre-sync recovery copy'));applyBackupObj({__myfin_transfer:1,profiles:[{sourceId:activeProfileId(),name:tt('同步前副本','Pre-sync copy')+' '+new Date(saved.createdAt).toLocaleString(),data:saved.profile}]});}
+  catch(e){showToast(String(e.message||e),1);}
+}
+function resumeImportedAutomation(){
+  if(!S.automationPaused||!confirm(tt('確認此副本已核對？啟用後會按現有規則執行到期自動入帳及負債計算。','Have you checked this copy? Enabling will run due automatic postings and debt calculations.')))return;
+  S.automationPaused=false;if(!saveS()){S.automationPaused=true;return;}checkAutopay();checkAutoincome();checkDebts();renderSettings();renderHome();showToast(tt('已啟用此帳本自動入帳','Automatic posting enabled for this profile'));
+}
+function renderTransferControls(){
+  const el=document.getElementById('backup-automation');if(el){el.hidden=!S.automationPaused;el.textContent=tt('目前帳本自動入帳已暫停 · 核對後按此啟用','Current profile: posting paused · Enable after checking');}
 }
 function restoreBackup(){
   const ta=document.getElementById('backup-in');const raw=((ta&&ta.value)||'').trim();if(!raw){showToast(t('restorebad'),1);return;}
@@ -5280,8 +5435,11 @@ function restoreBackup(){
 }
 function restoreFromFile(input){
   const f=input.files&&input.files[0];if(!f)return;
+  if(f.size>20*1024*1024){input.value='';showToast(tt('檔案過大（上限 20 MB）','File too large (20 MB limit)'),1);return;}
+  const state=S,key=profileKey();
   const r=new FileReader();
-  r.onload=function(){let obj;try{obj=JSON.parse(String(r.result));}catch(e){showToast(t('restorebad'),1);return;}applyBackupObj(obj);};
+  r.onload=function(){input.value='';if(S!==state||profileKey()!==key){showToast(tt('帳本已切換，請重新選檔','Profile changed; pick the file again'),1);return;}let obj;try{obj=JSON.parse(String(r.result));}catch(e){showToast(t('restorebad'),1);return;}applyBackupObj(obj);};
+  r.onerror=function(){input.value='';showToast(tt('讀取失敗，請重新選檔','Read failed; select the file again'),1);};
   r.readAsText(f);
 }
 // ─── STANDALONE P&L CALENDAR IMPORT ───────────────────────
@@ -5344,10 +5502,69 @@ function mpResolveCat(rawCat,type){
   if(c){let id=c.id;if(type==='income'&&id==='other')id='other_inc';const cc=getCat(id)||c;return {catId:cc.id,catLabel:cc.label,catIcon:cc.icon};}
   return {catId:type==='income'?'other_inc':'other',catLabel:rawCat||(type==='income'?'收入':'其他'),catIcon:'📦'};
 }
+function moneyPlusRecordId(sourceKey,used){
+  // Deterministic safe integers preserve legacy numeric UI handlers. Unlike
+  // Date.now()+Math.random(), the random fraction cannot round onto another ID.
+  // _mpKey remains the canonical source identity; a numeric hash is not a merge key.
+  let a=2166136261,b=2246822507;const text='myfin-mp-v1|'+String(sourceKey);
+  for(let i=0;i<text.length;i++){const c=text.charCodeAt(i);a=Math.imul(a^c,16777619);b=Math.imul(b^c,3266489909);}
+  let id=(a>>>0)*2097152+(b>>>11);if(!id)id=1;
+  while(used.has(String(id)))id=id===Number.MAX_SAFE_INTEGER?1:id+1;
+  used.add(String(id));return id;
+}
+function planMoneyPlusIdRepair(p){
+  const collections=['txns','portfolio','gamble'],used=new Set(),refs=new Set(),candidates=[],blocked=[];
+  // A duplicated ID cannot tell us which record a reference meant. Never guess.
+  const referenceFields=new Set(['openTxnId','incomeTxnId','settleTxnId','settleTxnIds','fromTxn','fromTxnId','txnId','txnIds','transactionId','transactionIds','posId','positionId','gambleId','sessionId']);
+  function scan(v){if(!v||typeof v!=='object')return;Object.keys(v).forEach(k=>{const x=v[k];if(referenceFields.has(k)){(Array.isArray(x)?x:[x]).forEach(id=>{if(id!=null&&id!=='')refs.add(String(id));});}else scan(x);});}
+  scan(p);
+  collections.forEach(collection=>{
+    const groups=new Map();(p[collection]||[]).forEach((r,index)=>{const key=String(r.id);used.add(key);if(!groups.has(key))groups.set(key,[]);groups.get(key).push({collection,index,record:r});});
+    groups.forEach((group,id)=>{
+      if(group.length<2)return;
+      if(group.some(x=>x.record.imported!=='mp'||!x.record._mpKey)){blocked.push('Money+ 來源未能確定 / source is not uniquely identified');return;}
+      if(new Set(group.map(x=>x.record._mpKey)).size!==group.length){blocked.push('Money+ 來源重複 / repeated source identity');return;}
+      if(refs.has(id)){blocked.push('存在未能判明的引用 / ambiguous reference');return;}
+      candidates.push(...group);
+    });
+  });
+  candidates.sort((a,b)=>{const x=a.collection+'|'+a.record._mpKey,y=b.collection+'|'+b.record._mpKey;return x<y?-1:x>y?1:0;});
+  const changes=candidates.map(x=>({collection:x.collection,index:x.index,oldId:x.record.id,newId:moneyPlusRecordId(x.record._mpKey,used)}));
+  return {changes,blocked};
+}
+function repairMoneyPlusIds(p){
+  const plan=planMoneyPlusIdRepair(p);if(plan.blocked.length)throw new Error(plan.blocked[0]);
+  plan.changes.forEach(c=>{p[c.collection][c.index].id=c.newId;});return plan;
+}
+function renderMoneyPlusRepairControls(){
+  [['mp-id-hint','修復舊匯入紀錄的編號衝突，不刪除交易或改動金額；修復前先儲存復原副本。','Repair conflicting legacy import IDs without deleting transactions or changing amounts. A recovery copy is saved first.'],['mp-id-repair','檢查／修復 Money+ 編號','Check / repair Money+ IDs'],['mp-id-recovery','預覽修復前副本','Preview pre-repair copy']].forEach(([id,zh,en])=>{const el=document.getElementById(id);if(el)el.textContent=tt(zh,en);});
+}
+function repairMoneyPlusRecordIds(){
+  try{
+    if(window._storageReadOnly)throw new Error(tt('本機儲存已暫停，請先保留備份。','Local storage is read-only; retain a backup first.'));
+    const current=profileSnapshot(),next=JSON.parse(JSON.stringify(current)),plan=repairMoneyPlusIds(next);
+    if(!plan.changes.length){showToast(tt('未發現需要修復的 Money+ 編號衝突','No Money+ ID collisions found'));return;}
+    if(!confirm(tt(`將修復 ${plan.changes.length} 筆紀錄的編號；全部金額、日期及紀錄保留。先儲存修復前副本，繼續？`,`Repair IDs on ${plan.changes.length} records, keeping all amounts, dates and records? A recovery copy will be saved first.`)))return;
+    const key=profileKey();
+    localStorage.setItem('myfin.id-recovery.v1.'+key,JSON.stringify({createdAt:Date.now(),profile:current,changes:plan.changes}));
+    const before={txns:S.txns,portfolio:S.portfolio,gamble:S.gamble};
+    S.txns=next.txns;S.portfolio=next.portfolio;S.gamble=next.gamble;
+    if(!saveS()){Object.assign(S,before);throw new Error(tt('儲存失敗，已撤回記憶體中的編號改動。','Save failed; in-memory ID changes were reverted.'));}
+    S._editTxnId=null;
+    if(typeof _undoDelTxn!=='undefined')_undoDelTxn=null;
+    const undo=document.getElementById('undo-toast');if(undo)undo.classList.remove('show');
+    refreshAllViews();showToast(tt(`已修復 ${plan.changes.length} 筆編號；帳目數字不變。`,`Repaired ${plan.changes.length} IDs; financial data is unchanged.`));
+  }catch(e){showToast(tt('未完成修復：','Repair not completed: ')+String(e.message||e),1);}
+}
+function previewMoneyPlusIdRecovery(){
+  try{const saved=JSON.parse(localStorage.getItem('myfin.id-recovery.v1.'+profileKey())||'null');if(!saved)throw new Error(tt('未有修復前副本','No pre-repair copy'));applyBackupObj({__myfin_transfer:1,activeSourceId:activeProfileId(),profiles:[{sourceId:activeProfileId(),name:tt('編號修復前副本','Pre-ID-repair copy')+' '+new Date(saved.createdAt).toLocaleString(),data:saved.profile}]});const preview=document.getElementById('backup-preview');if(preview){const body=preview.closest('.set-body');if(body)body.classList.remove('col');preview.scrollIntoView({behavior:'smooth',block:'center'});}}
+  catch(e){showToast(String(e.message||e),1);}
+}
 function processMpRows(rows){
   if(!rows||rows.length<2){showToast('No rows found',1);return;}
   let start=0;const h0=(rows[0]||[]).join('');if(h0.indexOf('日期')>=0||h0.toLowerCase().indexOf('date')>=0)start=1;
   const existing=new Set([].concat(S.txns||[],S.portfolio||[],S.gamble||[]).filter(x=>x._mpKey).map(x=>x._mpKey));
+  const usedIds=new Set([].concat(S.txns||[],S.portfolio||[],S.gamble||[]).map(x=>String(x.id)));
   let addTxn=0,addPos=0,addGmb=0,skipped=0,dup=0;
   const txnB=[],posB=[],gmbB=[];
   for(let i=start;i<rows.length;i++){
@@ -5372,18 +5589,18 @@ function processMpRows(rows){
     // SPECIAL 1: investment income -> a closed (realised) position in P&L
     if(type==='income'&&rc.catId==='invest'){
       const it=mpInvestType(rawAcct);
-      posB.push({id:Date.now()+Math.random(),type:it,name:(note||rawAcct||'已實現'),qty:0,entryPrice:0,currentPrice:0,exitPrice:1,exitDate:date,budgetPrice:null,cur:cur,costHKD:0,valueHKD:amtHKD,acctId:'',acctLabel:rawAcct,notes:'Money+ '+date,date:date,secId:'',imported:'mp',_mpKey:key});
+      posB.push({id:moneyPlusRecordId(key,usedIds),type:it,name:(note||rawAcct||'已實現'),qty:0,entryPrice:0,currentPrice:0,exitPrice:1,exitDate:date,budgetPrice:null,cur:cur,costHKD:0,valueHKD:amtHKD,acctId:'',acctLabel:rawAcct,notes:'Money+ '+date,date:date,secId:'',imported:'mp',_mpKey:key});
       addPos++;continue;
     }
     // SPECIAL 2: gambling (win or loss) -> a closed poker session
     if(rc.catId==='gambling'){
       const win=type==='income';
-      gmbB.push({id:Date.now()+Math.random(),venue:(note||rawAcct||'Poker'),buyin:win?0:amt,cashout:win?amt:0,buyinHKD:win?0:amtHKD,cashoutHKD:win?amtHKD:0,cur:cur,date:date,open:false,notes:'Money+',acctId:'',margin:false,imported:'mp',_mpKey:key});
+      gmbB.push({id:moneyPlusRecordId(key,usedIds),venue:(note||rawAcct||'Poker'),buyin:win?0:amt,cashout:win?amt:0,buyinHKD:win?0:amtHKD,cashoutHKD:win?amtHKD:0,cur:cur,date:date,open:false,notes:'Money+',acctId:'',margin:false,imported:'mp',_mpKey:key});
       addGmb++;continue;
     }
     // NORMAL: income/expense transaction
     const ac=(S.accounts||[]).find(a=>[a.label,a.labelEn].some(v=>v&&v.toString().trim().toLowerCase()===rawAcct.toLowerCase()));
-    txnB.push({id:Date.now()+Math.random(),type:type,amount:amt,amtHKD:amtHKD,cur:cur,catId:rc.catId,catLabel:rc.catLabel,catIcon:rc.catIcon,acctId:'',acctLabel:rawAcct,acctIcon:ac?ac.icon:'',note:note||rc.catLabel,date:date,oneOff:false,imported:'mp',_mpKey:key});
+    txnB.push({id:moneyPlusRecordId(key,usedIds),type:type,amount:amt,amtHKD:amtHKD,cur:cur,catId:rc.catId,catLabel:rc.catLabel,catIcon:rc.catIcon,acctId:'',acctLabel:rawAcct,acctIcon:ac?ac.icon:'',note:note||rc.catLabel,date:date,oneOff:false,imported:'mp',_mpKey:key});
     addTxn++;
   }
   const total=addTxn+addPos+addGmb;const st=document.getElementById('mp-status');
@@ -5481,7 +5698,7 @@ function recordPriceSnapshot(at){
   const last=S.priceHist[S.priceHist.length-1],sameP=last&&JSON.stringify(last.p||{})===JSON.stringify(snap.p||{});
   if(last&&(now-last.t)<60000&&sameP)S.priceHist[S.priceHist.length-1]=snap; // collapse rapid repeats only when P&L did not change
   else S.priceHist.push(snap);
-  if(S.priceHist.length>180)S.priceHist=S.priceHist.slice(-180);
+  // Do not discard old P&L days merely because prices were refreshed frequently.
 }
 async function refreshPrices(silent){
   if(_refreshing)return; _refreshing=true;
@@ -5890,22 +6107,69 @@ setInterval(maybeAutoRefresh,60*60*1000); // re-check hourly so a long-running s
 // Whole-profile blob with a version counter — deliberately no per-record merging, so a sync
 // bug can never silently mis-merge financial data. Local storage stays the source of truth.
 function cloudCfg(){S.cloud=S.cloud||{};const c=S.cloud;c.url=c.url||'';c.key=c.key||'';c.pass=c.pass||'';c.salt=c.salt||'';c.on=!!c.on;c.ver=c.ver||0;c.last=c.last||0;c.pending=!!(c.pending||c._dirty);c._dirty=c.pending;c.pendingAt=c.pendingAt||0;c.lastError=c.lastError||'';return c;}
-function cloudReady(){const c=cloudCfg();return !!(c.on&&c.url&&c.key&&c.pass);}
+function cloudSignedIn(c){const s=window._cloudAuthClient?.status();return !!(s&&s.userId&&s.userId===c.userId&&s.projectUrl===c.url);}
+function cloudReady(){const c=cloudCfg();return !!(window._cloudAuthApproved&&c.authVersion===2&&c.linked&&c.vaultId&&c.on&&c.url&&c.key&&c.pass&&cloudSignedIn(c));}
+function cloudPath(c){return 'myfin_sync_v2?owner_id=eq.'+encodeURIComponent(c.userId)+'&id=eq.'+encodeURIComponent(c.vaultId);}
 function b64e(bytes){let s='';for(let i=0;i<bytes.length;i+=0x8000)s+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));return btoa(s);}
 function b64d(str){const bin=atob(str);const b=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)b[i]=bin.charCodeAt(i);return b;}
 let _cloudKey=null,_cloudKeyFor='';
-async function cloudCryptoKey(){
-  const c=cloudCfg();
+async function cloudCryptoKey(config){
+  const c=config||cloudCfg();
   if(!c.salt){const b=new Uint8Array(16);crypto.getRandomValues(b);c.salt=b64e(b);}
   const tag=c.pass+'|'+c.salt;
   if(_cloudKey&&_cloudKeyFor===tag)return _cloudKey;
   const base=await crypto.subtle.importKey('raw',new TextEncoder().encode(c.pass),'PBKDF2',false,['deriveKey']);
-  _cloudKey=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(c.salt),iterations:150000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
-  _cloudKeyFor=tag;return _cloudKey;
+  const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:b64d(c.salt),iterations:150000,hash:'SHA-256'},base,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+  _cloudKey=key;_cloudKeyFor=tag;return key;
 }
-async function cloudEncrypt(str){const key=await cloudCryptoKey();const iv=new Uint8Array(12);crypto.getRandomValues(iv);const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(str));return {iv:b64e(iv),data:b64e(new Uint8Array(ct))};}
-async function cloudDecrypt(ivB64,dataB64,saltB64){const c=cloudCfg();if(saltB64&&saltB64!==c.salt){c.salt=saltB64;_cloudKey=null;}const key=await cloudCryptoKey();const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(ivB64)},key,b64d(dataB64));return new TextDecoder().decode(pt);}
-function cloudApi(path,opt){const c=cloudCfg();opt=opt||{};opt.headers=Object.assign({apikey:c.key,Authorization:'Bearer '+c.key,'Content-Type':'application/json'},opt.headers||{});return fetch(c.url.replace(/\/+$/,'')+'/rest/v1/'+path,opt);}
+async function cloudEncrypt(str,config){const key=await cloudCryptoKey(config);const iv=new Uint8Array(12);crypto.getRandomValues(iv);const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv:iv},key,new TextEncoder().encode(str));return {iv:b64e(iv),data:b64e(new Uint8Array(ct))};}
+async function cloudDecrypt(ivB64,dataB64,saltB64,config){const c=Object.assign({},config||cloudCfg());if(saltB64)c.salt=saltB64;const key=await cloudCryptoKey(c);const pt=await crypto.subtle.decrypt({name:'AES-GCM',iv:b64d(ivB64)},key,b64d(dataB64));return new TextDecoder().decode(pt);}
+async function cloudApi(path,opt,config){
+  const c=config||cloudCfg(),client=window._cloudAuthClient;
+  if(!client||!cloudSignedIn(c))throw new Error('login-required');
+  const epoch=client.status().epoch,token=await client.token();
+  if(!cloudSignedIn(c)||client.status().epoch!==epoch)throw new Error('auth-cancelled');
+  opt=Object.assign({},opt,{cache:'no-store',credentials:'omit',redirect:'error'});
+  opt.headers=Object.assign({},opt.headers,{apikey:c.key,Authorization:'Bearer '+token,'Content-Type':'application/json'});
+  const response=await fetch(c.url+'/rest/v1/'+path,opt);
+  if((response.status===401||response.status===403)&&cloudSignedIn(c)&&client.status().epoch===epoch){
+    if(typeof cloudPauseSession==='function')cloudPauseSession();else window._cloudAuthApproved=false;
+    if(typeof renderCloudAuth==='function')renderCloudAuth();
+    if(typeof cloudMessage==='function')cloudMessage('雲端拒絕存取，同步已暫停。請重新登入或核對個人權限；本機帳目保持不變。');
+  }
+  return response;
+}
+function cloudContent(){const p=profileSnapshot();delete p.cloud;delete p.automationPaused;p.quoteApis=quoteApiCloudSafe();p.tdKey='';p.ai=Object.assign({},p.ai||{},{key:''});return JSON.stringify(p);}
+function cloudOperation(){
+  if(window._cloudOperation&&cloudOperationCurrent(window._cloudOperation))return null;
+  const c=cloudCfg(),op={state:S,key:profileKey(),cloud:c,config:Object.assign({},c),epoch:window._cloudEpoch||0,authEpoch:window._cloudAuthClient?.status().epoch};
+  window._cloudOperation=op;clearTimeout(window._cloudT);window._cloudT=null;return op;
+}
+function cloudOperationCurrent(op){return S===op.state&&profileKey()===op.key&&(window._cloudEpoch||0)===op.epoch&&S.cloud===op.cloud&&cloudReady()&&window._cloudAuthClient?.status().epoch===op.authEpoch&&['url','key','pass','userId','vaultId'].every(k=>op.cloud[k]===op.config[k]);}
+function cloudSchedule(delay){
+  const state=S,key=profileKey(),epoch=window._cloudEpoch||0;
+  clearTimeout(window._cloudT);window._cloudT=setTimeout(function(){
+    if(S!==state||profileKey()!==key||(window._cloudEpoch||0)!==epoch||!cloudReady())return;
+    if(cloudCfg().pending)cloudPush();else cloudPull(false);
+  },delay||4000);
+}
+function cloudFinish(op){
+  if(window._cloudOperation!==op)return;
+  window._cloudOperation=null;
+  if(cloudOperationCurrent(op)&&!window._cloudMute&&(op.retry||op.cloud.pending)&&!['remote-newer','compare-and-swap','insert-race','changed-during-download'].includes(op.cloud.lastError))cloudSchedule(op.retry?30000:4000);
+}
+function validateProfileData(p){
+  if(!p||typeof p!=='object'||Array.isArray(p)||!Array.isArray(p.txns)||!Array.isArray(p.accounts)||!p.accounts.length)throw new Error('Invalid account data');
+  const arrays=['txns','accounts','cats','people','gamble','autopay','autoincome','portfolio','physicalAssets','privateLoans','debts','friends','customSections','priceHist','pnlImports'];
+  arrays.forEach(k=>{if(p[k]!==undefined&&(!Array.isArray(p[k])||p[k].some(r=>!r||typeof r!=='object'||Array.isArray(r))))throw new Error('Invalid '+k);});
+  const ids=new Set();p.accounts.forEach(a=>{if(typeof a.id!=='string'||!a.id||ids.has(a.id))throw new Error('Invalid account ID');ids.add(a.id);});
+  function inspect(v){if(!v||typeof v!=='object')return;Object.keys(v).forEach(k=>{if(['__proto__','prototype','constructor'].includes(k))throw new Error('Unsafe data key');inspect(v[k]);});}
+  inspect(p);return p;
+}
+function checkpointProfile(key){
+  // Must succeed before replacement. This stays on this device and is never uploaded.
+  localStorage.setItem('myfin.recovery.v1.'+key,JSON.stringify({createdAt:Date.now(),profile:profileSnapshot()}));
+}
 function setCloudStatus(state,err){
   const el=document.getElementById('cloud-status');if(!el)return;
   const c=cloudCfg();const when=c.last?new Date(c.last):null;
@@ -5916,76 +6180,86 @@ function setCloudStatus(state,err){
 function persistCloudMeta(){return saveS({skipCloud:true});}
 function markCloudConflict(c,msg){c.pending=true;c._dirty=true;c.pendingAt=c.pendingAt||Date.now();c.lastError=msg||'conflict';persistCloudMeta();setCloudStatus('conflict');}
 async function cloudPull(manual){
-  if(!cloudReady()){if(manual)showToast(tt('請先填齊 URL / key / 密碼並啟用','Fill in URL / key / passphrase and enable first'),1);return;}
-  const c=cloudCfg();setCloudStatus('sync');
+  if(!cloudReady()){if(manual)showToast(tt('請先登入，完成首次連結，再啟用本分頁同步','Sign in, confirm the first link, then enable sync for this tab'),1);return;}
+  const op=cloudOperation();if(!op)return false;
+  const c=op.cloud;setCloudStatus('sync');
   try{
-    const r=await cloudApi('myfin_sync?id=eq.'+encodeURIComponent(profileKey())+'&select=ver');
+    const r=await cloudApi(cloudPath(op.config)+'&select=ver',undefined,op.config);
+    if(!cloudOperationCurrent(op))return false;
     if(!r.ok)throw new Error('HTTP '+r.status);
     const rows=await r.json();
-    if(!rows.length){c.pending=true;c._dirty=true;c.pendingAt=c.pendingAt||Date.now();persistCloudMeta();await cloudPush(true);return;}
+    if(!cloudOperationCurrent(op))return false;
+    if(!Array.isArray(rows))throw new Error('Invalid sync response');
+    if(!rows.length){c.pending=true;c._dirty=true;c.pendingAt=c.pendingAt||Date.now();persistCloudMeta();cloudFinish(op);return await cloudPush();}
     const remoteVer=rows[0].ver||0;
-    if(remoteVer<c.ver){c.pending=true;c._dirty=true;c.pendingAt=c.pendingAt||Date.now();persistCloudMeta();await cloudPush();return;}
-    if(remoteVer===c.ver){if(c.pending)await cloudPush();else setCloudStatus('ok');return;}
+    if(remoteVer<c.ver){c.pending=true;c._dirty=true;c.pendingAt=c.pendingAt||Date.now();persistCloudMeta();cloudFinish(op);return await cloudPush();}
+    if(remoteVer===c.ver){if(c.pending){cloudFinish(op);return await cloudPush();}setCloudStatus('ok');return true;}
     if(c.pending&&!manual){markCloudConflict(c,'remote-newer');return;}
-    if(c.pending&&!confirm(tt('雲端同本機都有新改動。確定使用雲端版本？本機未同步改動會被取代。','Cloud and local both changed. Use the cloud version? Unsynced local changes will be replaced.'))){markCloudConflict(c,'remote-newer');return;}
-    const r2=await cloudApi('myfin_sync?id=eq.'+encodeURIComponent(profileKey())+'&select=ver,salt,iv,data');
+    if(c.pending&&!confirm(tt('雲端同本機都有新改動。使用雲端版本？會先保留本機復原副本；此操作並非合併。','Cloud and local both changed. Use the cloud version? A local recovery copy will be saved first. This is not a merge.'))){markCloudConflict(c,'remote-newer');return;}
+    const acceptedContent=cloudContent();
+    const r2=await cloudApi(cloudPath(op.config)+'&select=ver,salt,iv,data',undefined,op.config);
+    if(!cloudOperationCurrent(op))return false;
     if(!r2.ok)throw new Error('HTTP '+r2.status);
     const row=(await r2.json())[0];
+    if(!cloudOperationCurrent(op))return false;
+    if(!row||!Number.isSafeInteger(row.ver)||row.ver<remoteVer)throw new Error('Invalid sync version');
     let plain;
-    try{plain=await cloudDecrypt(row.iv,row.data,row.salt);}
+    try{plain=await cloudDecrypt(row.iv,row.data,row.salt,op.config);}
     catch(de){
-      if(manual&&confirm(tt('雲端資料解唔開（密碼唔同？）。用本機資料覆蓋雲端？','Cannot decrypt cloud data (different passphrase?). Overwrite cloud with local data?'))){c.salt='';_cloudKey=null;c.pending=true;c._dirty=true;persistCloudMeta();await cloudPush(true);return;}
       throw new Error(tt('解密失敗 — 檢查密碼','Decrypt failed — check passphrase'));
     }
-    const obj=JSON.parse(plain);
+    if(!cloudOperationCurrent(op))return false;
+    if(cloudContent()!==acceptedContent){markCloudConflict(c,'changed-during-download');return false;}
+    const obj=validateProfileData(JSON.parse(plain));
+    obj.automationPaused=!!S.automationPaused;
     obj.ai=Object.assign({},obj.ai||{},{key:(S.ai||{}).key||''});obj.quoteApis=JSON.parse(JSON.stringify(ensureQuoteApis()));obj.tdKey=S.tdKey||'';
-    obj.cloud={url:c.url,key:c.key,pass:c.pass,salt:c.salt,on:true,ver:row.ver,last:Date.now(),pending:false,pendingAt:0,lastError:''};
+    obj.cloud={url:c.url,key:c.key,pass:c.pass,authVersion:2,linked:true,userId:c.userId,vaultId:c.vaultId,salt:row.salt,on:true,ver:row.ver,last:Date.now(),pending:false,pendingAt:0,lastError:''};
+    checkpointProfile(op.key);
+    localStorage.setItem(op.key,JSON.stringify(obj));
     window._cloudMute=true;
-    localStorage.setItem(profileKey(),JSON.stringify(obj));
     location.reload();
-  }catch(e){setCloudStatus('err',e);}
+    return true;
+  }catch(e){if(cloudOperationCurrent(op)){op.retry=true;setCloudStatus('err',e);}return false;}
+  finally{cloudFinish(op);}
 }
 async function cloudPush(mode){
   if(!cloudReady())return false;
   const force=mode===true||!!(mode&&mode.force);
-  const c=cloudCfg();setCloudStatus('sync');
+  const op=cloudOperation();if(!op)return false;
+  const c=op.cloud;setCloudStatus('sync');
   try{
-    const r=await cloudApi('myfin_sync?id=eq.'+encodeURIComponent(profileKey())+'&select=ver');
+    const r=await cloudApi(cloudPath(op.config)+'&select=ver',undefined,op.config);
+    if(!cloudOperationCurrent(op))return false;
     if(!r.ok)throw new Error('HTTP '+r.status);
-    const rows=await r.json();const remoteVer=rows.length?(rows[0].ver||0):0;
+    const rows=await r.json();if(!cloudOperationCurrent(op))return false;
+    if(!Array.isArray(rows))throw new Error('Invalid sync response');
+    const remoteVer=rows.length?(rows[0].ver||0):0;
+    if(!Number.isSafeInteger(remoteVer)||remoteVer<0)throw new Error('Invalid sync version');
     if(rows.length&&remoteVer>c.ver&&!force){markCloudConflict(c,'remote-newer');return false;}
     const newVer=Math.max(remoteVer,c.ver)+1;const completedAt=Date.now();
-    const payload=profileSnapshot();payload.quoteApis=quoteApiCloudSafe();payload.tdKey='';payload.ai=Object.assign({},payload.ai||{},{key:''});payload.cloud={url:'',key:'',pass:'',salt:'',on:false,ver:newVer,last:completedAt,pending:false,pendingAt:0,lastError:''};
-    const enc=await cloudEncrypt(JSON.stringify(payload));
-    const row={id:profileKey(),ver:newVer,updated_at:new Date(completedAt).toISOString(),salt:c.salt,iv:enc.iv,data:enc.data};
+    const sentContent=cloudContent(),payload=JSON.parse(sentContent);payload.cloud={url:'',key:'',pass:'',salt:'',on:false,ver:newVer,last:completedAt,pending:false,pendingAt:0,lastError:''};
+    const enc=await cloudEncrypt(JSON.stringify(payload),op.config);
+    if(!cloudOperationCurrent(op))return false;
+    const row={owner_id:c.userId,id:c.vaultId,ver:newVer,updated_at:new Date(completedAt).toISOString(),salt:op.config.salt,iv:enc.iv,data:enc.data};
     let up;
-    if(rows.length)up=await cloudApi('myfin_sync?id=eq.'+encodeURIComponent(profileKey())+'&ver=eq.'+encodeURIComponent(remoteVer)+'&select=ver',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(row)});
-    else up=await cloudApi('myfin_sync?select=ver',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(row)});
+    if(rows.length)up=await cloudApi(cloudPath(op.config)+'&ver=eq.'+encodeURIComponent(remoteVer)+'&select=ver',{method:'PATCH',headers:{Prefer:'return=representation'},body:JSON.stringify(row)},op.config);
+    else up=await cloudApi('myfin_sync_v2?select=ver',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(row)},op.config);
+    if(!cloudOperationCurrent(op))return false;
     if(!up.ok){if(up.status===409){markCloudConflict(c,'insert-race');return false;}throw new Error('HTTP '+up.status);}
-    const changed=await up.json();if(!Array.isArray(changed)||!changed.length){markCloudConflict(c,'compare-and-swap');return false;}
-    c.ver=newVer;c.last=completedAt;c.pending=false;c._dirty=false;c.pendingAt=0;c.lastError='';persistCloudMeta();
-    setCloudStatus('ok');
+    const changed=await up.json();if(!cloudOperationCurrent(op))return false;
+    if(!Array.isArray(changed)||changed.length!==1||changed[0].ver!==newVer){markCloudConflict(c,'compare-and-swap');return false;}
+    const changedLocally=cloudContent()!==sentContent;
+    c.ver=newVer;c.salt=op.config.salt;c.last=completedAt;c.pending=changedLocally;c._dirty=changedLocally;c.pendingAt=changedLocally?(c.pendingAt||Date.now()):0;c.lastError='';
+    if(!persistCloudMeta()){c.pending=true;c._dirty=true;setCloudStatus('err',tt('本機儲存失敗','Local save failed'));return false;}
+    setCloudStatus(changedLocally?'pending':'ok');
     return true;
-  }catch(e){c.pending=true;c._dirty=true;c.pendingAt=c.pendingAt||Date.now();c.lastError=String(e.message||e);persistCloudMeta();setCloudStatus('err',e);return false;}
+  }catch(e){if(cloudOperationCurrent(op)){op.retry=true;c.pending=true;c._dirty=true;c.pendingAt=c.pendingAt||Date.now();c.lastError=String(e.message||e);persistCloudMeta();setCloudStatus('err',e);}return false;}
+  finally{cloudFinish(op);}
 }
-function cloudSaveCfg(){
-  const c=cloudCfg();
-  c.url=(document.getElementById('cloud-url').value||'').trim();
-  c.key=(document.getElementById('cloud-key').value||'').trim();
-  const np=document.getElementById('cloud-pass').value||'';
-  if(np!==c.pass){c.pass=np;c.salt='';_cloudKey=null;}
-  c.on=document.getElementById('cloud-on').classList.contains('on');
-  window._cloudMute=true;saveS();window._cloudMute=false;
-  showToast(tt('雲同步設定已儲存','Cloud sync settings saved'));
-  if(cloudReady())cloudPull(true);else setCloudStatus('');
-}
-function cloudCopySql(){
-  const sql='create table if not exists myfin_sync (\n  id text primary key,\n  ver bigint not null default 0,\n  updated_at timestamptz,\n  salt text,\n  iv text,\n  data text\n);\nalter table myfin_sync disable row level security;';
-  (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(sql):Promise.reject()).then(function(){showToast(tt('已複製 — 去 Supabase SQL Editor 貼上執行','Copied — run it in the Supabase SQL Editor'));}).catch(function(){prompt('SQL:',sql);});
-}
+function cloudSaveCfg(){if(typeof cloudSaveSettings==='function')cloudSaveSettings();else showToast('登入元件未能載入；本機記帳仍可使用。',1);}
 // Offline support: cache the app shell on-device (no server — pure client-side)
 if('serviceWorker' in navigator){try{navigator.serviceWorker.register('./sw.js').catch(function(){});}catch(e){}}
-if(cloudReady())setTimeout(function(){const c=cloudCfg();if(c.pending)cloudPush();else cloudPull(false);},1400);
+if(typeof initCloudUi==='function')initCloudUi();
 // Draggable global + button: drag it by finger/mouse to any phone border; it snaps and remembers the spot.
 (function initDraggableFab(){
   const f=document.getElementById('global-fab');if(!f)return;

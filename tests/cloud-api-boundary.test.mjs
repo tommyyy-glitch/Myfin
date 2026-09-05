@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';import fs from 'node:fs';import vm from 'node:vm';
+const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+function declaration(name){const start=new RegExp('^(?:async )?function '+name+'\\(','m').exec(html).index;for(let end=html.indexOf('\n',start);end>0;end=html.indexOf('\n',end+1)){try{new vm.Script(html.slice(start,end));return html.slice(start,end);}catch{}}throw Error(name);}
+const source=['cloudCfg','cloudSignedIn','cloudReady','cloudPath','cloudApi'].map(declaration).join('\n');
+let status={userId:'user-a',projectUrl:'https://a.supabase.co',epoch:1},requested=[],tokenCalls=0;
+const config={url:'https://a.supabase.co',key:'public-only',pass:'pass',userId:'user-a',vaultId:'main',on:true,linked:true,authVersion:2};
+const ctx=vm.createContext({window:{_cloudAuthApproved:false,_cloudAuthClient:{status:()=>status,token:async()=>{tokenCalls++;return 'personal-jwt';}}},S:{cloud:config},fetch:async(url,opt)=>{requested.push({url,opt});return {ok:true};},encodeURIComponent});
+vm.runInContext(source,ctx);
+assert.equal(vm.runInContext('cloudReady()',ctx),false,'persisted on:true does not auto-enable on load');
+ctx.window._cloudAuthApproved=true;assert.equal(vm.runInContext('cloudReady()',ctx),true);
+await vm.runInContext("cloudApi(cloudPath(cloudCfg()),{headers:{Authorization:'Bearer PUBLIC'}})",ctx);
+assert.equal(requested[0].opt.headers.Authorization,'Bearer personal-jwt');assert.equal(requested[0].opt.headers.apikey,'public-only');assert.equal(requested[0].opt.cache,'no-store');assert.equal(requested[0].opt.redirect,'error');assert.match(requested[0].url,/myfin_sync_v2\?owner_id=eq.user-a&id=eq.main/);
+status={userId:'user-b',projectUrl:config.url,epoch:2};
+await assert.rejects(vm.runInContext('cloudApi(cloudPath(cloudCfg()))',ctx),/login-required/);assert.equal(tokenCalls,1);assert.equal(requested.length,1);
+status={userId:'user-a',projectUrl:config.url,epoch:3};
+ctx.window._cloudAuthClient.token=async()=>{status={userId:'',projectUrl:config.url,epoch:4};return 'stale-token';};
+await assert.rejects(vm.runInContext('cloudApi(cloudPath(cloudCfg()))',ctx),/auth-cancelled/);assert.equal(requested.length,1);
+status={userId:'user-a',projectUrl:config.url,epoch:5};ctx.window._cloudAuthClient.token=async()=>'expired';ctx.fetch=async()=>({status:401,ok:false});
+await vm.runInContext('cloudApi(cloudPath(cloudCfg()))',ctx);assert.equal(ctx.window._cloudAuthApproved,false,'server access denial pauses sync rather than endlessly retrying');
+console.log('Authenticated API: no public-key bearer, owner scope, no startup sync, changed-session rejection passed.');

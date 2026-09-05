@@ -29,11 +29,20 @@ const appCode=[
   declaration('quoteApiCloudSafe'),
   declaration('createAppState'),
   declaration('profileSnapshot'),
+  declaration('recurringRunKey'),
+  declaration('migrateRecurringRuns'),
   declaration('saveS'),
   declaration('cloudCfg'),
   declaration('cloudReady'),
+  declaration('cloudSignedIn'),
+  declaration('cloudPath'),
   declaration('persistCloudMeta'),
   declaration('markCloudConflict'),
+  declaration('cloudContent'),
+  declaration('cloudOperation'),
+  declaration('cloudOperationCurrent'),
+  declaration('cloudSchedule'),
+  declaration('cloudFinish'),
   declaration('cloudPush'),
 ].join('\n');
 
@@ -52,7 +61,8 @@ function response(ok,status,data){return {ok,status,async json(){return data;}};
 function seed(ver){
   S=createAppState();
   S.ai={provider:'gemini',key:'AI-DEVICE',model:''};S.quoteApis.stock.keys=['TD-DEVICE'];S.quoteApis.physical.keys=['TD-DEVICE'];S.tdKey='TD-DEVICE';
-  S.cloud={url:'https://sync.test',key:'ANON',pass:'PASS',salt:'SALT',on:true,ver,pending:true,pendingAt:123,lastError:'',_dirty:true};
+  S.cloud={url:'https://sync.test',key:'ANON',pass:'PASS',salt:'SALT',on:true,ver,pending:true,pendingAt:123,lastError:'',_dirty:true,authVersion:2,linked:true,userId:'user-a',vaultId:'fos8'};
+  window._cloudAuthApproved=true;window._cloudAuthClient={status:()=>({userId:'user-a',projectUrl:'https://sync.test',epoch:1})};
   statuses=[];requests=[];responses=[];encryptedPayload=null;lastStorageError='';window._storageReadOnly=false;window._cloudMute=false;
   saveS({skipCloud:true});
 }

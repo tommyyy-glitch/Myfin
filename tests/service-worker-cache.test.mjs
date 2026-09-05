@@ -1,0 +1,12 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const source=fs.readFileSync(new URL('../sw.js',import.meta.url),'utf8');
+const current=/const CACHE='([^']+)'/.exec(source)[1],handlers={},deleted=[];
+vm.runInNewContext(source,{self:{addEventListener:(k,v)=>handlers[k]=v,clients:{claim(){}}},caches:{keys:async()=>['another-app-cache','myfin-v16',current],delete:async k=>{deleted.push(k);}}});
+let pending;handlers.activate({waitUntil(p){pending=p;}});await pending;
+assert.deepEqual(deleted,['myfin-v16']);console.log('Service worker preserves unrelated app caches.');
+const fetchHandlers={},cached=[];let fallback=null;
+vm.runInNewContext(source,{URL,Request,Response,location:{origin:'https://myfin.test'},self:{addEventListener:(k,v)=>fetchHandlers[k]=v,skipWaiting(){}},fetch:async()=>{throw Error('offline');},caches:{open:async()=>({addAll:async files=>cached.push(...files)}),match:async key=>key==='./index.html'?new Response('<html>app</html>'):null}});
+fetchHandlers.install({waitUntil(p){fallback=p;}});await fallback;assert.ok(cached.includes('./cloud-auth.js')&&cached.includes('./cloud-ui.js'));
+fetchHandlers.fetch({request:new Request('https://myfin.test/cloud-auth.js?v=1'),respondWith(p){fallback=p;}});assert.equal((await fallback).type,'error','missing script must not receive HTML fallback');
+let intercepted=false;fetchHandlers.fetch({request:new Request('https://one.supabase.co/rest/v1/myfin_sync_v2'),respondWith(){intercepted=true;}});assert.equal(intercepted,false,'authenticated cloud responses never enter app cache');
+console.log('Offline login assets cached; cloud data is not cached; missing JS fails closed.');

@@ -1,13 +1,13 @@
 // Myfin offline cache — pure client-side, no server involved.
 // Network-first for the app shell (so updates land immediately when online),
 // cache fallback when offline. CDN assets (icons font, xlsx) are cache-first.
-const CACHE='myfin-v16';
+const CACHE='myfin-v19';
 self.addEventListener('install',e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html'])).catch(()=>{}));
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html','./cloud-auth.js','./cloud-ui.js'])).catch(()=>{}));
   self.skipWaiting();
 });
 self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith('myfin-')&&k!==CACHE).map(k=>caches.delete(k)))));
   self.clients.claim();
 });
 self.addEventListener('fetch',e=>{
@@ -21,7 +21,7 @@ self.addEventListener('fetch',e=>{
       fetch(req).then(r=>{
         if(r&&r.ok){const cp=r.clone();caches.open(CACHE).then(c=>c.put(e.request,cp));}
         return r;
-      }).catch(()=>caches.match(e.request,{ignoreSearch:true}).then(m=>m||caches.match('./index.html',{ignoreSearch:true})))
+      }).catch(()=>caches.match(e.request,{ignoreSearch:true}).then(m=>m||(appShell?caches.match('./index.html',{ignoreSearch:true}):Response.error())))
     );
   }else if(/cdn\.jsdelivr\.net|cdnjs\.cloudflare\.com|unpkg\.com/.test(url.host)){
     e.respondWith(

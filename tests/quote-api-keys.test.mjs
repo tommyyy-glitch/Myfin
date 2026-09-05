@@ -73,6 +73,9 @@ assert.match(html,/data-settings-key="quoteapi"/);
 assert.match(html,/setSettingsSectionTitle\('asset-labels-title'/);
 assert.match(html,/\['stock','crypto','physical'\]/);
 assert.doesNotMatch(html,/id="td-key"/);
-assert.match(html,/payload\.quoteApis=quoteApiCloudSafe\(\)/);
+vm.runInContext(declaration('quoteApiCloudSafe')+'\n'+declaration('cloudContent')+`\nfunction profileSnapshot(){return {quoteApis:S.quoteApis,tdKey:'PRIVATE',ai:{key:'PRIVATE'},cloud:{pass:'PRIVATE'}};}`,context);
+const cloudSafe=JSON.parse(context.cloudContent());
+assert.equal(cloudSafe.ai.key,'');assert.equal(cloudSafe.tdKey,'');assert.equal(cloudSafe.cloud,undefined);
+for(const config of Object.values(cloudSafe.quoteApis))assert.equal(config.keys.length,0);
 
 console.log('Quote API class pools, rotation, keyless crypto fallback, and settings-title tests passed.');

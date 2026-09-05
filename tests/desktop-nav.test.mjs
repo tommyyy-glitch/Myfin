@@ -1,0 +1,11 @@
+import fs from 'node:fs';import vm from 'node:vm';import assert from 'node:assert/strict';
+const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const code=html.slice(html.indexOf('function installNavSwipe(){'),html.indexOf('\nfunction installPageSwipe('));
+const handlers={},captured=[],released=[],tabs=[];
+const nav={clientWidth:400,classList:{add(){},remove(){}},addEventListener:(k,v)=>handlers[k]=v,setPointerCapture:id=>captured.push(id),releasePointerCapture:id=>released.push(id)};
+vm.runInNewContext(code+'\ninstallNavSwipe();',{document:{getElementById:()=>nav,querySelector:()=>({})},TAB_ORDER:['home','wallet','gamble','settings'],activeTabIndex:()=>0,clampNavIndex:n=>Math.max(0,Math.min(3,n)),goTabIndex:n=>tabs.push(n),updateNavIsland(){},setTimeout:fn=>fn()});
+handlers.pointerdown({button:0,clientX:50,pointerId:1});assert.equal(captured.length,0,'a click must reach its child tab button');
+handlers.pointerup({clientX:50,pointerId:1});let blocked=false;handlers.click({preventDefault(){blocked=true;},stopPropagation(){}});assert.equal(blocked,false);
+handlers.pointerdown({button:0,clientX:50,pointerId:2});handlers.pointermove({clientX:160,pointerId:2,preventDefault(){}});assert.equal(captured.length,1,'capture starts only on a drag');
+handlers.pointerup({clientX:160,pointerId:2});assert.deepEqual(tabs,[1]);assert.ok(released.includes(2));
+console.log('Desktop click and navigation-drag tests passed.');

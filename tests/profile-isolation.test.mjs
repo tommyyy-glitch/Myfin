@@ -37,6 +37,8 @@ const appCode=[
   declaration('switchProfile'),
   declaration('loadS'),
   declaration('profileSnapshot'),
+  declaration('recurringRunKey'),
+  declaration('migrateRecurringRuns'),
   declaration('saveS'),
 ].join('\n');
 
