@@ -48,16 +48,52 @@ async function device(width,id){
 }
 try{
   const phone=await device(390,'phone-original');
+  // Match the reported ledger count with synthetic content and REAL browser
+  // storage pressure. Leave room for metadata, but not another full snapshot.
+  const pressure=await phone.evaluate(()=>{
+    S.accounts=Array.from({length:25},(_,i)=>({id:'account-'+i,kind:'cash',label:'Synthetic '+i,cur:'HKD',initial:0}));
+    S.txns=Array.from({length:3879},(_,i)=>({id:i?'synthetic-'+i:'phone-original',date:'2026-09-04',type:'expense',amount:12,amtHKD:12,cur:'HKD',catId:'food',acctId:'account-0',note:'synthetic record '.repeat(12)}));
+    if(!saveS({skipCloud:true}))throw Error('Synthetic primary save failed');
+    const recovery='myfin.recovery.v1.'+profileKey();localStorage.setItem(recovery,'synthetic previous recovery');
+    const chunk='s'.repeat(65536);let filler='',quota=false;
+    for(let i=0;i<160;i++){try{localStorage.setItem('synthetic-space-pressure',filler+chunk);filler+=chunk;}catch(e){if(e.name!=='QuotaExceededError')throw e;quota=true;break;}}
+    if(!quota)throw Error('Expected bounded synthetic quota');
+    localStorage.setItem('synthetic-space-pressure',filler.slice(0,-131072));
+    let duplicateBlocked=false;try{checkpointProfile(profileKey());}catch(e){duplicateBlocked=e.name==='QuotaExceededError';}
+    if(!duplicateBlocked)throw Error('Fixture must block the old full recovery write');
+    window.syntheticLedgerBefore=JSON.stringify(S.txns);
+    return{accounts:S.accounts.length,records:S.txns.length,duplicateBlocked};
+  });
+  assert.deepEqual(pressure,{accounts:25,records:3879,duplicateBlocked:true});
   await phone.locator('#cloud-service-settings summary').click();
   await phone.locator('.cloud-panel').screenshot({path:fileURLToPath(new URL('login-phone.png',out))});
   await phone.getByRole('button',{name:'預覽：本機 → 新雲端副本',exact:true}).click();await phone.locator('#cloud-preview').waitFor({state:'visible'});
   assert.equal(remote,null,'preview must not upload');
   // Stale previews fail closed when the local ledger changes before confirmation.
-  await phone.evaluate(()=>{S.txns.push({id:'added-before-confirmation'});saveS();});
+  await phone.evaluate(()=>{S.txns[1].note='edited-before-confirmation';saveS();});
   await phone.locator('#cloud-first-confirm').click();await phone.waitForFunction(()=>document.getElementById('cloud-auth-message').textContent.includes('重新預覽'));
   assert.equal(remote,null);
   await phone.getByRole('button',{name:'預覽：本機 → 新雲端副本',exact:true}).click();await phone.waitForFunction(()=>document.getElementById('cloud-auth-message').textContent.includes('預覽完成'));
+  await phone.evaluate(()=>{window.syntheticEncrypt=cloudEncrypt;cloudEncrypt=async()=>{throw new DOMException('synthetic private details','OperationError');};});
+  await phone.locator('#cloud-first-confirm').click();await phone.waitForFunction(()=>document.getElementById('cloud-auth-message').textContent.includes('FIRST-UPLOAD/ENCRYPT/OperationError'));
+  assert.equal(remote,null);assert.equal(await phone.locator('#cloud-preview').isVisible(),false);
+  assert.equal(await phone.locator('#cloud-auth-message').innerText().then(s=>s.includes('synthetic private details')),false);
+  await phone.locator('#cloud-auth-message').screenshot({path:fileURLToPath(new URL('first-upload-encrypt-error.png',out))});
+  await phone.evaluate(()=>{cloudEncrypt=window.syntheticEncrypt;delete window.syntheticEncrypt;});
+  await phone.getByRole('button',{name:'預覽：本機 → 新雲端副本',exact:true}).click();await phone.waitForFunction(()=>document.getElementById('cloud-auth-message').textContent.includes('預覽完成'));
+  await phone.evaluate(()=>{
+    window.syntheticSetItem=Storage.prototype.setItem;
+    Storage.prototype.setItem=function(k,v){if(k===profileKey())throw new DOMException('synthetic private details','QuotaExceededError');return window.syntheticSetItem.call(this,k,v);};
+  });
+  await phone.locator('#cloud-first-confirm').click();await phone.waitForFunction(()=>document.getElementById('cloud-auth-message').textContent.includes('FIRST-UPLOAD/LOCAL-SAVE'));
+  assert.equal(remote,null);
+  await phone.locator('#cloud-auth-message').screenshot({path:fileURLToPath(new URL('first-upload-save-error.png',out))});
+  await phone.evaluate(()=>{Storage.prototype.setItem=window.syntheticSetItem;delete window.syntheticSetItem;window.syntheticLedgerBefore=JSON.stringify(S.txns);});
+  await phone.getByRole('button',{name:'預覽：本機 → 新雲端副本',exact:true}).click();await phone.waitForFunction(()=>document.getElementById('cloud-auth-message').textContent.includes('預覽完成'));
   await phone.locator('#cloud-first-confirm').click();await phone.waitForFunction(()=>document.getElementById('cloud-auth-message').textContent.includes('已建立並連結'));
+  assert.equal(await phone.evaluate(()=>localStorage.getItem('myfin.recovery.v1.'+profileKey())),'synthetic previous recovery');
+  assert.equal(await phone.evaluate(()=>JSON.stringify(JSON.parse(localStorage.getItem(profileKey())).txns)===window.syntheticLedgerBefore),true);
+  await phone.locator('#cloud-auth-message').screenshot({path:fileURLToPath(new URL('first-upload-success.png',out))});
   assert.equal(remote.id,'main');assert.equal(remote.owner_id,'00000000-0000-4000-8000-000000000001');assert.ok(!remote.data.includes('phone-original'));
   assert.equal(await phone.evaluate(()=>cloudReady()),false,'first upload does not enable automatic sync');
   const uploads=requests.filter(r=>r.method==='POST'&&r.path.startsWith('/rest/')).length;
@@ -75,6 +111,7 @@ try{
   await desktop.locator('#cloud-first-confirm').click();await desktop.waitForFunction(()=>document.getElementById('cloud-auth-message').textContent.includes('已接收為另一份'));
   const result=await desktop.evaluate(()=>{const meta=profilesMeta(),p=JSON.parse(localStorage.getItem(profileKey(meta.list.at(-1).id)));return {original:localStorage.getItem('fos8'),active:meta.active,profiles:meta.list.length,imported:p};});
   assert.equal(result.original,before);assert.equal(result.active,'default');assert.equal(result.profiles,2);assert.equal(result.imported.cloud.linked,true);assert.equal(result.imported.cloud.on,false);assert.equal(result.imported.automationPaused,true);assert.equal(result.imported.txns[0].id,'phone-original');
+  assert.equal(result.imported.accounts.length,25);assert.equal(result.imported.txns.length,3879,'real WebCrypto round trip preserves every synthetic record');
   await desktop.evaluate(()=>switchProfile(profilesMeta().list.at(-1).id));assert.equal(await desktop.evaluate(()=>S.cloud.vaultId),'main');
   // Logout cancels a prepared download without creating any second copy.
   await desktop.locator('.bottom-nav .tab-btn').nth(3).click();
@@ -87,6 +124,6 @@ try{
   assert.equal(requests.filter(r=>r.path.startsWith('/rest/')).length,ledgerRequests,'reload makes no cloud ledger requests');
   for(const page of [phone,desktop])assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
   assert.deepEqual(errors,[]);
-  const evidence={passed:true,widths:[390,1280],sixCharacterSignup:true,shortSignupBlocked:true,signupLedgerRequests:0,loginLedgerRequests:0,encryptedUploads:uploads,stalePreviewBlocked:true,existingRemoteNotOverwritten:true,originalDesktopPreserved:true,importedPaused:true,logoutCancelsPreview:true,errors};
+  const evidence={passed:true,widths:[390,1280],storagePressure:pressure,primarySaveFailureBlocked:true,cryptoErrorSanitized:true,recoveryPreserved:true,sixCharacterSignup:true,shortSignupBlocked:true,signupLedgerRequests:0,loginLedgerRequests:0,encryptedUploads:uploads,stalePreviewBlocked:true,existingRemoteNotOverwritten:true,originalDesktopPreserved:true,importedPaused:true,logoutCancelsPreview:true,errors};
   fs.writeFileSync(new URL('browser-results.json',out),JSON.stringify(evidence,null,2));console.log(JSON.stringify(evidence,null,2));
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

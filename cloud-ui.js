@@ -13,7 +13,8 @@ function cloudPauseSession(){
 }
 function cloudMessage(message){const el=document.getElementById('cloud-auth-message');if(el)el.textContent=message;}
 function cloudAuthError(error){
-  const code=error.code||error.message;
+  // DOMException.code is numeric on browsers (for example quota code 22).
+  const code=['QuotaExceededError','SecurityError'].includes(error?.name)?error.name:(error?.code||error?.message);
   const messages={
     'invalid-project':'服務網址不正確，請檢查進階設定。','public-key-required':'請使用 publishable／anon 公開金鑰，不能使用 secret／service-role 金鑰。',
     'invalid_credentials':'電郵或密碼不正確。','email_not_confirmed':'請先到電郵確認帳戶，再回來登入。','rate-limited':'嘗試次數過多，請稍後再試。',
@@ -23,9 +24,28 @@ function cloudAuthError(error){
     'preview-stale':'資料或登入狀態已改變，請重新預覽。','vault-exists':'這個雲端帳本已有資料。請用「預覽接收」，或選另一個帳本代號。',
     'vault-missing':'找不到這個雲端帳本。請先在主要裝置建立副本，並核對兩邊的帳本代號。',
     'sync-unavailable':'雲端資料表尚未就緒或權限不符；本機資料沒有更改。','decrypt-failed':'解密失敗，請核對兩部裝置的帳本加密密語。',
-    'local-save-failed':'本機儲存失敗，已停止。請先下載備份；不要清除網站資料。','vault-race':'雲端版本已改變，請重新預覽。'
+    'local-save-failed':'本機儲存失敗，已停止。請先下載備份；不要清除網站資料。','vault-race':'雲端版本已改變，請重新預覽。',
+    'QuotaExceededError':'本機儲存空間不足。請先下載備份；不要清除網站資料。',
+    'SecurityError':'瀏覽器未允許本機儲存。請檢查私密瀏覽或網站儲存設定；不要清除網站資料。'
   };
   return messages[code]||'未能完成，請檢查網絡及設定後再試。本機帳目不會因登入失敗而被清除。';
+}
+function cloudFirstError(error,operation){
+  const {direction,stage,writeState,status}=operation;
+  // Only allow fixed diagnostic labels. Never show raw provider errors, tokens,
+  // encryption material or ledger contents in messages/screenshots.
+  const name=['QuotaExceededError','SecurityError','NotSupportedError','OperationError','TypeError','SyntaxError','AbortError'].includes(error?.name)?error.name:'Error';
+  const diagnostic=' [FIRST-'+(direction==='upload'?'UPLOAD':'RECEIVE')+'/'+stage+'/'+name+(Number.isInteger(status)&&status>=400&&status<=599?'/HTTP-'+status:'')+']';
+  if(writeState==='created')return '雲端副本已建立，但本機未能儲存連結，同步仍暫停。請先下載本機備份，不要清除網站資料；重新預覽雲端核對，勿當作未上傳而重建。'+diagnostic;
+  if(writeState==='uncertain')return '未能確認上傳結果，雲端副本可能已建立。本機帳目保留、同步暫停。請重新預覽核對雲端狀態，不要連續按確認。'+diagnostic;
+  const known=['preview-stale','vault-exists','vault-race','login-required','auth-cancelled','sync-unavailable','local-save-failed','decrypt-failed'];
+  let message;
+  if(known.includes(error?.message)||(stage==='LOCAL-SAVE'&&['QuotaExceededError','SecurityError'].includes(error?.name)))message=cloudAuthError(error);
+  else if(stage==='ENCRYPT')message='帳本加密未能完成。請重新開啟 App 再試；若仍失敗，請提供下面的錯誤代號，不要提供密語。';
+  else if(stage==='REMOTE-CHECK')message='未能讀取雲端狀態，請檢查連線後重新預覽。';
+  else message=direction==='upload'?'雲端未接受這次上傳，請重新預覽並提供錯誤代號。':'未能儲存接收的帳本副本，原有帳本保留。請先下載備份；不要清除網站資料。';
+  if(direction==='upload'&&writeState==='not-sent')message+=' 尚未傳送帳目。';
+  return message+diagnostic;
 }
 function renderCloudAuth(){
   const el=document.getElementById('cloud-auth-state');if(!el)return;
@@ -116,26 +136,44 @@ async function cloudPreviewFirst(direction){
 async function cloudConfirmFirst(){
   const p=window._cloudPreview;if(!p||window._cloudFirstBusy)return;
   window._cloudFirstBusy=true;document.getElementById('cloud-first-confirm').disabled=true;
+  const operation={direction:p.direction,stage:'REMOTE-CHECK',writeState:'not-sent'};
   try{
+    cloudMessage('正在核對雲端狀態…');
     if(!cloudPreviewCurrent(p))throw new Error('preview-stale');
     const current=await cloudFetchVault(p.config);
     if(!cloudPreviewCurrent(p))throw new Error('preview-stale');
     if(JSON.stringify(current)!==JSON.stringify(p.row))throw new Error('vault-race');
     if(p.direction==='upload'){
       if(current)throw new Error('vault-exists');
+      operation.stage='LOCAL-SAVE';cloudMessage('正在確認本機帳目已儲存；尚未傳送帳目…');
+      // A create-only upload does not replace local data. Verify the primary
+      // save without allocating a second full ledger. Downloads still checkpoint.
+      if(!saveS({skipCloud:true}))throw new Error('local-save-failed');
+      if(!cloudPreviewCurrent(p))throw new Error('preview-stale');
+      operation.stage='ENCRYPT';cloudMessage('正在加密帳本；尚未傳送帳目…');
       const config=Object.assign({},p.config,{salt:''}),encrypted=await cloudEncrypt(p.content,config);
       if(!cloudPreviewCurrent(p))throw new Error('preview-stale');
-      checkpointProfile(p.key);
       const row={owner_id:p.userId,id:config.vaultId,ver:1,salt:config.salt,iv:encrypted.iv,data:encrypted.data};
-      const response=await cloudApi('myfin_sync_v2?select=ver',{method:'POST',headers:{Prefer:'return=representation'},body:JSON.stringify(row)},config);
-      if(!response.ok)throw new Error(response.status===409?'vault-exists':'sync-unavailable');
+      const body=JSON.stringify(row);
+      operation.stage='UPLOAD';operation.writeState='uncertain';cloudMessage('正在建立加密雲端副本，請等待結果…');
+      const response=await cloudApi('myfin_sync_v2?select=ver',{method:'POST',headers:{Prefer:'return=representation'},body},config);
+      if(!response.ok){
+        operation.status=response.status;
+        // A server/proxy 5xx can occur after a write; only definite 4xx
+        // rejections can safely be described as rejected rather than uncertain.
+        if(response.status>=400&&response.status<500)operation.writeState='rejected';
+        throw new Error(response.status===409?'vault-exists':'sync-unavailable');
+      }
       const changed=await response.json();if(!Array.isArray(changed)||changed.length!==1||changed[0].ver!==1)throw new Error('sync-unavailable');
+      operation.writeState='created';operation.stage='LINK-SAVE';
       // The server write may already have completed if the user leaves during upload. Never bind another local profile.
-      if(!cloudPreviewCurrent(p)){cloudMessage('雲端副本已建立，但本機狀態已改變，未有連結目前帳本。請重新預覽核對。');return;}
+      if(!cloudPreviewCurrent(p)){cloudPauseSession();renderCloudAuth();cloudMessage('雲端副本已建立，但本機狀態已改變，未有連結目前帳本。請重新預覽核對。');return;}
+      const previous=S.cloud;
       S.cloud=Object.assign({},config,{authVersion:2,linked:true,on:false,ver:1,last:Date.now(),pending:false,_dirty:false,pendingAt:0,lastError:''});
-      if(!persistCloudMeta())throw new Error('local-save-failed');
+      try{if(!persistCloudMeta())throw new Error('local-save-failed');}catch(error){S.cloud=previous;throw error;}
       cloudMessage('雲端副本已建立並連結此帳本。自動同步仍然暫停；確認後可按「啟用已連結帳本的同步」。');
     }else{
+      operation.stage='LOCAL-SAVE';cloudMessage('正在儲存為另一份本機帳本；原有帳本不變…');
       const config=Object.assign({},p.config,{salt:p.row.salt,authVersion:2,linked:true,on:false,ver:p.row.ver,last:Date.now(),pending:false,_dirty:false,pendingAt:0,lastError:''});
       const plan=planBackupImport({__myfin_transfer:1,profiles:[{sourceId:p.config.vaultId,name:'雲端 '+p.config.vaultId,emoji:'☁️',data:p.data}]});
       if(!cloudPreviewCurrent(p))throw new Error('preview-stale');
@@ -143,7 +181,10 @@ async function cloudConfirmFirst(){
       cloudMessage('已接收為另一份本機帳本，原有帳本不變。請從頂部帳本選單開啟「雲端 '+p.config.vaultId+' · 匯入副本」核對，再啟用同步。');
     }
     cloudPauseSession();renderCloudAuth();
-  }catch(error){cloudMessage(String(error.message).includes('Source already imported')?'相同帳目副本已存在，沒有重複匯入。請先從帳本選單核對。':cloudAuthError(error));}
+  }catch(error){
+    cloudPauseSession();renderCloudAuth();
+    cloudMessage(String(error?.message).includes('Source already imported')?'相同帳目副本已存在，沒有重複匯入。請先從帳本選單核對。':cloudFirstError(error,operation));
+  }
   finally{window._cloudFirstBusy=false;document.getElementById('cloud-first-confirm').disabled=false;}
 }
 function cloudResumeSession(){
