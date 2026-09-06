@@ -18,6 +18,8 @@ const code=[
   declaration('dateOnly'),
   declaration('parseDateOnly'),
   declaration('loanPayments'),
+  declaration('loanPaymentsThrough'),
+  declaration('recordEffective'),
   declaration('loanInterestReceived'),
   declaration('loanInterestMode'),
   declaration('loanAccruedTotal'),

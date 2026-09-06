@@ -88,18 +88,21 @@ assert.equal(context.result.active.win.start.getMonth(),6);
 assert.equal(context.result.active.win.start.getDate(),7);
 assert.equal(context.result.active.win.end.getMonth(),7);
 assert.equal(context.result.active.win.end.getDate(),15);
-assert.equal(context.result.active.allSpent,400);
+assert.equal(context.result.active.allSpent,100,'future expenses are scheduled, not spent yet');
 assert.equal(context.result.active.spent,100);
-assert.equal(context.result.active.excludedSpent,300);
+assert.equal(context.result.active.excludedSpent,0);
 assert.equal(context.result.active.remain,900);
 assert.equal(context.result.active.phase,'active');
 assert.equal(context.result.active.daysLeft,27);
 assert.deepEqual([...context.result.active.cfg.excludedCats],['travel']);
 
 assert.equal(context.result.upcoming.phase,'upcoming');
+assert.equal(context.result.upcoming.allSpent,0);
 assert.equal(context.result.upcoming.daysUntilStart,6);
 assert.equal(context.result.upcoming.daysLeft,40);
 assert.equal(context.result.ended.phase,'ended');
+assert.equal(context.result.ended.allSpent,400);
+assert.equal(context.result.ended.excludedSpent,300);
 assert.equal(context.result.ended.daysLeft,0);
 assert.equal(context.result.ended.daily,0);
 

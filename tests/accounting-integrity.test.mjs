@@ -16,6 +16,7 @@ function declaration(name){
 
 const accountingCode=[
   declaration('acctCashTxns'),
+  declaration('recordEffective'),
   declaration('acctPositionsCash'),
   declaration('acctCash'),
   declaration('acctMarginDebt'),

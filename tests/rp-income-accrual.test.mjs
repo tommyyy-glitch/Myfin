@@ -33,6 +33,7 @@ const code=[
   declaration('txCashFlowSign'),
   declaration('txAccountingSign'),
   declaration('acctCashTxns'),
+  declaration('recordEffective'),
   declaration('acctFlows'),
   `
     const S={

@@ -8,10 +8,24 @@ function cloudAuthClient(){
 }
 function cloudPauseSession(){
   window._cloudAuthApproved=false;window._cloudPreview=null;window._cloudEpoch=(window._cloudEpoch||0)+1;
+  window._cloudReceivedProfile=null;
+  const openButton=document.getElementById('cloud-open-received');if(openButton)openButton.hidden=true;
   window._cloudOperation=null;clearTimeout(window._cloudT);
   const box=document.getElementById('cloud-preview');if(box)box.hidden=true;
 }
 function cloudMessage(message){const el=document.getElementById('cloud-auth-message');if(el)el.textContent=message;}
+function cloudOpenReceivedProfile(){
+  const received=window._cloudReceivedProfile;
+  if(!received||received.sourceKey!==profileKey()||!(profilesMeta()?.list||[]).some(p=>p.id===received.id)){
+    cloudPauseSession();cloudMessage('帳本選擇已改變，請從頂部帳本選單核對接收的副本。');return;
+  }
+  // Explicit navigation only. Keep both ledgers, and keep sync/automation paused.
+  if(window._storageReadOnly||!saveS({skipCloud:true})){cloudMessage(cloudAuthError(new Error('local-save-failed')));return;}
+  try{
+    switchProfile(received.id);
+    cloudPauseSession();goTabIndex(TAB_ORDER.indexOf('home'));renderCloudAuth();
+  }catch(_){cloudMessage('未能切換帳本，請先下載備份，再從帳本選單核對。');}
+}
 function cloudAuthError(error){
   // DOMException.code is numeric on browsers (for example quota code 22).
   const code=['QuotaExceededError','SecurityError'].includes(error?.name)?error.name:(error?.code||error?.message);
@@ -137,6 +151,7 @@ async function cloudConfirmFirst(){
   const p=window._cloudPreview;if(!p||window._cloudFirstBusy)return;
   window._cloudFirstBusy=true;document.getElementById('cloud-first-confirm').disabled=true;
   const operation={direction:p.direction,stage:'REMOTE-CHECK',writeState:'not-sent'};
+  let receivedId=null;
   try{
     cloudMessage('正在核對雲端狀態…');
     if(!cloudPreviewCurrent(p))throw new Error('preview-stale');
@@ -177,10 +192,14 @@ async function cloudConfirmFirst(){
       const config=Object.assign({},p.config,{salt:p.row.salt,authVersion:2,linked:true,on:false,ver:p.row.ver,last:Date.now(),pending:false,_dirty:false,pendingAt:0,lastError:''});
       const plan=planBackupImport({__myfin_transfer:1,profiles:[{sourceId:p.config.vaultId,name:'雲端 '+p.config.vaultId,emoji:'☁️',data:p.data}]});
       if(!cloudPreviewCurrent(p))throw new Error('preview-stale');
-      commitBackupImport(plan,config);renderProfileChip();
-      cloudMessage('已接收為另一份本機帳本，原有帳本不變。請從頂部帳本選單開啟「雲端 '+p.config.vaultId+' · 匯入副本」核對，再啟用同步。');
+      [receivedId]=commitBackupImport(plan,config);renderProfileChip();
+      cloudMessage('已接收為另一份本機帳本，原有帳本不變。請按「打開接收的帳本」核對內容；自動入帳及同步仍然暫停。');
     }
     cloudPauseSession();renderCloudAuth();
+    if(receivedId){
+      window._cloudReceivedProfile={id:receivedId,sourceKey:p.key};
+      const button=document.getElementById('cloud-open-received');if(button){button.hidden=false;button.focus();}
+    }
   }catch(error){
     cloudPauseSession();renderCloudAuth();
     cloudMessage(String(error?.message).includes('Source already imported')?'相同帳目副本已存在，沒有重複匯入。請先從帳本選單核對。':cloudFirstError(error,operation));

@@ -41,6 +41,8 @@ ${declaration('pnlShiftIsoDate')}
 ${declaration('pnlImportBatchDateOffset')}
 ${declaration('pnlImportCalendarRows')}
 ${declaration('pnlCalendarEvents')}
+${declaration('loanPaymentsThrough')}
+${declaration('recordEffective')}
 const S={
   pnlPieFilters:[],
   pnlCalendarFilters:[],

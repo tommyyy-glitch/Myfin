@@ -148,6 +148,8 @@ function renderGamble(){}
 function renderPnlSecMgr(){}
 ${declaration('pnlNetExcluded')}
 ${declaration('acctCashTxns')}
+${declaration('recordEffective')}
+${declaration('today')}
 ${declaration('acctCash')}
 ${declaration('acctIsPhysical')}
 ${declaration('acctCountsInNet')}

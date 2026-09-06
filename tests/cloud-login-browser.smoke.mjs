@@ -112,7 +112,13 @@ try{
   const result=await desktop.evaluate(()=>{const meta=profilesMeta(),p=JSON.parse(localStorage.getItem(profileKey(meta.list.at(-1).id)));return {original:localStorage.getItem('fos8'),active:meta.active,profiles:meta.list.length,imported:p};});
   assert.equal(result.original,before);assert.equal(result.active,'default');assert.equal(result.profiles,2);assert.equal(result.imported.cloud.linked,true);assert.equal(result.imported.cloud.on,false);assert.equal(result.imported.automationPaused,true);assert.equal(result.imported.txns[0].id,'phone-original');
   assert.equal(result.imported.accounts.length,25);assert.equal(result.imported.txns.length,3879,'real WebCrypto round trip preserves every synthetic record');
-  await desktop.evaluate(()=>switchProfile(profilesMeta().list.at(-1).id));assert.equal(await desktop.evaluate(()=>S.cloud.vaultId),'main');
+  assert.equal(await desktop.locator('#cloud-open-received').isVisible(),true);
+  await desktop.locator('#cloud-open-received').screenshot({path:fileURLToPath(new URL('open-received-button.png',out))});
+  await desktop.locator('#cloud-open-received').click();assert.equal(await desktop.evaluate(()=>S.cloud.vaultId),'main');
+  assert.equal(await desktop.evaluate(()=>activeProfileId()===profilesMeta().list.at(-1).id),true);
+  assert.equal(await desktop.evaluate(()=>S.activeTab),'home');
+  assert.equal(await desktop.evaluate(()=>cloudReady()),false);assert.equal(await desktop.evaluate(()=>S.automationPaused),true);
+  assert.equal(await desktop.locator('#cloud-open-received').isVisible(),false);
   // Logout cancels a prepared download without creating any second copy.
   await desktop.locator('.bottom-nav .tab-btn').nth(3).click();
   if(!await desktop.locator('#cloud-signout').isVisible())await desktop.locator('[data-i="cloudsync"]').click();
