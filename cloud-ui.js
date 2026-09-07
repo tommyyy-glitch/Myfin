@@ -61,6 +61,27 @@ function cloudFirstError(error,operation){
   if(direction==='upload'&&writeState==='not-sent')message+=' 尚未傳送帳目。';
   return message+diagnostic;
 }
+function cloudGuideState(c,signed,ready,state){
+  const conflict=state==='conflict'||(c.pending&&['conflict','remote-newer','changed-during-download','insert-race','compare-and-swap'].includes(c.lastError));
+  if(!signed)return {title:'先登入，帳目仍留在本機',next:'登入本身不會上傳或下載資料。請使用原本建立雲端副本的 Myfin 帳戶。',conflict:false};
+  if(!c.linked)return {title:'尚未連結雲端帳本',next:'手機資料最完整：預覽建立新雲端副本。另一部裝置：預覽接收為另一份本機帳本，核對後才啟用同步。',conflict:false};
+  if(conflict)return {title:'兩邊版本有差異，尚未合併',next:'先在兩部裝置各自下載備份。可用下方「安全預覽雲端副本」接收另一份帳本核對，不覆蓋目前帳本。立即同步並選用雲端版本會取代目前帳本，不是逐筆合併；不確定時請取消。',conflict:true};
+  if(!ready)return {title:'已連結，同步暫停',next:'確認目前帳本及登入帳戶正確後，按「啟用已連結帳本的同步」。重新開啟 App 後亦需確認；本機記帳照常。',conflict:false};
+  if(state==='err')return {title:'這次同步未完成',next:'保留本機資料，檢查連線及登入後再試。不要清除網站資料；必要時先下載備份。',conflict:false};
+  if(state==='sync')return {title:'正在核對／傳送版本',next:'請等待結果；尚不能當作同步完成。',conflict:false};
+  return {title:c.pending?'有本機改動等待上傳':'本分頁同步已啟用',next:'同步的是目前已連結帳本，不是裝置內所有帳本。兩邊同時修改會停止要求核對，不會自動逐筆合併。',conflict:false};
+}
+function renderCloudGuide(state){
+  const el=document.getElementById('cloud-guide');if(!el)return;
+  const c=cloudCfg(),status=window._cloudAuthClient?.status();
+  const signed=!!status?.userId&&status.projectUrl===c.url&&(!c.linked||status.userId===c.userId);
+  const guide=cloudGuideState(c,signed,cloudReady(),state);
+  const meta=profilesMeta(),profile=meta?.list?.find(p=>p.id===activeProfileId());
+  document.getElementById('cloud-guide-title').textContent=guide.title;
+  document.getElementById('cloud-guide-ledger').textContent='目前本機帳本：'+(profile?.name||activeProfileId())+'\n'+(c.linked?'已連結雲端代號：'+c.vaultId:'尚未連結（填寫代號不等於已連結）');
+  document.getElementById('cloud-guide-next').textContent=guide.next;
+  document.getElementById('cloud-conflict-preview').hidden=!guide.conflict;
+}
 function renderCloudAuth(){
   const el=document.getElementById('cloud-auth-state');if(!el)return;
   const status=window._cloudAuthClient?.status(),signed=!!status?.userId;
@@ -69,6 +90,7 @@ function renderCloudAuth(){
   document.getElementById('cloud-signout').hidden=!signed;
   document.getElementById('cloud-first-actions').hidden=!signed;
   document.getElementById('cloud-resume').textContent=window._cloudAuthApproved?'暫停本分頁同步':'啟用已連結帳本的同步';
+  renderCloudGuide();
 }
 function cloudFormConfig(){
   const get=id=>document.getElementById(id).value;

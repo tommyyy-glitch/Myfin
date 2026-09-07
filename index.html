@@ -1290,6 +1290,12 @@ img,canvas,svg{max-width:100%;}
       <div style="font-weight:700;font-size:17px;margin-bottom:8px">Myfin 個人登入 <span class="msub">（可選）</span></div>
       <p class="msub" style="line-height:1.7;margin:0">未登入也能記帳。登入只驗證身份，不會自動搬移資料。首次同步先預覽，再由你確認。</p>
       <div id="cloud-auth-state" role="status" style="margin:12px 0;font-size:13px;color:var(--g3)">未登入 · 本機記帳照常使用</div>
+      <div id="cloud-guide" role="status" aria-live="polite" style="padding:14px;margin:12px 0;background:var(--bg2);border-radius:12px;overflow-wrap:anywhere">
+        <strong id="cloud-guide-title"></strong>
+        <div id="cloud-guide-ledger" style="white-space:pre-line;font-size:13px;line-height:1.7;margin:8px 0"></div>
+        <p id="cloud-guide-next" class="msub" style="line-height:1.7;margin:0"></p>
+        <div class="cloud-buttons"><button id="cloud-conflict-preview" hidden onclick="cloudPreviewFirst('download')">安全預覽雲端副本（不覆蓋本機）</button></div>
+      </div>
       <details id="cloud-service-settings">
         <summary class="msub">進階：同步服務設定</summary>
         <label for="cloud-url">服務網址</label><input id="cloud-url" placeholder="https://xxxx.supabase.co" autocomplete="off" inputmode="url" spellcheck="false">
@@ -6371,6 +6377,7 @@ function checkpointProfile(key){
   localStorage.setItem('myfin.recovery.v1.'+key,JSON.stringify({createdAt:Date.now(),profile:profileSnapshot()}));
 }
 function setCloudStatus(state,err){
+  if(typeof renderCloudGuide==='function')renderCloudGuide(state);
   const el=document.getElementById('cloud-status');if(!el)return;
   const c=cloudCfg();const when=c.last?new Date(c.last):null;
   const stamp=when?((when.toDateString()===new Date().toDateString()?'':(when.getMonth()+1)+'/'+when.getDate()+' ')+String(when.getHours()).padStart(2,'0')+':'+String(when.getMinutes()).padStart(2,'0')):'';
