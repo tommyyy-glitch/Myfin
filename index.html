@@ -4414,9 +4414,14 @@ function savePortfolio(){
   if(!name)return;
   if(!acctId){showToast(t('noinvestacct'),1);return;}
   const acct=getAcct(acctId);
-  const costHKD=parseFloat(toHKD(entryPrice*qty,cur).toFixed(2));
-  const valueHKD=parseFloat(toHKD((exitPrice||currentPrice)*qty,cur).toFixed(2));
   const editId=document.getElementById('port-edit-id').value;
+  const original=editId?(S.portfolio||[]).find(p=>String(p.id)===String(editId)):null;
+  // Quotes and cosmetic edits must not reprice historical cash movements.
+  const samePurchase=original&&original.cur===cur&&Number(original.qty)===qty&&Number(original.entryPrice)===entryPrice;
+  const sameSettlement=original&&original.exitPrice&&original.cur===cur&&Number(original.qty)===qty&&Number(original.exitPrice)===exitPrice;
+  if((samePurchase&&(!Number.isFinite(original.costHKD)||original.costHKD<0))||(sameSettlement&&!Number.isFinite(original.valueHKD))){showToast(tt('缺少有效歷史成本或結算金額，請先核對原始記錄。','Historical cost or settlement is missing; review the original record first.'),1);return;}
+  const costHKD=samePurchase?original.costHKD:parseFloat(toHKD(entryPrice*qty,cur).toFixed(2));
+  const valueHKD=sameSettlement?original.valueHKD:parseFloat(toHKD((exitPrice||currentPrice)*qty,cur).toFixed(2));
   // Cash-cover check: the account must have enough available cash, unless margin is enabled or it's a closed position
   if(!margin&&!exitPrice){
     const avail=acctAvailableCash(acctId,editId);
@@ -4498,10 +4503,11 @@ function openSell(id){
 }
 function confirmSell(){
   const p=(S.portfolio||[]).find(x=>String(x.id)===String(S._sellId));
-  if(!p)return;
+  if(!p||p.exitPrice)return;
   const sellQty=parseFloat(document.getElementById('sell-qty').value)||0;
   const sellPx=parseFloat(document.getElementById('sell-price').value)||0;
-  if(sellQty<=0||sellQty>(p.qty||0)+1e-9||sellPx<=0){showToast(t('sellerr'),1);return;}
+  if(!Number.isFinite(sellQty)||!Number.isFinite(sellPx)||!Number.isFinite(Number(p.qty))||sellQty<=0||sellQty>(p.qty||0)+1e-9||sellPx<=0){showToast(t('sellerr'),1);return;}
+  if(!Number.isFinite(p.costHKD)||p.costHKD<0){showToast(tt('缺少有效歷史成本，不能以今天匯率猜測。請先核對原始記錄。','Historical cost is missing; review the original record instead of using today’s FX.'),1);return;}
   const acct=getAcct(p.acctId);
   const closedAt=Date.now();
   if(sellQty>=(p.qty||0)-1e-9){
@@ -4512,12 +4518,14 @@ function confirmSell(){
     p.valueHKD=parseFloat(toHKD(sellPx*(p.qty||0),p.cur).toFixed(2));
   } else {
     // split off a realized (closed) lot for the sold units; reduce the open position by the same qty
-    const lotCost=parseFloat(toHKD(p.entryPrice*sellQty,p.cur).toFixed(2));
+    const originalCost=p.costHKD;
+    const lotCost=parseFloat((originalCost*sellQty/p.qty).toFixed(2));
     const lotValue=parseFloat(toHKD(sellPx*sellQty,p.cur).toFixed(2));
     S.portfolio.unshift({id:Date.now(),type:p.type,name:p.name,qty:sellQty,entryPrice:p.entryPrice,currentPrice:sellPx,exitPrice:sellPx,exitDate:today(),exitAt:closedAt,budgetPrice:null,cur:p.cur,apiSymbol:'',notes:t('soldlot')+' '+today(),costHKD:lotCost,valueHKD:lotValue,acctId:p.acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin:p.margin,secId:p.secId||'',date:today()});
     const remQty=p.qty-sellQty;
     p.qty=parseFloat(remQty.toFixed(6));
-    p.costHKD=parseFloat(toHKD(p.entryPrice*p.qty,p.cur).toFixed(2));
+    // Allocate stored basis; the remainder receives the rounding residual.
+    p.costHKD=parseFloat((originalCost-lotCost).toFixed(2));
     p.valueHKD=parseFloat(toHKD((p.currentPrice||p.entryPrice)*p.qty,p.cur).toFixed(2));
   }
   logChange('sell',p,sellQty+' @ '+p.cur+sellPx);
