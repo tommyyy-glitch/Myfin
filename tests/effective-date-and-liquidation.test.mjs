@@ -16,7 +16,7 @@ function fixture(){
   const c=vm.createContext({S:{accounts:[{id:'cash',opening:1000},{id:'bank',opening:0}],txns:[],portfolio:[],priceHist:[],privateLoans:[]},
     today:()=> '2026-09-05',toHKD:n=>n,periodMatchDate:()=>true,tt:s=>s,t:s=>s,
     pnlSecForPort:p=>p.secId||p.type,ymd:d=>d.toISOString().slice(0,10),pnlSnapshotCalendarDate:at=>new Date(at).toISOString().slice(0,10)});
-  vm.runInContext(['recordEffective','loanPayments','loanPaymentsThrough','loanPrincipalReturned','loanInterestReceived','loanOutstandingPrincipal','loanInterestMode','loanAccruedTotal','loanAccruedOutstanding','dateOnly','parseDateOnly','acctCashTxns','acctFlows','getPeriodTxns','txnsInPeriod','pnlIncomeItems','privateLoanStats','portfolioUnrealizedSnapshot','recordPriceSnapshot','pnlUnrealizedEvents'].map(declaration).join('\n'),c);
+  vm.runInContext(['loanBasisRate','loanPaymentBasis','loanInterestSettled','loanPrincipalFx','loanPaymentPnl','recordEffective','loanPayments','loanPaymentsThrough','loanPrincipalReturned','loanInterestReceived','loanOutstandingPrincipal','loanInterestMode','loanAccruedTotal','loanAccruedOutstanding','dateOnly','parseDateOnly','acctCashTxns','acctFlows','getPeriodTxns','txnsInPeriod','pnlIncomeItems','privateLoanStats','portfolioUnrealizedSnapshot','recordPriceSnapshot','pnlUnrealizedEvents'].map(declaration).join('\n'),c);
   return c;
 }
 test('scheduled income, expense, transfers and debt/loan movements do not post early',()=>{

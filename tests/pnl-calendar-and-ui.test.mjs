@@ -42,6 +42,7 @@ ${declaration('pnlImportBatchDateOffset')}
 ${declaration('pnlImportCalendarRows')}
 ${declaration('pnlCalendarEvents')}
 ${declaration('loanPaymentsThrough')}
+${['loanBasisRate','loanPaymentBasis','loanPaymentPnl','loanInterestMode'].map(declaration).join('\n')}
 ${declaration('recordEffective')}
 const S={
   pnlPieFilters:[],

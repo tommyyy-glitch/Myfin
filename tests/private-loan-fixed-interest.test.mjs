@@ -15,6 +15,7 @@ function declaration(name){
 }
 
 const code=[
+  ...['loanBasisRate','loanPaymentBasis','loanInterestSettled'].map(declaration),
   declaration('dateOnly'),
   declaration('parseDateOnly'),
   declaration('loanPayments'),
