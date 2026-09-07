@@ -10,7 +10,7 @@ function declaration(name){
   while(end>=0){const code=html.slice(start,end);try{new vm.Script(code);return code;}catch{}end=html.indexOf('\n',end+1);}
   throw new Error('Cannot extract '+name);
 }
-const names=['defaultQuoteApis','ensureQuoteApis','quoteApiCloudSafe','createAppState','profilesMeta','ensureProfiles','saveProfilesMeta','activeProfileId','profileKey','resetProfileRuntime','reloadActiveProfile','switchProfile','loadS','profileSnapshot','saveS','cloudCfg','cloudReady','persistCloudMeta','markCloudConflict','cloudPush','cloudPull'];
+const names=['defaultQuoteApis','ensureQuoteApis','quoteApiCloudSafe','createAppState','profilesMeta','ensureProfiles','saveProfilesMeta','activeProfileId','profileKey','resetProfileRuntime','reloadActiveProfile','switchProfile','ensureDefaultCategories','loadS','profileSnapshot','saveS','cloudCfg','cloudReady','persistCloudMeta','markCloudConflict','cloudPush','cloudPull'];
 // Optional during the red/green baseline; the scenarios assert real behavior, not helper presence.
 for(const n of ['cloudContent','cloudOperation','cloudOperationCurrent','cloudSchedule','cloudFinish','validateProfileData','checkpointProfile','recurringRunKey','migrateRecurringRuns','cloudSignedIn','cloudPath'])if(html.includes('function '+n+'('))names.push(n);
 const code=['DEF_CATS','DEF_ACCTS'].map(n=>html.match(new RegExp('const '+n+'=\\[[\\s\\S]*?\\n\\];'))[0]).concat(names.map(declaration)).join('\n');

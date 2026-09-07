@@ -35,6 +35,7 @@ const appCode=[
   declaration('resetProfileRuntime'),
   declaration('reloadActiveProfile'),
   declaration('switchProfile'),
+  declaration('ensureDefaultCategories'),
   declaration('loadS'),
   declaration('profileSnapshot'),
   declaration('recurringRunKey'),

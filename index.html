@@ -2066,6 +2066,15 @@ function showStorageError(action,e){
   console.error('Myfin storage '+action+' failed',e);
 }
 function clearStorageError(action){const el=document.getElementById('storage-error-banner');if(el&&el.dataset.action===action)el.remove();}
+function ensureDefaultCategories(){
+  if(!Array.isArray(S.cats))return;
+  const mergedIds=new Set(S.cats.flatMap(c=>Array.isArray(c.mergedFromIds)?c.mergedFromIds.map(String):[]));
+  DEF_CATS.forEach(dc=>{
+    const ex=S.cats.find(c=>c.id===dc.id);
+    if(!ex){if(!mergedIds.has(dc.id))S.cats.push({...dc,aliases:[...dc.aliases]});}
+    else dc.aliases.forEach(a=>{if(!(ex.aliases||[]).includes(a))ex.aliases=(ex.aliases||[]).concat(a);});
+  });
+}
 function loadS(){try{const d=localStorage.getItem(profileKey());if(d){const p=JSON.parse(d),legacyQuoteKey=!p.quoteApis?String(p.tdKey||'').trim():'';Object.assign(S,p);if(S.fx){if(S.fx.USD)FX.USD=S.fx.USD;if(S.fx.RMB)FX.RMB=S.fx.RMB;if(S.fx.JPY)FX.JPY=S.fx.JPY;}if(!S.portfolio)S.portfolio=[];if(!S.accounts||!S.accounts.length)S.accounts=DEF_ACCTS.map(a=>({...a}));S.accounts.forEach(a=>{if(!ACCT_SECONDARY_KINDS.includes(a.secondaryKind))a.secondaryKind='none';});const inv=S.accounts.find(a=>a.id==='invest_acct');if(inv&&inv.isInvest===undefined)inv.isInvest=true;
 if(!S.debts)S.debts=[];
 if(!S.privateLoans)S.privateLoans=[];
@@ -2088,7 +2097,7 @@ if(!Array.isArray(S.budget.excludedCats))S.budget.excludedCats=[];
 if(!S.tax)S.tax={year:0,allowance:145000,deductions:0,excludedCats:[]};
 if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
 S.notify=notifyCfg();
-if(S.cats)DEF_CATS.forEach(function(dc){const ex=S.cats.find(function(c){return c.id===dc.id;});if(!ex){S.cats.push({...dc,aliases:[...dc.aliases]});}else{dc.aliases.forEach(function(a){if((ex.aliases||[]).indexOf(a)<0)ex.aliases=(ex.aliases||[]).concat(a);});}});
+ensureDefaultCategories();
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(typeof ensureRPIncomeAccruals==='function'&&ensureRPIncomeAccruals())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));showStorageError('load',e);}}
 function profileSnapshot(){migrateRecurringRuns(S,localStorage);const cloud=S.cloud||{};return {recurringRuns:S.recurringRuns,recurringLedgerVersion:1,automationPaused:!!S.automationPaused,txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},pnlCalendarSections:S.pnlCalendarSections||{},pnlCalendarFilters:Array.isArray(S.pnlCalendarFilters)?S.pnlCalendarFilters:[],pnlImports:Array.isArray(S.pnlImports)?S.pnlImports:[],ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],rpLabels:S.rpLabels||{},customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],fixedAssetReviewedYear:Number(S.fixedAssetReviewedYear)||0,setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:S.priceHist||[],acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{authVersion:cloud.authVersion||0,linked:!!cloud.linked,userId:cloud.userId||'',vaultId:cloud.vaultId||'',url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
 function saveS(opt){
@@ -2116,10 +2125,10 @@ function abbrevNum(v){var neg=v<0;v=Math.abs(v);var s;
   else return (neg?'-':'')+Math.round(v).toLocaleString();
   return (neg?'-':'')+s.replace(/\.0(?=[KMB]$)/,'');}
 function numStr(v){if(S.numFmt==='abbr')return abbrevNum(v);const r=Math.round(v*100)/100;return r%1?r.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}):Math.round(r).toLocaleString();}
-function fmt(n){if(S.privacy)return '••••';const c=S.dispCur||'HKD';const v=(c==='HKD')?n:n/(FX[c]||1);const neg=v<0&&Math.round(Math.abs(v))!==0;return (neg?'−':'')+(CUR_SYM[c]||'')+numStr(Math.abs(v));}
-function fmtSigned(n){return n<0?'−'+fmt(Math.abs(n)):fmt(n);}
+function fmt(n){if(S.privacy)return '••••';const c=S.dispCur||'HKD';const v=(c==='HKD')?n:n/(FX[c]||1);const neg=v<0&&Math.round(Math.abs(v)*(S.numFmt==='abbr'?1:100))!==0;return (neg?'−':'')+(CUR_SYM[c]||'')+numStr(Math.abs(v));}
+function fmtSigned(n){return fmt(n);}
 function setNumFmt(m){S.numFmt=m;saveS();document.querySelectorAll('.numfmt-btn').forEach(b=>b.classList.toggle('active',b.dataset.numfmt===(S.numFmt||'full')));renderHome();if(S.activeTab==='gamble')renderGamble();if(typeof refreshWallet==='function')refreshWallet();}
-function getCat(id){return S.cats.find(c=>c.id===id)||S.cats[S.cats.length-1];}
+function getCat(id){return S.cats.find(c=>c.id===id)||S.cats.find(c=>Array.isArray(c.mergedFromIds)&&c.mergedFromIds.includes(String(id)))||S.cats[S.cats.length-1];}
 function getAcct(id){return (S.accounts||[]).find(a=>a.id===id)||(S.accounts||[])[0];}
 function acctLabel(a){return a?(S.lang==='en'?(a.labelEn||a.label):a.label):'';}
 // Historical name retained for compatibility: both physical assets and
@@ -3393,13 +3402,17 @@ function addInlineCat(){
   const icon=document.getElementById('inline-cat-icon').value.trim()||'📌';
   const name=document.getElementById('inline-cat-name').value.trim();
   if(!name)return;
-  const id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'')||('cat_'+Date.now());
-  if(!S.cats.find(c=>c.id===id))S.cats.push({id,label:name,labelEn:name,icon,aliases:[]});
+  const existing=findCategoryByName(name);
+  if(existing&&!existing.id){showToast(tt('這個舊分類的編號需要另外核對，未有改動。','This legacy category needs an ID review; nothing changed.'),1);return;}
+  const id=existing?existing.id:newCategoryId();
+  const before=S.cats,previous=S.selCat;
+  if(!existing)S.cats=[...S.cats,{id,label:name,labelEn:name,icon,aliases:[]}];
   S.selCat=id;
+  if(!saveS()){S.cats=before;S.selCat=previous;return;}
   document.getElementById('inline-cat-icon').value='';
   document.getElementById('inline-cat-name').value='';
   document.getElementById('inline-newcat').style.display='none';
-  saveS();renderCatChips();
+  renderCatChips();
 }
 function selCat(id,el){S.selCat=id;bumpMRU('catMRU',id);saveS();document.querySelectorAll('#cat-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
 function renderAcctChips(){
@@ -5301,29 +5314,89 @@ function toggleAcctExclude(id){const a=(S.accounts||[]).find(x=>x.id===id);if(a)
 function pickAcctEmoji(btn){document.getElementById('new-acct-icon').value=btn.textContent.trim();}
 function addAcct(){const icon=document.getElementById('new-acct-icon').value.trim()||'💳';const name=document.getElementById('new-acct-name').value.trim();if(!name)return;let id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!id)id='acct_'+Date.now();if(!S.accounts)S.accounts=[];const kind=document.getElementById('new-acct-kind').value;const isInvest=kind==='invest';const secondaryKind=document.getElementById('new-acct-secondary').value||'none';const cur=document.getElementById('new-acct-cur').value||'HKD';if(!S.accounts.find(a=>a.id===id))S.accounts.push({id,label:name,labelEn:name,icon,isInvest,kind,secondaryKind,cur});['new-acct-icon','new-acct-name'].forEach(x=>document.getElementById(x).value='');document.getElementById('new-acct-secondary').value='none';document.getElementById('new-acct-cur').value=S.dispCur||'HKD';saveS();renderSettings();renderHome();refreshWallet();}
 function setAcctCur(id,cur){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.cur=cur;saveS();renderSettings();renderHome();refreshWallet();}
-function fmtCur(n,cur){if(S.privacy)return '••••';cur=cur||'HKD';const v=cur==='HKD'?n:n/(FX[cur]||1);const neg=v<0&&Math.round(Math.abs(v))!==0;return (neg?'−':'')+(CUR_SYM[cur]||(cur+' '))+numStr(Math.abs(v));}
+function fmtCur(n,cur){if(S.privacy)return '••••';cur=cur||'HKD';const v=cur==='HKD'?n:n/(FX[cur]||1);const neg=v<0&&Math.round(Math.abs(v)*(S.numFmt==='abbr'?1:100))!==0;return (neg?'−':'')+(CUR_SYM[cur]||(cur+' '))+numStr(Math.abs(v));}
 function setAcctFilter(v){S.acctFilter=v;saveS();renderAcctBalances();}
 function setAcctKind(id,kind){const a=(S.accounts||[]).find(x=>x.id===id);if(a){a.kind=kind;a.isInvest=(kind==='invest');}saveS();renderSettings();renderHome();}
 function setAcctSecondaryKind(id,secondaryKind){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.secondaryKind=ACCT_SECONDARY_KINDS.includes(secondaryKind)?secondaryKind:'none';saveS();renderSettings();renderHome();refreshWallet();}
-function deleteAcct(id){if((S.accounts||[]).length<=1)return;S.accounts=S.accounts.filter(a=>a.id!==id);if(S.selAcct===id)S.selAcct=S.accounts[0]?.id;saveS();renderSettings();renderHome();refreshWallet();}
+function accountDeletionBlockers(id){
+  const ac=(S.accounts||[]).find(a=>String(a.id)===String(id));if(!ac)return [];
+  const key=String(ac.id),reasons=[],norm=v=>String(v||'').normalize('NFC').replace(/\s+/g,'').toLowerCase();
+  const knownIds=new Set((S.accounts||[]).map(a=>String(a.id)));
+  const names=new Set([ac.label,ac.labelEn].map(norm).filter(Boolean));
+  const opening=Number(ac.opening||0);
+  if(!Number.isFinite(opening)||opening!==0)reasons.push(tt('期初結餘並非零','Non-zero or invalid opening balance'));
+  // Include closed, excluded and scheduled records: they still own historical links.
+  const touches=row=>{
+    if(!row||typeof row!=='object')return false;
+    if(['acctId','toAcctId','settleAcctId','saleAcctId','accountId'].some(k=>row[k]!=null&&String(row[k])===key))return true;
+    if([['acctId','acctLabel'],['acctId','acct'],['toAcctId','toAcctLabel'],['settleAcctId','settleAcctLabel'],['saleAcctId','saleAcctLabel']].some(([k,label])=>!knownIds.has(String(row[k]))&&names.has(norm(row[label]))))return true;
+    return Object.values(row).some(v=>v&&typeof v==='object'&&(Array.isArray(v)?v.some(touches):touches(v)));
+  };
+  const groups=[['txns','交易','Transactions'],['portfolio','持倉／平倉','Positions / sales'],['gamble','撲克記錄','Poker records'],['people','應收／應付','Receivables / payables'],['physicalAssets','實體資產','Physical assets'],['privateLoans','私人借款','Private loans'],['debts','負債','Debts'],['autopay','自動支出','Recurring expenses'],['autoincome','自動收入','Recurring income'],['changelog','操作歷史','Activity history']];
+  groups.forEach(([field,zh,en])=>{const count=(S[field]||[]).filter(touches).length;if(count)reasons.push(tt(zh,en)+' × '+count);});
+  const sections=(S.customSections||[]).filter(c=>touches(c)||names.has(norm(c.name))).length;
+  if(sections)reasons.push(tt('投資分頁','Investment sections')+' × '+sections);
+  const alerts=(S.notify?.customRules||[]).filter(r=>r.type==='account_balance'&&String(r.target)===key).length;
+  if(alerts)reasons.push(tt('戶口通知條件','Account notification rules')+' × '+alerts);
+  if(typeof _undoDelTxn!=='undefined'&&_undoDelTxn&&touches(_undoDelTxn.tx))reasons.push(tt('仍可撤銷的交易刪除','A transaction deletion can still be undone'));
+  return reasons;
+}
+function deleteAcct(id){
+  const ac=(S.accounts||[]).find(a=>String(a.id)===String(id));if(!ac)return;
+  if(S.accounts.length<=1){showToast(tt('至少需要保留一個戶口。','Keep at least one account.'),1);return;}
+  const blockers=accountDeletionBlockers(ac.id);
+  if(blockers.length){showToast(tt('不能刪除：','Cannot delete: ')+blockers.join('；')+tt('。戶口及歷史記錄保持不變。','; account and history remain unchanged.'),1);return;}
+  if(!confirm(tt('刪除空戶口「','Delete empty account “')+(ac.label||ac.id)+tt('」？沒有關聯記錄，會先保留本機復原副本。','”? No linked records; a local recovery copy will be kept first.')))return;
+  try{checkpointProfile(profileKey());}catch(e){showToast(tt('未能建立復原副本，沒有刪除戶口。','Could not create a recovery copy; account was not deleted.'),1);return;}
+  const keys=['accounts','selAcct','selAcctTo','acctFilter','acctMRU'],before=new Map(keys.map(k=>[k,{exists:Object.hasOwn(S,k),value:S[k]}]));
+  S.accounts=S.accounts.filter(a=>String(a.id)!==String(ac.id));
+  if(String(S.selAcct)===String(ac.id))S.selAcct=S.accounts[0].id;
+  if(String(S.selAcctTo)===String(ac.id))S.selAcctTo=S.accounts[0].id;
+  if(String(S.acctFilter)===String(ac.id))S.acctFilter='all';
+  if(Array.isArray(S.acctMRU))S.acctMRU=S.acctMRU.filter(k=>String(k)!==String(ac.id));
+  if(!saveS()){before.forEach((v,k)=>{if(v.exists)S[k]=v.value;else delete S[k];});return;}
+  renderSettings();renderHome();refreshWallet();
+}
+function newCategoryId(){
+  const token=typeof crypto!=='undefined'&&typeof crypto.randomUUID==='function'?crypto.randomUUID():Date.now().toString(36)+'_'+Math.random().toString(36).slice(2);
+  const base='cat_'+token,used=new Set((S.cats||[]).map(c=>String(c.id)));let id=base,n=1;
+  while(used.has(id))id=base+'_'+n++;
+  return id;
+}
+function categoryNameKey(name){return String(name||'').normalize('NFC').trim().replace(/\s+/g,' ').toLowerCase();}
+function findCategoryByName(name){const key=categoryNameKey(name);return key?(S.cats||[]).find(c=>[c.label,c.labelEn].some(label=>categoryNameKey(label)===key)):null;}
 function renderMergeChips(){document.getElementById('merge-chips').innerHTML=S.cats.map(c=>`<div class="cat-chip${S.mergeSelected.includes(c.id)?' merge-sel':''}" onclick="toggleMergeSel(${inlineJsString(c.id)})"><span style="font-size:20px">${escapeHtml(c.icon)}</span><span>${escapeHtml(catLabel(c))}</span></div>`).join('');updateMergePreview();}
 function toggleMergeSel(id){const i=S.mergeSelected.indexOf(id);i>=0?S.mergeSelected.splice(i,1):S.mergeSelected.push(id);renderMergeChips();}
 function updateMergePreview(){const sel=S.mergeSelected.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean);const prev=document.getElementById('merge-preview');if(sel.length<2){prev.innerHTML=`<div style="font-size:12px;color:var(--ink3)">${t('mergehint')}</div>`;return;}const newName=document.getElementById('merge-name')?.value||'...';prev.innerHTML=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px">${sel.map(c=>`<span style="background:var(--g2);color:var(--g3);padding:3px 10px;border-radius:20px">${escapeHtml(c.icon)} ${escapeHtml(catLabel(c))}</span>`).join('<span style="color:var(--ink3)">+</span>')}<span style="color:var(--ink3)">→</span><span style="background:var(--p2);color:var(--p3);padding:3px 10px;border-radius:20px">${escapeHtml(newName)}</span></div>`;}
 function mergeCats(){
   if(S.mergeSelected.length<2)return;
   const newName=document.getElementById('merge-name').value.trim(),newIcon=document.getElementById('merge-icon').value.trim()||'📌';if(!newName)return;
-  const selected=S.mergeSelected.map(String),newId=newName.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');
-  const merged=S.mergeSelected.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean),allAliases=[...new Set(merged.flatMap(c=>[c.label,...(c.aliases||[])]))];
-  const excluded=budgetCfg().excludedCats,mergedWasExcluded=selected.some(id=>excluded.includes(id));
-  const excludedCats=excluded.filter(id=>!selected.includes(String(id)));if(mergedWasExcluded)excludedCats.push(newId);
-  S.budget={...S.budget,excludedCats:[...new Set(excludedCats)]};
-  S.cats.push({id:newId,label:newName,labelEn:newName,icon:newIcon,aliases:allAliases});
-  S.txns.forEach(tx=>{if(S.mergeSelected.includes(tx.catId)){tx.catId=newId;tx.catLabel=newName;tx.catIcon=newIcon;}});
-  S.cats=S.cats.filter(c=>!S.mergeSelected.includes(c.id));S.mergeSelected=[];
-  document.getElementById('merge-name').value='';document.getElementById('merge-icon').value='';saveS();renderSettings();
+  const selected=[...new Set(S.mergeSelected.map(String))],merged=S.cats.filter(c=>selected.includes(String(c.id)));
+  if(selected.some(id=>!id||S.cats.filter(c=>String(c.id)===id).length!==1)||merged.length<2){showToast(tt('所選分類的舊編號需要核對，沒有合併。','Selected category IDs need review; nothing merged.'),1);return;}
+  if(typeof _undoDelTxn!=='undefined'&&_undoDelTxn&&selected.includes(String(_undoDelTxn.tx?.catId))){showToast(tt('請先撤銷交易刪除，或等撤銷期限結束後再合併分類。','Undo the transaction deletion, or wait for its undo window to end before merging.'),1);return;}
+  const collision=S.cats.find(c=>!selected.includes(String(c.id))&&[c.label,c.labelEn].some(label=>categoryNameKey(label)===categoryNameKey(newName)));
+  if(collision){showToast(tt('已有另一個同名分類，請改名或把它一併選取。','Another category has this name. Rename it or include that category.'),1);return;}
+  try{checkpointProfile(profileKey());}catch(e){showToast(tt('未能建立復原副本，沒有合併分類。','Could not create a recovery copy; categories were not merged.'),1);return;}
+  const keys=['cats','txns','people','autopay','autoincome','budget','tax','catMRU','selCat','_billCat','mergeSelected'],before=new Map(keys.map(k=>[k,{exists:Object.hasOwn(S,k),value:S[k]}]));
+  const newId=newCategoryId(),allAliases=[...new Set(merged.flatMap(c=>[c.label,c.labelEn,...(c.aliases||[])].filter(Boolean)))];
+  const mergedFromIds=[...new Set(merged.flatMap(c=>[String(c.id),...(Array.isArray(c.mergedFromIds)?c.mergedFromIds.map(String):[])]))];
+  S.cats=[...S.cats.filter(c=>!selected.includes(String(c.id))),{id:newId,label:newName,labelEn:newName,icon:newIcon,aliases:allAliases,mergedFromIds}];
+  // Only a user-confirmed merge changes references; loading the new version never migrates old IDs.
+  ['txns','people','autopay','autoincome'].forEach(field=>{if(Array.isArray(S[field]))S[field]=S[field].map(row=>selected.includes(String(row.catId))?{...row,catId:newId,catLabel:newName,catIcon:newIcon}:row);});
+  ['budget','tax'].forEach(field=>{if(S[field]&&Array.isArray(S[field].excludedCats)){const old=S[field].excludedCats,ids=old.filter(id=>!selected.includes(String(id)));if(old.some(id=>selected.includes(String(id))))ids.push(newId);S[field]={...S[field],excludedCats:[...new Set(ids)]};}});
+  if(Array.isArray(S.catMRU))S.catMRU=[...new Set(S.catMRU.map(id=>selected.includes(String(id))?newId:id))];
+  ['selCat','_billCat'].forEach(k=>{if(selected.includes(String(S[k])))S[k]=newId;});S.mergeSelected=[];
+  if(!saveS()){before.forEach((v,k)=>{if(v.exists)S[k]=v.value;else delete S[k];});return;}
+  document.getElementById('merge-name').value='';document.getElementById('merge-icon').value='';renderSettings();refreshAllViews();
 }
 function addAlias(){const alias=document.getElementById('alias-name').value.trim();const tId=document.getElementById('alias-target').value;if(!alias)return;const cat=S.cats.find(c=>c.id===tId);if(cat&&!(cat.aliases||[]).includes(alias))cat.aliases.push(alias);document.getElementById('alias-name').value='';saveS();renderSettings();}
-function addCat(){const icon=document.getElementById('new-cat-icon').value.trim()||'📌';const name=document.getElementById('new-cat-name').value.trim();if(!name)return;const id=name.toLowerCase().replace(/\s+/g,'_').replace(/[^\w]/g,'');if(!S.cats.find(c=>c.id===id))S.cats.push({id,label:name,labelEn:name,icon,aliases:[]});['new-cat-icon','new-cat-name'].forEach(x=>document.getElementById(x).value='');saveS();renderSettings();}
+function addCat(){
+  const icon=document.getElementById('new-cat-icon').value.trim()||'📌',name=document.getElementById('new-cat-name').value.trim();if(!name)return;
+  if(findCategoryByName(name)){showToast(tt('此分類名稱已存在，沒有重複新增。','This category name already exists; no duplicate added.'),1);return;}
+  const before=S.cats;S.cats=[...S.cats,{id:newCategoryId(),label:name,labelEn:name,icon,aliases:[]}];
+  if(!saveS()){S.cats=before;return;}
+  ['new-cat-icon','new-cat-name'].forEach(x=>document.getElementById(x).value='');renderSettings();
+}
 
 // ─── SAFE DEVICE TRANSFER / LOCAL RECOVERY ─────────────────
 function transferProfileData(raw,legacy){
