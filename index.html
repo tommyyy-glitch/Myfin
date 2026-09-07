@@ -478,6 +478,15 @@ body.dark #s-settings .glass-card{background:rgba(36,36,40,0.9);border-color:rgb
 .pnl-filter-drawer{display:none;margin:10px 0 4px;padding:10px;border:1px solid var(--bdr);border-radius:14px;background:var(--bg2)}
 .pnl-filter-drawer.open{display:block}
 .pnl-filter-btn.on{border-color:var(--g)!important;color:var(--g3)!important;background:var(--g2)!important}
+.pnl-tools{display:flex;gap:10px;align-items:center;padding:8px 20px;background:var(--bg);flex-shrink:0;border-bottom:1px solid var(--bdr)}
+.pnl-tools select{flex:1;min-width:0;max-width:100%;height:44px;border:1px solid var(--bdr2);border-radius:12px;background:var(--surf2);color:var(--ink);padding:0 10px;font:inherit;font-size:13px}
+.pnl-tools button{min-height:44px;padding:8px 16px;border:0;border-radius:12px;background:var(--hero-grad);color:#fff;font-weight:700;flex-shrink:0}
+.pnl-tools :focus-visible{outline:2px solid var(--g3);outline-offset:2px}
+#s-gamble .pnl-period-summary,#s-gamble .pnl-selected-summary,#pnl-cal-detail strong{overflow-wrap:anywhere;min-width:0}
+#pnl-cal-detail>div>span{min-width:0;overflow-wrap:anywhere}
+#pnl-cal-detail>div>strong{flex-shrink:1;text-align:right}
+@media(max-width:480px){#pnl-cal-detail>div:not(.pnl-selected-summary){flex-wrap:wrap}#pnl-cal-detail>div:not(.pnl-selected-summary)>strong{flex-basis:100%;max-width:100%}}
+#s-gamble .mval,#s-gamble .pnl-simple-val{overflow-wrap:anywhere;min-width:0}
 .pnl-calendar-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}
 .pnl-calendar-grid.year{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 .pnl-cal-day{border:0;background:var(--bg2);border-radius:9px;min-height:44px;padding:5px 2px;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--ink);cursor:pointer}
@@ -801,6 +810,10 @@ img,canvas,svg{max-width:100%;}
     <div class="nav-actions" style="gap:6px">
       <button class="ai-top-btn" onclick="openAI()"><i class="ti ti-message-circle"></i><span data-i="aiask"></span></button>
     </div>
+  </div>
+  <div class="pnl-tools">
+    <select id="pnl-jump" aria-label="跳到損益分區" onchange="jumpPnlSection(this.value);this.value='' "></select>
+    <button id="pnl-add-entry" type="button" onclick="fabAction()">＋ 新增</button>
   </div>
   <div class="scroll-body" style="padding:16px 20px 28px">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
@@ -3270,7 +3283,7 @@ function updateFab(){
   const fab=document.getElementById('global-fab');
   if(!fab)return;
   // Wallet: show add for txn & ar panes (not on the accounts-balance pane)
-  let show=S.activeTab==='home'||S.activeTab==='gamble';
+  let show=S.activeTab==='home';
   if(S.activeTab==='wallet')show=(S.walletPane==='txn'||S.walletPane==='ar');
   fab.style.display=show?'flex':'none';
 }
@@ -4637,7 +4650,24 @@ function applyPnlLayout(){
     if(row){const card=row.querySelector('[data-sec=\"'+id+'\"]');if(card){card.style.display=hidden?'none':'';row.appendChild(card);}}
     const addbtn=document.querySelector('#pnl-addbtns [data-sec=\"'+id+'\"]');if(addbtn)addbtn.style.display=hidden?'none':'';
   });
-  renderTrendChips();
+  renderTrendChips();renderPnlJump();
+}
+function renderPnlJump(){
+  const el=document.getElementById('pnl-jump');if(!el)return;
+  const label=tt('跳到分區…','Jump to section…');el.setAttribute('aria-label',label);
+  el.replaceChildren();
+  [['',label],['overview',tt('資產總覽','Asset overview')],['calendar',tt('損益日曆','P&L calendar')],...pnlOrderSafe().filter(id=>!(S.pnlHidden&&S.pnlHidden[id])).map(id=>['sec:'+id,secName(id)])].forEach(([value,text])=>{const option=document.createElement('option');option.value=value;option.textContent=text;el.appendChild(option);});
+  document.getElementById('pnl-add-entry').textContent='＋ '+t('add');
+}
+function jumpPnlSection(value){
+  const scroller=document.querySelector('#s-gamble .scroll-body');if(!scroller)return;
+  if(value==='overview'){scroller.scrollTo({top:0,behavior:'auto'});return;}
+  const id=value.startsWith('sec:')?value.slice(4):null;
+  if(id&&(!pnlOrderSafe().includes(id)||(S.pnlHidden&&S.pnlHidden[id])))return;
+  const target=document.getElementById(value==='calendar'?'pnl-calendar-card':id?'sec-'+id:'');if(!target)return;
+  if(id&&_collapsedSecs.has(id))toggleSecBody(id);
+  scroller.scrollTo({top:scroller.scrollTop+target.getBoundingClientRect().top-scroller.getBoundingClientRect().top-10,behavior:'auto'});
+  target.setAttribute('tabindex','-1');target.focus({preventScroll:true});
 }
 // Rebuild the trend-chart chips: 總計 + every visible section (incl. PE + custom)
 function renderTrendChips(){
