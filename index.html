@@ -2875,6 +2875,7 @@ function estMonths(d){const mr=debtMonthlyRate(d);const M=d.monthly||0;let b=d.b
 // Accrue interest and (unless paused) post a monthly repayment for every month that has come due
 function checkDebts(){
   if(S.automationPaused)return;
+  const originalDebts=JSON.parse(JSON.stringify(S.debts||[])),originalTxns=(S.txns||[]).slice();
   const now=new Date();const curYM=ymNum(now);let changed=false;
   (S.debts||[]).forEach(d=>{
     if(d.lastYM==null){d.lastYM=curYM;changed=true;return;}
@@ -2896,14 +2897,18 @@ function checkDebts(){
       }
       if(!d.paused&&(d.balance||0)>0&&(d.monthly||0)>0){
         const pay=Math.min(d.monthly,d.balance);const y=Math.floor(targetYM/12),mo=targetYM%12;const dd=Math.min(d.day||1,dimM(y,mo));const ac=getAcct(d.acctId);
+        // Capture the state AFTER accrual, BEFORE payment. Reversal retains interest
+        // and the consumed period, so the deleted payment is not generated again.
+        const before=JSON.parse(JSON.stringify({...d,lastYM:targetYM}));
         S.txns.unshift({id:Date.now()+Math.random(),type:'expense',amount:parseFloat(pay.toFixed(2)),amtHKD:parseFloat(toHKD(pay,d.cur||'HKD').toFixed(2)),cur:d.cur||'HKD',catId:'longdebt',catLabel:t('longdebt'),catIcon:'🏦',acctId:d.acctId||'',acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:d.name+' · '+t('debtrepay'),date:y+'-'+String(mo+1).padStart(2,'0')+'-'+String(dd).padStart(2,'0'),oneOff:false,debtId:d.id});
         d.balance-=pay;d.paidTotal=(d.paidTotal||0)+pay;
+        S.txns[0].debtEffect={version:1,before,after:JSON.parse(JSON.stringify({...d,lastYM:targetYM}))};
       }
       d.lastYM=targetYM;changed=true;
     }
     if(d.balance<0)d.balance=0;
   });
-  if(changed)saveS();
+  if(changed&&saveS()===false){S.debts=originalDebts;S.txns=originalTxns;}
 }
 function renderDebts(){
   const el=document.getElementById('debt-list');if(!el)return;
@@ -2948,7 +2953,12 @@ function saveDebt(){
   else {const rec={id:Date.now(),name:name,balance:bal,principal0:bal,apr:apr,monthly:monthly,day:day,acctId:acctId,cur:'HKD',compound:compound,noInterest:noInterest,paused:false,paidTotal:0,accInterest:0,lastYM:ymNum(new Date()),anchorYM:ymNum(new Date()),startDate:today()};const tx=addDebtOpenMove(rec);if(tx)rec.openTxnId=tx.id;S.debts.push(rec);}
   saveS();closeM('m-debt');renderDebts();renderHome();
 }
-function deleteDebt(id){if(!confirm(t('deltxnq')))return;S.debts=(S.debts||[]).filter(x=>String(x.id)!==String(id));S.txns=(S.txns||[]).filter(tx=>!(tx.type==='debt_move'&&String(tx.debtId)===String(id)));saveS();renderDebts();renderHome();refreshWallet();}
+function deleteDebt(id){
+  if((S.txns||[]).some(tx=>String(tx.debtId)===String(id))||(typeof _undoDelTxn!=='undefined'&&_undoDelTxn&&String(_undoDelTxn.tx.debtId)===String(id))){showToast(tt('這項債務有借入／還款記錄，不能直接刪除；可暫停自動還款。','This debt has borrowing or repayment records and cannot be deleted directly. You can pause automatic repayments.'),1);return;}
+  if(!confirm(t('deltxnq')))return;
+  const old=S.debts;S.debts=(S.debts||[]).filter(x=>String(x.id)!==String(id));
+  if(saveS()===false){S.debts=old;return;}renderDebts();renderHome();refreshWallet();
+}
 function toggleDebtPause(id){const d=(S.debts||[]).find(x=>String(x.id)===String(id));if(d)d.paused=!d.paused;saveS();renderDebts();}
 // ─── AUTOPAY CHECK ─────────────────────────────────────────
 function recurringRunKey(kind,id,y,m){return kind+':'+encodeURIComponent(String(id))+':'+y+'-'+String(m+1).padStart(2,'0');}
@@ -3263,6 +3273,7 @@ function openIncomeReceivableModal(){
 function openTxnModal(){S._editTxnId=null;S.amtStr='0';S.amtExpr='';updateAmtDisplay();document.getElementById('t-note').value='';document.getElementById('t-cur').value=S.dispCur||'HKD';document.getElementById('t-date').value=today();document.getElementById('t-person').value='';document.getElementById('oneoff-toggle').classList.remove('on');document.getElementById('recur-toggle').classList.remove('on');document.getElementById('recur-day-wrap').style.display='none';document.getElementById('inline-newcat').style.display='none';document.getElementById('inline-newacct').style.display='none';setTT('expense');renderCatChips();renderAcctChips();applyI18n();document.getElementById('m-txn').classList.add('open');}
 function editTxn(id){
   const tx=S.txns.find(x=>String(x.id)===String(id));if(!tx)return;
+  if(tx.debtId!=null){showToast(tt('這是連動債務記錄，不能當普通收支修改。請在長期負債設定管理；新還款可用刪除／撤銷一起還原。','Linked debt entries cannot be edited as ordinary transactions. Manage the debt in settings; eligible new repayments support linked deletion and undo.'),1);return;}
   S._editTxnId=tx.id;
   S.amtStr=String(tx.amount);S.amtExpr='';updateAmtDisplay();
   document.getElementById('t-note').value=tx.note||'';
@@ -3507,14 +3518,31 @@ function txnRow(tx){
   const cat=getCat(tx.catId);
   return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${escapeHtml(cat.icon)}</div><div class="rinfo"><div class="rtitle">${note}${tx.oneOff?`<span class="badge ba">${t('oneoff')}</span>`:''}${tx.autoPayId?'<span class="badge bb">auto</span>':''}${tx.isGroupBill?`<span class="badge bp">${t('group')}</span>`:''}${exBadge}</div><div class="rsub">${date} · ${cur}${acct?` · ${acct}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${cls}">${sign}${sym}${escapeHtml(tx.amount.toLocaleString())}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
 }
-function toggleTxnExclude(id){const tx=S.txns.find(x=>String(x.id)===String(id));if(tx&&tx.rpAccrual)return;if(tx){tx.excluded=!tx.excluded;syncAutoPayFromTxn(tx);}saveS();refreshAllViews();}
+function toggleTxnExclude(id){const tx=S.txns.find(x=>String(x.id)===String(id));if(tx&&tx.rpAccrual)return;if(tx?.debtId!=null){showToast(tt('連動債務記錄不能單獨排除，否則現金與債務會不一致。','Linked debt entries cannot be excluded separately from the debt.'),1);return;}if(tx){tx.excluded=!tx.excluded;syncAutoPayFromTxn(tx);}saveS();refreshAllViews();}
+function debtRepaymentReversal(tx){
+  const matches=(S.debts||[]).filter(d=>String(d.id)===String(tx.debtId)),e=tx.debtEffect;
+  if(matches.length!==1||tx.type!=='expense'||tx.excluded||e?.version!==1||!e.before||!e.after)return null;
+  const d=matches[0];
+  if(String(e.before.id)!==String(d.id)||String(e.after.id)!==String(d.id)||JSON.stringify(d)!==JSON.stringify(e.after))return null;
+  if((tx.cur||'HKD')!==(d.cur||'HKD')||tx.acctId!==d.acctId||(S.txns||[]).filter(x=>String(x.id)===String(tx.id)).length!==1)return null;
+  if(JSON.stringify({...e.before,balance:e.after.balance,paidTotal:e.after.paidTotal})!==JSON.stringify(e.after))return null;
+  if(![e.before.balance,e.after.balance,e.before.paidTotal,e.after.paidTotal,tx.amount].every(Number.isFinite))return null;
+  const delta=e.before.balance-e.after.balance;
+  if(delta<=0||Math.abs(delta-tx.amount)>.011||Math.abs((e.after.paidTotal-e.before.paidTotal)-delta)>1e-7)return null;
+  return {index:S.debts.indexOf(d),before:e.before,after:e.after};
+}
 // Delete is now instant with a 5s Undo toast — faster than a confirm() popup and just as safe
 let _undoDelTxn=null,_undoDelTimer=null;
 function deleteTxn(id){
   const i=S.txns.findIndex(x=>String(x.id)===String(id));if(i<0)return;
-  _undoDelTxn={tx:S.txns[i],idx:i};
-  S.txns.splice(i,1);
-  saveS();renderHome();refreshWallet();
+  const tx=S.txns[i],effect=tx.debtId!=null?debtRepaymentReversal(tx):null;
+  if(tx.debtId!=null&&!effect){showToast(tt('未有完整還原資料，或債務已再變更；為免現金與債務不一致，沒有刪除。舊記錄須先核對修復。','No complete reversal evidence, or the debt changed later. Nothing was deleted; historical records require a reviewed repair.'),1);return;}
+  const txns=S.txns,debts=S.debts;
+  const pending={tx,idx:i,state:S,key:profileKey(),epoch:window._cloudEpoch||0,effect};
+  S.txns=txns.filter((_,n)=>n!==i);
+  if(effect){S.debts=debts.slice();S.debts[effect.index]=JSON.parse(JSON.stringify(effect.before));}
+  if(saveS()===false){S.txns=txns;S.debts=debts;return;}
+  _undoDelTxn=pending;renderHome();refreshWallet();if(effect)renderDebts();
   showUndoToast();
 }
 function showUndoToast(){
@@ -3527,13 +3555,20 @@ function showUndoToast(){
 }
 function undoDeleteTxn(){
   if(!_undoDelTxn)return;
-  S.txns.splice(Math.min(_undoDelTxn.idx,S.txns.length),0,_undoDelTxn.tx);
+  const u=_undoDelTxn;
+  if(u.state!==S||u.key!==profileKey()||u.epoch!==(window._cloudEpoch||0)||S.txns.some(tx=>String(tx.id)===String(u.tx.id))){showToast(tt('帳本已變更，不能套用這次撤銷。','Ledger changed; this undo cannot be applied.'),1);return;}
+  let di=-1;
+  if(u.effect){di=(S.debts||[]).findIndex(d=>String(d.id)===String(u.tx.debtId));if(di<0||JSON.stringify(S.debts[di])!==JSON.stringify(u.effect.before)){showToast(tt('債務已再變更，未有撤銷；請先核對。','Debt changed after deletion; undo was not applied.'),1);return;}}
+  const txns=S.txns,debts=S.debts;S.txns=txns.slice();S.txns.splice(Math.min(u.idx,S.txns.length),0,u.tx);
+  if(u.effect){S.debts=debts.slice();S.debts[di]=JSON.parse(JSON.stringify(u.effect.after));}
+  if(saveS()===false){S.txns=txns;S.debts=debts;return;}
   _undoDelTxn=null;clearTimeout(_undoDelTimer);
   const el=document.getElementById('undo-toast');if(el)el.classList.remove('show');
-  saveS();renderHome();refreshWallet();
+  renderHome();refreshWallet();if(u.effect)renderDebts();
 }
 
 function saveTxn(){
+  if(S._editTxnId!=null&&S.txns.some(tx=>String(tx.id)===String(S._editTxnId)&&tx.debtId!=null)){showToast(tt('連動債務記錄不能當普通收支儲存。','Linked debt entries cannot be saved as ordinary transactions.'),1);return;}
   if(!finishAmtCalc()){shakeAmt();return;}
   const amt=parseFloat(S.amtStr);if(!amt||amt<=0){shakeAmt();return;}
   const cur=document.getElementById('t-cur').value;
