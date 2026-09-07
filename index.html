@@ -2342,9 +2342,17 @@ function openPhysicalAssetModal(editId){
   fillAcctSelect('fa-acct',a?a.acctId:(S.selAcct||'cash'));renderPhysicalUiText();renderPhysicalHistoryPreview(a);document.getElementById('physical-modal-title').textContent=a?tt('更新固定資產市值','Update physical asset value'):tt('新增固定資產','Add physical fixed asset');const ai=document.getElementById('fa-ai-result');if(ai){ai.style.display='none';ai.textContent='';}syncPhysicalAssetForm();document.getElementById('m-physical').classList.add('open');
 }
 function savePhysicalAsset(){
-  const editId=document.getElementById('physical-edit-id').value,old=editId?(S.physicalAssets||[]).find(x=>String(x.id)===String(editId)):null,name=(document.getElementById('fa-name').value||'').trim(),inputCost=Math.max(0,Number(document.getElementById('fa-cost').value)||0),inputMarket=Math.max(0,Number(document.getElementById('fa-market').value)||0),cur=document.getElementById('fa-cur').value||'HKD',acctId=document.getElementById('fa-acct').value,fundingMode=document.getElementById('fa-funding-mode').value==='existing'?'existing':'purchase',deducts=fundingMode==='purchase';
+  const editId=document.getElementById('physical-edit-id').value,old=editId?(S.physicalAssets||[]).find(x=>String(x.id)===String(editId)):null,name=(document.getElementById('fa-name').value||'').trim(),inputCost=Number(document.getElementById('fa-cost').value),inputMarket=Number(document.getElementById('fa-market').value),cur=document.getElementById('fa-cur').value||'HKD',acctId=document.getElementById('fa-acct').value,fundingMode=document.getElementById('fa-funding-mode').value==='existing'?'existing':'purchase',deducts=fundingMode==='purchase';
+  if((editId&&!old)||![inputCost,inputMarket].every(n=>Number.isFinite(n)&&n>=0)){showToast(tt('金額或原始記錄無效，請先核對。','Invalid amount or original record; review it first.'),1);return;}
   if(!name||!acctId||(deducts&&!inputCost)||(!deducts&&!inputCost&&!inputMarket)){showToast(deducts?tt('請填寫名稱、成本及資金來源','Enter name, cost and funding account'):tt('請填寫名稱、目前市值及所屬戶口','Enter name, current market value and linked account'),1);return;}
-  const market=inputMarket||inputCost,openingBasis=!deducts&&!inputCost,cost=openingBasis?((old&&old.costBasis==='opening')?(Number(old.cost)||market):market):inputCost,costHKD=Number(toHKD(cost,cur).toFixed(2));if(deducts){const avail=acctAvailableCash(acctId,editId);if(costHKD>avail+0.001){showToast(t('insufficient'),1);return;}}
+  const market=inputMarket||inputCost,openingBasis=!deducts&&!inputCost;
+  if(openingBasis&&old&&old.costBasis==='opening'&&(!Number.isFinite(old.cost)||old.cost<=0)){showToast(tt('缺少歷史成本，請先核對原始記錄。','Historical cost is missing; review the original record first.'),1);return;}
+  const cost=openingBasis?((old&&old.costBasis==='opening')?old.cost:market):inputCost;
+  const sameCost=old&&cur===(old.cur||'HKD')&&cost===Number(old.cost)&&openingBasis===(old.costBasis==='opening');
+  if(sameCost&&(!Number.isFinite(old.costHKD)||old.costHKD<0)){showToast(tt('缺少歷史成本，請先核對原始記錄。','Historical cost is missing; review the original record first.'),1);return;}
+  const costHKD=sameCost?old.costHKD:Number(toHKD(cost,cur).toFixed(2));
+  if(!Number.isFinite(costHKD)||costHKD<0){showToast(tt('換算金額無效，請先核對匯率。','Invalid converted amount; check the exchange rate first.'),1);return;}
+  if(deducts){const avail=acctAvailableCash(acctId,editId);if(costHKD>avail+0.001){showToast(t('insufficient'),1);return;}}
   const valuationDate=document.getElementById('fa-valuedate').value||today(),purchaseDate=document.getElementById('fa-date').value||(deducts?today():''),ac=getAcct(acctId),rec={name,category:document.getElementById('fa-category').value||'other',fundingMode,costBasis:openingBasis?'opening':'purchase',purchaseDate,cost,costHKD,cur,acctId,acctLabel:ac?acctLabel(ac):'',depreciation:'none',lifeYears:0,residualValue:0,marketValue:market,liquidationValue:0,liquidationDiscountPct:0,valueBasis:'market',valuationDate,metalType:document.getElementById('fa-metal').value||'gold',weight:Math.max(0,Number(document.getElementById('fa-weight').value)||0),weightUnit:document.getElementById('fa-unit').value||'g',purityPct:Math.max(0,Math.min(100,Number(document.getElementById('fa-purity').value)||0)),spotPricePerGram:Math.max(0,Number(document.getElementById('fa-spot').value)||0),priceTracking:document.getElementById('fa-track').value||'manual',apiSymbol:(document.getElementById('fa-symbol').value||'').trim(),quoteCurrency:document.getElementById('fa-quote-cur').value||'USD',quoteUnit:document.getElementById('fa-quote-unit').value||'oz',notes:document.getElementById('fa-notes').value||''};
   S.physicalAssets=S.physicalAssets||[];if(editId){const i=S.physicalAssets.findIndex(x=>String(x.id)===String(editId));if(i>=0){const a=S.physicalAssets[i];ensurePhysicalAssetHistory(a);S.physicalAssets[i]={...a,...rec,valuationHistory:a.valuationHistory};recordPhysicalValuation(S.physicalAssets[i],market,valuationDate,'manual');}}else{const a={id:'fa_'+Date.now(),...rec,valuationHistory:[]};if(deducts){recordPhysicalValuation(a,cost,rec.purchaseDate,'purchase');if(Math.abs(market-cost)>0.0001||valuationDate!==rec.purchaseDate)recordPhysicalValuation(a,market,valuationDate,'manual');}else recordPhysicalValuation(a,market,valuationDate,'opening');S.physicalAssets.unshift(a);}
   markPhysicalReviewed();saveS();closeM('m-physical');renderGamble();renderHome();refreshWallet();
@@ -4559,18 +4567,25 @@ function openPEModal(editId,defaultSecId){
 function savePE(){
   const name=document.getElementById('pe-name').value.trim();
   const pct=parseFloat(document.getElementById('pe-pct').value);
-  const invested=parseFloat(document.getElementById('pe-invested').value)||0;
-  const valuation=parseFloat(document.getElementById('pe-valuation').value);
+  const invested=Number(document.getElementById('pe-invested').value);
+  const valuationInput=document.getElementById('pe-valuation').value;
+  const valuation=valuationInput.trim()===''?invested:Number(valuationInput);
   const cur=document.getElementById('pe-cur').value;
   const notes=document.getElementById('pe-notes').value;
   const acctId=document.getElementById('pe-acct').value;
   if(!name)return;
   if(!acctId){showToast(t('noinvestacct'),1);return;}
   const acct=getAcct(acctId);
-  const val=isNaN(valuation)?invested:valuation;
-  const costHKD=parseFloat(toHKD(invested,cur).toFixed(2));
-  const valueHKD=parseFloat(toHKD(val,cur).toFixed(2));
+  const val=valuation;
   const editId=document.getElementById('pe-edit-id').value;
+  const old=editId?(S.portfolio||[]).find(p=>String(p.id)===String(editId)):null;
+  if((editId&&!old)||![invested,val].every(n=>Number.isFinite(n)&&n>=0)){showToast(tt('金額或原始記錄無效，請先核對。','Invalid amount or original record; review it first.'),1);return;}
+  const sameCost=old&&cur===old.cur&&invested===Number(old.invested);
+  const sameSettlement=old&&old.exitPrice!=null&&cur===old.cur&&val===Number(old.valuation);
+  if((sameCost&&(!Number.isFinite(old.costHKD)||old.costHKD<0))||(sameSettlement&&(!Number.isFinite(old.valueHKD)||old.valueHKD<0))){showToast(tt('缺少歷史成本或結算金額，請先核對原始記錄。','Historical cost or settlement is missing; review the original record first.'),1);return;}
+  const costHKD=sameCost?old.costHKD:parseFloat(toHKD(invested,cur).toFixed(2));
+  const valueHKD=sameSettlement?old.valueHKD:parseFloat(toHKD(val,cur).toFixed(2));
+  if(![costHKD,valueHKD].every(n=>Number.isFinite(n)&&n>=0)){showToast(tt('換算金額無效，請先核對匯率。','Invalid converted amount; check the exchange rate first.'),1);return;}
   const secId=document.getElementById('pe-secid').value||'';
   const divPct=parseFloat(document.getElementById('pe-div').value)||0;
   const divFreq=document.getElementById('pe-divfreq').value||'none';
