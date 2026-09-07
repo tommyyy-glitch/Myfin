@@ -2044,7 +2044,7 @@ function resetProfileRuntime(){
   Object.assign(FX,DEFAULT_FX);
   if(typeof _cloudKey!=='undefined'){_cloudKey=null;_cloudKeyFor='';}
 }
-function reloadActiveProfile(){resetProfileRuntime();S=createAppState();loadS();applyTheme();applyPrivacy();applyI18n();renderHome();updateFab();if(typeof refreshWallet==='function')refreshWallet();if(S.activeTab==='gamble')renderGamble();if(S.activeTab==='settings'&&typeof renderSettings==='function')renderSettings();renderProfileChip();}
+function reloadActiveProfile(){resetProfileRuntime();S=createAppState();loadS();applyTheme();applyPrivacy();applyI18n();renderHome();updateFab();if(typeof refreshWallet==='function')refreshWallet();if(S.activeTab==='gamble')renderGamble();if(S.activeTab==='settings'&&typeof renderSettings==='function')renderSettings();renderProfileChip();if(typeof priceRefreshLabel==='function')priceRefreshLabel();}
 function switchProfile(id){if(id===activeProfileId()){closeM('m-profiles');return;}saveS({skipCloud:true});const m=ensureProfiles();m.active=id;saveProfilesMeta(m);reloadActiveProfile();closeM('m-profiles');}
 function addProfile(){const nmEl=document.getElementById('newprof-name'),emEl=document.getElementById('newprof-emoji');const nm=((nmEl&&nmEl.value)||'').trim()||'新帳戶';const em=((emEl&&emEl.value)||'').trim()||'👤';saveS({skipCloud:true});const id='p_'+Date.now();const m=ensureProfiles();m.list.push({id,name:nm,emoji:em});m.active=id;saveProfilesMeta(m);reloadActiveProfile();renderProfilesModal();}
 function deleteProfile(id){if(id==='default')return;const m=ensureProfiles();if(m.list.length<=1)return;if(!confirm('刪除呢個帳戶同佢所有資料？此動作無法復原。'))return;localStorage.removeItem(profileKey(id));m.list=m.list.filter(p=>p.id!==id);if(m.active===id){m.active=m.list[0].id;saveProfilesMeta(m);reloadActiveProfile();}else{saveProfilesMeta(m);}renderProfilesModal();}
@@ -2292,7 +2292,25 @@ async function fetchCoinGeckoPrices(ids){
   },{allowKeyless:true});
 }
 async function fetchMetalPriceIntoForm(){const mode=document.getElementById('fa-track').value||'manual',status=document.getElementById('fa-price-status');if(mode==='manual')return;const metal=document.getElementById('fa-metal').value||'gold',symbol=(mode==='td_spot'?defaultMetalApiSymbol(metal):document.getElementById('fa-symbol').value).trim();if(!symbol){showToast(tt('請輸入 API 代碼','Enter an API symbol'),1);return;}status.textContent=tt('更新中…','Updating…');try{const px=await fetchTwelveDataPrice(symbol,'physical'),cur=document.getElementById('fa-cur').value||'HKD',quoteCur=document.getElementById('fa-quote-cur').value||'USD',quoteUnit=document.getElementById('fa-quote-unit').value||'oz',perGram=metalQuoteToAssetPerGram(px,quoteCur,quoteUnit,cur);document.getElementById('fa-spot').value=Number(perGram.toFixed(cur==='JPY'?2:4));document.getElementById('fa-valuedate').value=today();document.getElementById('fa-symbol').value=symbol;status.textContent=tt('已更新：','Updated: ')+symbol+' '+px.toLocaleString()+' '+quoteCur+'/'+(quoteUnit==='oz'?'oz t':'g')+' → '+perGram.toFixed(4)+' '+cur+'/g';}catch(e){status.textContent=tt('更新失敗：','Update failed: ')+(e.message||e);}}
-async function refreshTrackedMetalPrices(){const rows=(S.physicalAssets||[]).filter(a=>!a.soldAt&&a.category==='metal'&&a.priceTracking&&a.priceTracking!=='manual');if(!rows.length)return true;if(!hasQuoteKey('physical'))return false;let ok=true;for(const a of rows){const symbol=(a.priceTracking==='td_spot'?defaultMetalApiSymbol(a.metalType):a.apiSymbol||'').trim();if(!symbol){ok=false;continue;}try{const px=await fetchTwelveDataPrice(symbol,'physical');a.spotPricePerGram=Number(metalQuoteToAssetPerGram(px,a.quoteCurrency||'USD',a.quoteUnit||'oz',a.cur||'HKD').toFixed(a.cur==='JPY'?2:4));a.apiSymbol=symbol;a.marketQuote=px;a.marketQuoteUpdatedAt=Date.now();a.marketSource='Twelve Data';recordPhysicalValuation(a,physicalMetalValueRaw(a),today(),'Twelve Data');}catch(e){a.marketLastError=String(e.message||e);ok=false;}}return ok;}
+async function refreshTrackedMetalPrices(result,current){
+  result=result||{total:0,ok:0};current=current||(()=>true);
+  const rows=(S.physicalAssets||[]).filter(a=>!a.soldAt&&a.category==='metal'&&a.priceTracking&&a.priceTracking!=='manual');
+  result.total=rows.length;if(!rows.length)return true;if(!hasQuoteKey('physical'))return false;
+  for(const a of rows){
+    if(!current())return false;
+    const symbol=(a.priceTracking==='td_spot'?defaultMetalApiSymbol(a.metalType):a.apiSymbol||'').trim();if(!symbol)continue;
+    try{
+      const px=await fetchTwelveDataPrice(symbol,'physical');
+      if(!current())return false;
+      if(!S.physicalAssets.includes(a)||a.soldAt||!Number.isFinite(px)||px<=0)continue;
+      const perGram=metalQuoteToAssetPerGram(px,a.quoteCurrency||'USD',a.quoteUnit||'oz',a.cur||'HKD');
+      if(!Number.isFinite(perGram)||perGram<=0)continue;
+      a.spotPricePerGram=Number(perGram.toFixed(a.cur==='JPY'?2:4));a.apiSymbol=symbol;a.marketQuote=px;a.marketQuoteUpdatedAt=Date.now();a.marketSource='Twelve Data';
+      delete a.marketLastError;recordPhysicalValuation(a,physicalMetalValueRaw(a),today(),'Twelve Data');result.ok++;
+    }catch(e){if(!current())return false;a.marketLastError=String(e.message||e);}
+  }
+  return result.ok===result.total;
+}
 function renderPhysicalUiText(){
   const texts={
     'physical-modal-title':['固定資產','Physical fixed asset'],'fa-name-label':['名稱','Name'],'fa-category-label':['類別','Category'],'fa-funding-mode-label':['加入方式','How to add'],'fa-date-label':['購置日期','Acquisition date'],'fa-cost-label':['購置成本','Purchase cost'],'fa-cur-label':['貨幣','Currency'],'fa-acct-label':['資金來源','Funding account'],'fa-dep-title':['市值記錄','Market-value history'],'fa-market-label':['目前市值','Current market value'],'fa-valuedate-label':['估值日期','Valuation date'],'fa-metal-title':['貴金屬資料','Precious-metal details'],'fa-metal-label':['金屬','Metal'],'fa-weight-label':['重量','Weight'],'fa-unit-label':['單位','Unit'],'fa-purity-label':['純度 %','Purity %'],'fa-spot-label':['參考價／克','Reference price / gram'],'fa-track-label':['市場追蹤','Market tracking'],'fa-symbol-label':['API 代碼','API symbol'],'fa-quote-label':['報價規格','Quote format'],'fa-fetch-btn':['↻ 立即取得市場價','↻ Fetch market price now'],'fa-notes-label':['備註','Notes'],'fa-save-btn':['儲存','Save'],'fa-ai-btn':['✨ AI 估值研究（不自動改數值）','✨ AI valuation research (never auto-fills)']
@@ -5787,73 +5805,101 @@ function recordPriceSnapshot(at,closing=false){
   else S.priceHist.push(snap);
   // Do not discard old P&L days merely because prices were refreshed frequently.
 }
+function priceRefreshLabel(){
+  const q=S.fx?.quoteRefresh;if(!q){setPriceStatus('',tt('報價尚未驗證','Quotes not yet verified'));return;}
+  const names={fx:tt('匯率','FX'),crypto:tt('加密貨幣','Crypto'),stock:tt('股票','Stocks'),metal:tt('金屬','Metals')};
+  const failed=Object.entries(q.sources||{}).filter(([,v])=>v.ok<v.total).map(([k,v])=>names[k]+' '+v.ok+'/'+v.total);
+  const success=Object.values(q.sources||{}).reduce((n,v)=>n+v.ok,0);
+  const when=new Date(q.attemptedAt).toLocaleString([], {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  setPriceStatus(failed.length||q.saveFailed?'err':'ok',(q.saveFailed?tt('更新未能儲存','Update could not be saved'):failed.length?(success?tt('部分更新','Partial update'):tt('更新失敗','Update failed')):t('pricesupdated'))+' '+when+(failed.length?' · '+tt('未完成：','Incomplete: ')+failed.join(' · '):'')+(failed.length?' · '+tt('未更新項目保留舊報價','Unchanged items retain cached prices'):''));
+}
 async function refreshPrices(silent){
   if(_refreshing)return; _refreshing=true;
   document.querySelectorAll('.refresh-prices-btn').forEach(b=>b.classList.add('spin'));
   if(!silent)setPriceStatus('','…');
-  let okFx=false,okCg=false,okStk=false,okMetal=false;
+  const state=S,key=profileKey(),epoch=window._cloudEpoch||0;
+  const current=()=>S===state&&profileKey()===key&&(window._cloudEpoch||0)===epoch;
+  const valid=n=>typeof n==='number'&&Number.isFinite(n)&&n>0;
+  const sources={fx:{total:1,ok:0},crypto:{total:0,ok:0},stock:{total:0,ok:0},metal:{total:0,ok:0}};
+  const attemptedAt=Date.now();
+  try{
   // 1) FX via Frankfurter — base HKD, so invert (rate = foreign per HKD → HKD per foreign)
   try{
     const r=await fetch('https://api.frankfurter.dev/v1/latest?base=HKD&symbols=USD,CNY,JPY');
     if(r.ok){const j=await r.json();
-      if(j.rates&&j.rates.USD)FX.USD=1/j.rates.USD;
-      if(j.rates&&j.rates.CNY)FX.RMB=1/j.rates.CNY;
-      if(j.rates&&j.rates.JPY)FX.JPY=1/j.rates.JPY;
-      okFx=true;
+      if(!current())return;
+      if(['USD','CNY','JPY'].every(c=>valid(j.rates?.[c])&&valid(1/j.rates[c]))){
+        Object.assign(FX,{USD:1/j.rates.USD,RMB:1/j.rates.CNY,JPY:1/j.rates.JPY});
+        sources.fx.ok=1;
+        S.fx={...S.fx,USD:FX.USD,RMB:FX.RMB,JPY:FX.JPY,updated:Date.now()};
+      }
     }
   }catch(e){}
+  if(!current())return;
   // 2) Crypto via CoinGecko — only built-in crypto positions (custom sections are manual)
   const cryptos=(S.portfolio||[]).filter(p=>p.type==='crypto'&&!p.exitPrice&&!p.secId);
+  sources.crypto.total=cryptos.length;
   if(cryptos.length){
     const ids=[...new Set(cryptos.map(p=>cgId(p.name)).filter(Boolean))];
     try{
       if(ids.length){const j=await fetchCoinGeckoPrices(ids);
+        if(!current())return;
         cryptos.forEach(p=>{
+          if(!S.portfolio.includes(p)||p.exitPrice)return;
           const d=j[cgId(p.name)];if(!d)return;
           const cur=(p.cur||'HKD').toLowerCase();
           let px=d[cur];
-          if(px==null&&d.hkd!=null){px=d.hkd;p.cur='HKD';} // fall back to HKD if the coin lacks that currency
-          if(px!=null){
+          // Preserve the position's currency and cost basis when only HKD is returned.
+          if(!valid(px)&&valid(d.hkd)&&valid(FX[p.cur||'HKD']))px=d.hkd/FX[p.cur||'HKD'];
+          if(valid(px)){
             p.currentPrice=px;
             p.valueHKD=parseFloat(toHKD(px*(p.qty||0),p.cur).toFixed(2));
+            sources.crypto.ok++;
           }
         });
-        okCg=true;
-      }else okCg=true;
+      }
     }catch(e){}
-  } else { okCg=true; }
+  }
+  if(!current())return;
   // 3) Stocks via their own rotating Twelve Data key pool (custom sections are manual)
   const stocks=(S.portfolio||[]).filter(p=>p.type==='stock'&&!p.exitPrice&&!p.secId);
+  sources.stock.total=stocks.length;
   if(hasQuoteKey('stock')&&stocks.length){
-    let allOk=true;
     for(const p of stocks){
       const sym=(p.apiSymbol||p.name||'').trim();
       if(!sym){continue;}
       try{
         const px=await fetchTwelveDataPrice(sym,'stock');
+        if(!current())return;
+        if(!valid(px)||!S.portfolio.includes(p)||p.exitPrice)continue;
         p.currentPrice=px;
         p.valueHKD=parseFloat(toHKD(px*(p.qty||0),p.cur).toFixed(2));
-      }catch(e){allOk=false;}
+        sources.stock.ok++;
+      }catch(e){}
+      if(!current())return;
     }
-    okStk=allOk;
-  } else { okStk=true; }
+  }
   // 4) Optional precious-metal tracking via Twelve Data commodity/spot symbols.
   // Quotes default to USD per troy ounce and are normalized to the asset currency per gram.
-  okMetal=await refreshTrackedMetalPrices();
-  S.fx={USD:FX.USD,RMB:FX.RMB,JPY:FX.JPY,updated:Date.now()}; // remember last-known rates for offline/reload
-  recordPriceSnapshot();
-  saveS();
-  document.querySelectorAll('.refresh-prices-btn').forEach(b=>b.classList.remove('spin'));
+  await refreshTrackedMetalPrices(sources.metal,current);
+  if(!current())return;
+  const complete=Object.values(sources).every(v=>v.ok===v.total);
+  S.fx={...S.fx,quoteRefresh:{attemptedAt,sources,complete,lastSuccessAt:complete?Date.now():(S.fx?.quoteRefresh?.lastSuccessAt||0)}};
+  if(Object.values(sources).some(v=>v.ok>0))recordPriceSnapshot();
+  if(saveS()===false)S.fx.quoteRefresh.saveFailed=true;
   refreshAllViews();if(document.getElementById('m-fx')&&document.getElementById('m-fx').classList.contains('open'))renderFxRates();
-  const now=new Date();const hh=String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
-  if(okFx||okCg||okStk||okMetal)setPriceStatus('ok',t('pricesupdated')+' '+hh+(okMetal?'':' · '+tt('金屬報價未更新','metal quote not updated')));
-  else setPriceStatus('err',t('pricesfail'));
-  _refreshing=false;
+  priceRefreshLabel();
+  }finally{
+    document.querySelectorAll('.refresh-prices-btn').forEach(b=>b.classList.remove('spin'));
+    _refreshing=false;
+  }
 }
 // Auto-update at most once per day; manual button works anytime.
 function maybeAutoRefresh(){
-  const last=(S.fx&&S.fx.updated)||0;
-  if(Date.now()-last > 24*60*60*1000) refreshPrices(true);
+  const q=S.fx?.quoteRefresh;
+  const last=q?.attemptedAt||(S.fx&&S.fx.updated)||0;
+  const interval=q&&(!q.complete||q.saveFailed)?5*60*1000:24*60*60*1000;
+  if(Date.now()-last > interval) refreshPrices(true);
 }
 
 // ─── AI ASSISTANT (multi-provider) ───────────────────────────
@@ -6187,7 +6233,8 @@ function installMotionFeedback(){
 }
 installMotionFeedback();installNavSwipe();installPageSwipe();loadS();applyTheme();applyPrivacy();applyI18n();checkAutopay();checkAutoincome();checkDebts();renderHome();updateFab();renderProfileChip();notifySchedule('open');updateNavIsland(document.querySelector('.bottom-nav .tab-btn.active'));
 // Show the last-known update time if we have one, then auto-refresh only if a day has passed.
-if(S.fx&&S.fx.updated){const d=new Date(S.fx.updated);const sameDay=d.toDateString()===new Date().toDateString();setPriceStatus('ok',t('pricesupdated')+' '+(sameDay?'':(d.getMonth()+1)+'/'+d.getDate()+' ')+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'));}
+if(S.fx?.quoteRefresh)priceRefreshLabel();
+else if(S.fx&&S.fx.updated){setPriceStatus('',tt('已載入上次儲存的匯率；報價尚未驗證','Saved FX loaded; quotes not yet verified'));}
 maybeAutoRefresh();
 setInterval(maybeAutoRefresh,60*60*1000); // re-check hourly so a long-running session still updates daily
 // ─── CLOUD SYNC · Supabase encrypted blob (E2E: AES-GCM, PBKDF2 key from user passphrase) ───
