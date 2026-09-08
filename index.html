@@ -3936,7 +3936,10 @@ function validBudgetDate(s){
 function budgetCfg(){
   S.budget=S.budget||{amount:0,cur:'HKD',mode:'cycle',startDay:1,cutoffDay:31,customStart:'',customEnd:'',excludedCats:[]};
   if(!Array.isArray(S.budget.excludedCats))S.budget.excludedCats=[];
-  const excludedCats=[...new Set(S.budget.excludedCats.map(String).filter(Boolean))];
+  // Older Chinese custom categories can have an explicit empty ID. Preserve
+  // that key only when it identifies exactly one category; never guess a repair.
+  const legacyEmpty=(S.cats||[]).filter(c=>c.id==='').length===1;
+  const excludedCats=[...new Set(S.budget.excludedCats.filter(id=>id!=null).map(String).filter(id=>id!==''||legacyEmpty))];
   S.budget.excludedCats=excludedCats;
   const amount=Math.max(0,parseFloat(S.budget.amount||0)||0);
   const cur=['HKD','USD','RMB','JPY'].includes(S.budget.cur)?S.budget.cur:'HKD';
@@ -3983,7 +3986,7 @@ function budgetInfo(base){
     const d=parseDateOnly(tx.date);return d>=win.start&&d<=win.end&&d<=now;
   });
   const allSpent=expenseRows.reduce((a,tx)=>a+(tx.amtHKD||0),0);
-  const spent=expenseRows.filter(tx=>!cfg.excludedCats.includes(String(tx.catId||'other'))).reduce((a,tx)=>a+(tx.amtHKD||0),0);
+  const spent=expenseRows.filter(tx=>!cfg.excludedCats.includes(String(tx.catId??'other'))).reduce((a,tx)=>a+(tx.amtHKD||0),0);
   const excludedSpent=allSpent-spent;
   const remain=targetHKD-spent;
   const phase=now<win.start?'upcoming':now>win.end?'ended':'active';
@@ -4017,10 +4020,13 @@ function renderBudgetCategoryFilter(){
   el.innerHTML=cats.map(c=>{const off=excluded.has(String(c.id));return `<div class="tax-cat-row"><div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="font-size:20px">${escapeHtml(c.icon||'📌')}</span><span style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(catLabel(c))}</span></div><button type="button" aria-pressed="${off}" onclick="toggleBudgetCat(${inlineJsString(c.id)})" style="padding:6px 10px;border:1.5px solid ${off?'var(--a)':'var(--bdr2)'};border-radius:20px;background:${off?'var(--a2)':'transparent'};color:${off?'var(--a3)':'var(--ink3)'};font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">${off?tt('不扣預算','Excluded'):tt('扣預算','Counts')}</button></div>`;}).join('');
 }
 function toggleBudgetCat(id){
+  if(id===''&&(S.cats||[]).filter(c=>c.id==='').length!==1){showToast(tt('舊分類編號無法唯一識別，請先核對分類；沒有更改預算。','Legacy category ID is ambiguous. Review categories first; budget unchanged.'),1);return;}
+  const before=S.budget;
   const cfg=budgetCfg(),key=String(id),i=cfg.excludedCats.indexOf(key);
-  i>=0?cfg.excludedCats.splice(i,1):cfg.excludedCats.push(key);
-  S.budget={...S.budget,excludedCats:cfg.excludedCats};
-  saveS();renderBudgetSettings();renderHome();
+  const excludedCats=i>=0?cfg.excludedCats.filter(cat=>cat!==key):[...cfg.excludedCats,key];
+  S.budget={...S.budget,excludedCats};
+  if(saveS()===false)S.budget=before;
+  renderBudgetSettings();renderHome();
 }
 function renderBudgetPeriodMode(){
   const cfg=budgetCfg(),cycle=document.getElementById('budget-mode-cycle'),custom=document.getElementById('budget-mode-custom');

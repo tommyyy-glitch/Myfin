@@ -135,3 +135,44 @@ assert.match(html,/id="budget-cat-list"/);
 assert.match(html,/aria-pressed="\$\{off\}"/);
 
 console.log('Budget cycle, custom date range, and category exclusion tests passed.');
+
+// Legacy Chinese category IDs were generated as ''. Keep exact references,
+// rather than treating these transactions as missing/other or migrating them.
+vm.runInContext(`
+  S.cats=[{id:'',label:'生產力'},{id:'other',label:'其他'}];
+  S.budget={amount:1000,mode:'custom',customStart:'2026-07-01',customEnd:'2026-07-31',excludedCats:[]};
+  S.txns=[
+    {type:'expense',catId:'',amtHKD:120,date:'2026-07-10'},
+    {type:'expense',catId:'other',amtHKD:30,date:'2026-07-10'},
+    {type:'expense',amtHKD:40,date:'2026-07-10'},
+    {type:'expense',catId:null,amtHKD:50,date:'2026-07-10'}
+  ];
+  globalThis.originalRows=JSON.stringify(S.txns);
+  toggleBudgetCat('');
+  globalThis.legacy=budgetInfo(new Date(2026,6,20));
+`,context);
+assert.deepEqual([...context.legacy.cfg.excludedCats],['']);
+assert.equal(context.legacy.excludedSpent,120);
+assert.equal(context.legacy.spent,120,'missing and other categories still count');
+vm.runInContext(`
+  S.budget=JSON.parse(JSON.stringify(S.budget));
+  globalThis.reloaded=budgetInfo(new Date(2026,6,20));
+  toggleBudgetCat('');
+  globalThis.restored=budgetInfo(new Date(2026,6,20));
+  globalThis.rowsUnchanged=JSON.stringify(S.txns)===originalRows;
+  S.cats.push({id:'',label:'Another legacy category'});
+  toggleBudgetCat('');
+  globalThis.ambiguous=budgetCfg().excludedCats;
+`,context);
+assert.equal(context.reloaded.excludedSpent,120);
+assert.equal(context.restored.spent,240);
+assert.equal(context.rowsUnchanged,true);
+assert.deepEqual([...context.ambiguous],[],'ambiguous IDs must not exclude multiple categories');
+vm.runInContext(`
+  S.cats.pop();
+  saveS=()=>false;
+  toggleBudgetCat('');
+  globalThis.failedSave=budgetCfg().excludedCats;
+`,context);
+assert.deepEqual([...context.failedSave],[],'failed persistence must roll back the toggle');
+console.log('Legacy budget category selection, exact matching, reload, ambiguity and save-failure tests passed.');
