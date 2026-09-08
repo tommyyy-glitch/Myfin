@@ -660,6 +660,14 @@ img,canvas,svg{max-width:100%;}
       </div>
     </div>
 
+    <div class="dash-section" id="home-priority" style="padding-bottom:0">
+      <div class="metric-row" style="flex-wrap:wrap">
+        <div class="metric-card" style="min-width:130px;flex:1"><div class="mlabel" id="home-quick-label"></div><div class="mval" id="home-quick-value" style="overflow-wrap:anywhere"></div></div>
+        <button class="metric-card" type="button" onclick="goTabIndex(1);setWalletPane('ar')" style="min-width:130px;flex:1;text-align:left;color:var(--ink);cursor:pointer"><div class="mlabel" id="home-rp-label"></div><div id="home-rp-value" style="font-size:13px;line-height:1.8;overflow-wrap:anywhere"></div></button>
+      </div>
+      <p class="msub" id="home-quick-hint" style="line-height:1.6"></p>
+      <div id="home-attention" class="glass-card" hidden style="padding:12px;margin-top:10px"></div>
+    </div>
     <!-- PERIOD SELECTOR -->
     <div class="period-bar" id="period-bar">
       <button class="period-btn active" onclick="setPeriod('week',this)" data-i="week"></button>
@@ -696,6 +704,12 @@ img,canvas,svg{max-width:100%;}
       </div>
       <div class="glass-card budget-card" id="h-budget-card"></div>
 
+      <div class="slbl" id="home-recent-label"></div>
+      <p class="msub" id="home-recent-hint" style="line-height:1.6"></p>
+      <div class="glass-card" id="h-recent"></div>
+      <div id="ap-banner-zone" style="margin-top:12px"></div>
+      <div id="resolver-zone"></div>
+
       <!-- SPEND BY CATEGORY (uses the shared period filter above) -->
       <div class="slbl" data-i="spendbycat"></div>
       <div class="glass-card">
@@ -727,11 +741,6 @@ img,canvas,svg{max-width:100%;}
         </div>
       </div>
 
-      <!-- RECENT -->
-      <div class="slbl" data-i="recent"></div>
-      <div class="glass-card" id="h-recent"></div>
-      <div id="ap-banner-zone" style="margin-top:12px"></div>
-      <div id="resolver-zone"></div>
     </div>
   </div>
 </div>
@@ -4209,6 +4218,32 @@ function toggleHomeLongDebt(){
   if(S.activeTab==='gamble')renderGamble();
   if(S.activeTab==='settings')renderPnlSecMgr();
 }
+function homeAttentionItems(){
+  const items=[],c=S.cloud||{},q=S.fx?.quoteRefresh;
+  if(c.linked&&c.pending&&['conflict','remote-newer','changed-during-download','insert-race','compare-and-swap'].includes(c.lastError))items.push({kind:'cloud',label:tt('同步版本有差異 — 前往安全核對','Sync versions differ — review safely')});
+  if(q&&(q.saveFailed||Object.values(q.sources||{}).some(v=>v.ok<v.total)))items.push({kind:'quotes',label:tt('上次報價更新未完成 — 查看詳情','Last quote update incomplete — view details')});
+  return items;
+}
+function openHomeAttention(kind){
+  if(kind==='quotes'){goTabIndex(2);jumpPnlSection('overview');return;}
+  if(kind!=='cloud')return;
+  goTabIndex(TAB_ORDER.indexOf('settings'));
+  const heading=document.querySelector('[data-i="cloudsync"]');if(heading?.classList.contains('col'))heading.click();
+  if(typeof renderCloudAuth==='function')renderCloudAuth();
+  document.getElementById('cloud-guide')?.scrollIntoView({block:'center'});
+}
+function renderHomePriority(bs){
+  document.getElementById('home-quick-label').textContent=assetLabel('quick');
+  document.getElementById('home-quick-value').textContent=fmt(bs.quickAsset);
+  document.getElementById('home-rp-label').textContent=tt('應收／應付 · 查看','Receivable / payable · View');
+  document.getElementById('home-rp-value').textContent=t('arowed')+' '+fmt(bs.receivable)+' / '+t('payable')+' '+fmt(bs.payable);
+  document.getElementById('home-quick-hint').textContent=tt('沿用資產明細的速動資產口徑，並非全部可即時提款的現金。','Uses the liquid-assets definition in the asset breakdown; not all of it is immediately withdrawable cash.');
+  const end=new Date(),start=new Date(end);start.setDate(start.getDate()-6);
+  document.getElementById('home-recent-label').textContent=tt('最近 7 日記錄','Recent 7 days');
+  document.getElementById('home-recent-hint').textContent=ymd(start)+' → '+ymd(end)+' · '+tt('包括今日，不含未來記錄；不跟隨上方期間篩選。','Includes today, excludes future entries; independent of the period filter above.');
+  const box=document.getElementById('home-attention'),items=homeAttentionItems();box.replaceChildren();box.hidden=!items.length;
+  items.forEach(item=>{const button=document.createElement('button');button.type='button';button.textContent=item.label;button.style.cssText='display:block;width:100%;min-height:44px;text-align:left;padding:8px;border:0;border-radius:8px;background:var(--bg2);color:var(--ink);font:inherit;font-size:13px;margin:4px 0;cursor:pointer';button.onclick=()=>openHomeAttention(item.kind);box.appendChild(button);});
+}
 function renderHome(){
   syncPeriodUI();
   const nwLbl=document.querySelector('.hero-label[data-i="networth"]');
@@ -4220,6 +4255,7 @@ function renderHome(){
   const expAll=periTxns.filter(tx=>tx.type==='expense').reduce((a,tx)=>a+tx.amtHKD,0);
   const cf=incomeCash-expAll;
   const bs=balanceSheetBreakdown();
+  renderHomePriority(bs);
   const fixedOn=!pnlNetExcluded('physical'),fixedRecorded=bs.fixedAssetRecorded,longDebtOn=longDebtCountsInNet();
   // hero accounting board: Net worth = Total assets − Total debt
   document.getElementById('h-nw').textContent=fmt(bs.netWorth);
