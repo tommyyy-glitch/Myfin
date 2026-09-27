@@ -8,7 +8,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1D9E75">
 <!-- Resolve the first paint before blocking CDN assets; never write ledger data here. -->
-<style>html{background:#0F6E56;color-scheme:dark}</style>
+<style>html{background:#0F6E56;color-scheme:dark}
+</style>
 <script id="initial-theme">
 (function(){
   let mode='auto';
@@ -1400,7 +1401,57 @@ body:has(#s-home.active) #global-fab{display:none!important;}
     <div class="set-group" data-i="sg6"></div>
     <div class="slbl" data-i="cloudsync"></div>
     <div class="glass-card cloud-panel" style="padding:15px;margin-bottom:12px">
-      <style>.cloud-panel label{display:block;font-size:13px;color:var(--ink2);margin:12px 0 5px}.cloud-panel input{box-sizing:border-box;width:100%;padding:12px;border:1px solid var(--bdr2);border-radius:12px;background:var(--bg2);color:var(--ink);font:inherit;font-size:16px}.cloud-panel button{min-height:44px;padding:11px 14px;border:1px solid var(--bdr2);border-radius:12px;background:var(--surf2);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}.cloud-panel button:disabled{opacity:.5;cursor:wait}.cloud-panel .cloud-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.cloud-panel .cloud-primary{background:var(--hero-grad);color:white}.cloud-panel [hidden]{display:none!important}.cloud-panel summary{cursor:pointer;min-height:44px;line-height:44px}.cloud-panel input:focus-visible,.cloud-panel button:focus-visible{outline:2px solid var(--g3);outline-offset:2px}</style>
+      <style>.cloud-panel label{display:block;font-size:13px;color:var(--ink2);margin:12px 0 5px}.cloud-panel input{box-sizing:border-box;width:100%;padding:12px;border:1px solid var(--bdr2);border-radius:12px;background:var(--bg2);color:var(--ink);font:inherit;font-size:16px}.cloud-panel button{min-height:44px;padding:11px 14px;border:1px solid var(--bdr2);border-radius:12px;background:var(--surf2);color:var(--ink);font:inherit;font-size:13px;cursor:pointer}.cloud-panel button:disabled{opacity:.5;cursor:wait}.cloud-panel .cloud-buttons{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.cloud-panel .cloud-primary{background:var(--hero-grad);color:white}.cloud-panel [hidden]{display:none!important}.cloud-panel summary{cursor:pointer;min-height:44px;line-height:44px}.cloud-panel input:focus-visible,.cloud-panel button:focus-visible{outline:2px solid var(--g3);outline-offset:2px}
+/* Phone UI follow-through: layout only; keep every ledger script unchanged. */
+#s-wallet .nav-bar,#s-gamble .nav-bar,#s-settings .nav-bar{background:var(--bg);backdrop-filter:none;}
+#s-wallet .nav-btn,.screen .ai-top-btn{min-height:44px;border-radius:12px;box-shadow:none;}
+#s-wallet .wsub-bar{gap:4px;margin:12px 20px 0;padding:4px;border:1px solid var(--bdr);border-radius:13px;background:var(--bg2);}
+#s-wallet .wsub-btn{min-height:44px;border-radius:9px;font-size:13px;}
+#s-wallet .wsub-btn.active{background:var(--g);color:white;box-shadow:none;animation:none;}
+#s-wallet #txn-search{min-height:46px;font-size:16px!important;}
+#s-wallet .filter-chips{gap:6px;padding-bottom:12px;}
+#s-wallet .fchip{min-height:40px;border-width:1px;border-radius:10px;padding:7px 12px;}
+#s-wallet .glass-card,#s-gamble .glass-card,#s-settings .glass-card{background:var(--surf);border:1px solid var(--bdr);border-radius:14px;box-shadow:none;backdrop-filter:none;}
+#s-wallet .crow{padding:15px 14px;gap:10px;}
+#s-wallet .ramount,#s-gamble .mval{font-variant-numeric:tabular-nums;overflow-wrap:anywhere;}
+#s-wallet .seg-btn,#s-wallet .add-ar-dashed{min-height:44px;}
+#s-wallet .slbl,#s-gamble .slbl{font-size:13px;letter-spacing:0;text-transform:none;line-height:1.5;color:var(--ink2);}
+#s-gamble .pnl-tools{padding-top:12px;padding-bottom:12px;gap:8px;}
+#s-gamble .pnl-tools button{background:var(--g);box-shadow:none;}
+#s-gamble .pnl-tools select{font-size:16px;}
+#s-gamble .sec-hide-btn{width:44px;height:44px;border-radius:12px;}
+#s-gamble .metric-card{min-width:0;box-shadow:none;border-radius:14px;}
+#s-gamble .metric-row{gap:10px;}
+#s-gamble .refresh-prices-btn,#s-wallet .refresh-prices-btn{min-height:44px;border-radius:12px;box-shadow:none;}
+/* A single list keeps each setting next to the panel it expands. */
+#s-settings .scroll-body{grid-template-columns:minmax(0,1fr);gap:8px;}
+#s-settings .set-group{margin:20px 0 4px;font-size:12px;letter-spacing:.03em;}
+#s-settings .set-group:first-child{margin-top:0;}
+#s-settings .slbl.set-h{min-height:58px;flex-direction:row;justify-content:flex-start;gap:12px;padding:12px 42px 12px 14px;margin:0;border-radius:12px;background:var(--surf);border:1px solid var(--bdr);box-shadow:none;text-align:left;}
+#s-settings .set-h .set-ico{width:28px;flex-shrink:0;font-size:21px;text-align:center;}
+#s-settings .set-h .set-title{font-size:14px;font-weight:650;line-height:1.45;}
+#s-settings .set-h::after{right:16px;top:50%;margin-top:-10px;font-size:18px;}
+#s-settings .set-h:not(.col){border-color:var(--g);background:var(--g2);}
+#s-settings .set-body{min-width:0;margin:0 0 8px;}
+#s-settings .set-body>.glass-card{margin-bottom:0!important;}
+#s-settings input:not([type="checkbox"]):not([type="range"]),#s-settings select,#s-settings textarea{font-size:16px!important;max-width:100%;}
+#s-settings .lang-btn,#s-settings .theme-btn,#s-settings .motion-btn,#s-settings .numfmt-btn{min-height:44px;}
+#s-settings summary{padding:12px 0;line-height:1.5;cursor:pointer;}
+.modal{box-shadow:0 -8px 30px rgba(0,0,0,.14);}
+.modal .mclose{width:44px;height:44px;top:10px;right:12px;border-radius:12px;}
+.modal .mtitle{padding-right:72px;min-height:46px;display:flex;align-items:center;}
+.modal .fval{min-width:0;min-height:44px;font-size:16px;}
+.modal .fval[type="date"]{min-width:138px;}
+.modal .ttype{min-height:44px;padding:8px 4px;}
+.modal .sbtn{border-radius:12px;box-shadow:none;}
+#m-txn .amt-disp{font-size:clamp(30px,10vw,46px);overflow-wrap:anywhere;font-variant-numeric:tabular-nums;letter-spacing:-1px;}
+#m-txn .calc-op{height:44px;border-radius:10px;box-shadow:none;}
+#m-txn .np{min-height:48px;padding:14px 0;}
+#m-txn .cat-chip,#m-txn .acct-chip{box-shadow:none;border-radius:10px;}
+#s-wallet button:focus-visible,#s-gamble button:focus-visible,#s-settings button:focus-visible,.modal button:focus-visible{outline:3px solid var(--g);outline-offset:2px;}
+@media(min-width:760px){#s-settings .scroll-body{max-width:720px;margin:0 auto;}}
+
+</style>
       <div style="font-weight:700;font-size:17px;margin-bottom:8px">Myfin 個人登入 <span class="msub">（可選）</span></div>
       <p class="msub" style="line-height:1.7;margin:0">未登入也能記帳。登入只驗證身份，不會自動搬移資料。首次同步先預覽，再由你確認。</p>
       <div id="cloud-auth-state" role="status" style="margin:12px 0;font-size:13px;color:var(--g3)">未登入 · 本機記帳照常使用</div>

@@ -1,0 +1,70 @@
+{
+  "privateFixture": false,
+  "results": [
+    {
+      "width": 360,
+      "theme": "light",
+      "scriptsUnchanged": true,
+      "allTabs": true,
+      "exportMatchesBaseline": true,
+      "moneyAndSnapshotMatch": true
+    },
+    {
+      "width": 360,
+      "theme": "dark",
+      "scriptsUnchanged": true,
+      "allTabs": true,
+      "exportMatchesBaseline": true,
+      "moneyAndSnapshotMatch": true
+    },
+    {
+      "width": 393,
+      "theme": "light",
+      "scriptsUnchanged": true,
+      "allTabs": true,
+      "exportMatchesBaseline": true,
+      "moneyAndSnapshotMatch": true
+    },
+    {
+      "width": 393,
+      "theme": "dark",
+      "scriptsUnchanged": true,
+      "allTabs": true,
+      "exportMatchesBaseline": true,
+      "moneyAndSnapshotMatch": true
+    },
+    {
+      "width": 852,
+      "theme": "light",
+      "scriptsUnchanged": true,
+      "allTabs": true,
+      "exportMatchesBaseline": true,
+      "moneyAndSnapshotMatch": true
+    },
+    {
+      "width": 852,
+      "theme": "dark",
+      "scriptsUnchanged": true,
+      "allTabs": true,
+      "exportMatchesBaseline": true,
+      "moneyAndSnapshotMatch": true
+    },
+    {
+      "width": 1280,
+      "theme": "light",
+      "scriptsUnchanged": true,
+      "allTabs": true,
+      "exportMatchesBaseline": true,
+      "moneyAndSnapshotMatch": true
+    },
+    {
+      "width": 1280,
+      "theme": "dark",
+      "scriptsUnchanged": true,
+      "allTabs": true,
+      "exportMatchesBaseline": true,
+      "moneyAndSnapshotMatch": true
+    }
+  ],
+  "errors": []
+}
