@@ -95,8 +95,8 @@ try{
         }
         await page.evaluate(()=>{const sc=document.getElementById('home-scroll');sc.scrollTop=100;sc.dispatchEvent(new Event('scroll'));updateBrowserChrome();});
         const guard=await page.locator('#app-status-guard').evaluate(el=>{const s=getComputedStyle(el);return {opacity:s.opacity,bg:s.backgroundColor,mask:s.maskImage,height:el.getBoundingClientRect().height};});
-        assert.equal(guard.opacity,'1');assert.notEqual(guard.bg,pageColor,'partly visible green hero must not turn the edge black');assert.equal(guard.mask,'none');assert.equal(guard.height,capApplies?Math.max(top,12):0);
-        assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),guard.bg,'native canvas and cap follow the same visible gradient');
+        assert.equal(guard.opacity,'1');assert.equal(guard.bg,heroColor,'the pinned home toolbar keeps chrome stable throughout scrolling');assert.equal(guard.mask,'none');assert.equal(guard.height,capApplies?Math.max(top,12):0);
+        assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),guard.bg,'native canvas and fixed toolbar retain the same color');
         if(width===393&&standalone&&theme!=='auto')await page.screenshot({path:fileURLToPath(new URL(`${theme}-inset-${top}-scrolled.png`,out))});
         await page.evaluate(()=>{const sc=document.getElementById('home-scroll');sc.scrollTop=0;sc.dispatchEvent(new Event('scroll'));updateBrowserChrome();});
         assert.equal(await page.locator('#app-status-guard').evaluate(el=>getComputedStyle(el).opacity),'1');

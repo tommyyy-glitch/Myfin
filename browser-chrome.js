@@ -8,8 +8,6 @@
   const root=document.documentElement;
   const meta=document.querySelector('meta[name="theme-color"]');
   const home=document.getElementById('s-home');
-  const hero=document.getElementById('hero-section');
-  const scroll=document.getElementById('home-scroll');
   let cap=document.getElementById('app-status-guard');
   if(!cap){cap=document.createElement('div');cap.id='app-status-guard';}
   cap.setAttribute('aria-hidden','true');
@@ -53,21 +51,10 @@
     const theme=getComputedStyle(body);
     const page=color(theme.getPropertyValue('--bg'),[14,14,18,1]);
     let rgb=page.slice(0,3);
-    const capStyle=getComputedStyle(cap);
-    const capHeight=cap.getBoundingClientRect().height;
-    // min-height resolves env(safe-area-inset-top); height remains at least 12px
-    // even for older installs whose web viewport starts below the system bar.
-    const safeTop=Math.max(0,parseFloat(capStyle.minHeight)||0);
-    if(home&&hero&&home.classList.contains('active')){
-      const rect=hero.getBoundingClientRect();
-      if(rect.bottom>capHeight){
-        const top=color(theme.getPropertyValue('--hero-top'),page);
-        const bottom=color(theme.getPropertyValue('--hero-bottom'),top);
-        const solidEnd=safeTop+32;
-        const gradientHeight=rect.height-solidEnd;
-        const progress=gradientHeight>0?clamp((capHeight-rect.top-solidEnd)/gradientHeight,0,1):0;
-        rgb=top.slice(0,3).map((channel,index)=>channel+(bottom[index]-channel)*progress);
-      }
+    // The home toolbar is outside the scroller. Keeping this color stationary
+    // avoids racing native iOS chrome updates against composited touch scrolling.
+    if(home&&home.classList.contains('active')){
+      rgb=color(theme.getPropertyValue('--hero-top'),page).slice(0,3);
     }
 
     // The cap sits ABOVE the backdrops. Composite them here exactly once so a
@@ -104,13 +91,11 @@
   for(const element of [body,...document.querySelectorAll('.screen,.modal-wrap')]){
     observer.observe(element,{attributes:true,attributeFilter:['class']});
   }
-  if(scroll)scroll.addEventListener('scroll',schedule,{passive:true});
   window.addEventListener('pageshow',repaintNow);
   window.addEventListener('resize',schedule,{passive:true});
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',schedule,{passive:true});
     window.visualViewport.addEventListener('scroll',schedule,{passive:true});
   }
-  if(hero&&window.ResizeObserver)new ResizeObserver(schedule).observe(hero);
   repaintNow();
 })();

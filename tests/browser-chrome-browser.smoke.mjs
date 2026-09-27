@@ -49,8 +49,14 @@ async function pixels(page,label,visible,{compareBelow=true,save=false}={}){
   const hero=await page.locator('#s-home .hero-card').boundingBox();
   const x=Math.max(2,Math.ceil(hero?.x||0)+3),above=Math.max(0,Math.floor(state.bottom)-1),below=Math.ceil(state.bottom);
   const pixel=(px,py)=>Array.from(png.data.subarray((py*png.width+px)*4,(py*png.width+px)*4+3));
-  near(pixel(x,above),rgb(state.bg),label+' cap paints its opaque color',0);
-  if(compareBelow)near(pixel(x,above),pixel(x,below),label+' cap joins the surface immediately below');
+  // Installed landscape layouts center the page but the native status area and
+  // fixed cap span the full viewport. Check both gutters as well as page content.
+  const homeActive=await page.locator('#s-home').evaluate(el=>el.classList.contains('active'));
+  const sampleXs=[...new Set(homeActive&&compareBelow?[x,5,png.width-5]:[x])];
+  for(const px of sampleXs){
+    near(pixel(px,above),rgb(state.bg),label+' cap paints its opaque color at x='+px,0);
+    if(compareBelow)near(pixel(px,above),pixel(px,below),label+' cap joins the surface immediately below at x='+px);
+  }
   return state;
 }
 async function noOverflow(page,label){
@@ -130,15 +136,39 @@ try{
     near(rgb(cap.root),rgb(cap.bg),label+' root canvas',0);near(rgb(cap.meta),rgb(cap.bg),label+' theme color',0);
     await pixels(page,label+'-home',visible,{save:scenario.name==='portrait'});await noOverflow(page,label);
 
-    // Scroll through the gradient, then entirely beyond it. Exercise the real scroll listener.
+    // The home header is outside the scroller. iOS never needs to repaint its
+    // system-owned area in sync with a moving gradient beneath that header.
+    const header=page.locator('#home-nav'),headerRect=await header.boundingBox();
+    const structure=await header.evaluate(el=>({
+      outsideScroller:!document.getElementById('home-scroll').contains(el),
+      sameScreen:el.parentElement===document.getElementById('home-scroll').parentElement,
+      ownsProfile:el.contains(document.getElementById('profile-chip')),
+      ownsAI:el.contains(document.getElementById('ai-hero-btn')),
+      background:getComputedStyle(el).backgroundColor
+    }));
+    assert.equal(structure.outsideScroller,true,label+' home header must not scroll with content');
+    assert.equal(structure.sameScreen,true,label+' header and scroller share the home screen');
+    assert.equal(structure.ownsProfile,true);assert.equal(structure.ownsAI,true);
+    const homeColor=theme==='dark'?[15,110,86]:[29,158,117];
+    near(rgb(structure.background),homeColor,label+' solid home header',0);
+    const profileRect=await page.locator('#profile-chip').boundingBox(),aiRect=await page.locator('#ai-hero-btn').boundingBox();
     const geometry=await page.locator('#s-home .hero-card').evaluate(el=>({height:el.getBoundingClientRect().height}));
     const half=Math.floor(geometry.height*.5),past=Math.ceil(geometry.height+24);
-    await page.locator('#home-scroll').evaluate((el,y)=>{el.scrollTop=y;el.dispatchEvent(new Event('scroll'));},half);await settle(page);
-    cap=await pixels(page,label+'-half-scroll',visible,{save:scenario.name==='portrait'});
-    assert.notDeepEqual(rgb(cap.bg),theme==='dark'?[15,110,86]:[29,158,117],label+' partially scrolled hero must sample its darker gradient');
-    assert.notDeepEqual(rgb(cap.bg),theme==='dark'?[14,14,18]:[240,239,233],label+' must not jump to page background while hero is visible');
-    await page.locator('#home-scroll').evaluate((el,y)=>{el.scrollTop=y;el.dispatchEvent(new Event('scroll'));},past);await settle(page);
-    cap=await capState(page);near(rgb(cap.bg),theme==='dark'?[14,14,18]:[240,239,233],label+' after hero',0);
+    const scrollPositions=[...new Set([0,12,32,half,half+32,past])].sort((a,b)=>a-b);
+    for(const position of scrollPositions){
+      const actual=await page.locator('#home-scroll').evaluate((el,y)=>{el.scrollTop=y;el.dispatchEvent(new Event('scroll'));return el.scrollTop;},position);
+      await settle(page);
+      if(position>0)assert.ok(actual>0,label+' fixture must genuinely scroll');
+      assert.deepEqual(await header.boundingBox(),headerRect,label+' header bounds stay fixed at scroll '+position);
+      assert.deepEqual(await page.locator('#profile-chip').boundingBox(),profileRect,label+' profile control stays fixed');
+      assert.deepEqual(await page.locator('#ai-hero-btn').boundingBox(),aiRect,label+' AI control stays fixed');
+      const scrollRect=await page.locator('#home-scroll').boundingBox();
+      assert.ok(scrollRect.y>=headerRect.y+headerRect.height-.5,label+' scrolling content remains below header');
+      cap=await pixels(page,label+'-scroll-'+position,visible,{save:scenario.name==='portrait'&&(position===half||position===past)});
+      near(rgb(cap.bg),homeColor,label+' stable cap at scroll '+position,0);
+      near(rgb(cap.meta),homeColor,label+' stable native theme hint at scroll '+position,0);
+      near(rgb(cap.root),homeColor,label+' stable root canvas at scroll '+position,0);
+    }
 
     // Each tab owns the same top canvas; a home-only fix is insufficient.
     for(const tab of [1,2,3]){
@@ -197,7 +227,7 @@ try{
     });await settle(page);
     near(rgb((await capState(page)).bg),theme==='dark'?[15,110,86]:[29,158,117],label+' visual viewport resize restores canvas',0);
     await noOverflow(page,label+' final');
-    results.push({scenario,theme,standaloneClassFallback:standalone&&width>=760,allExistingScriptsUnchanged:true,gradientPixels:true,allTabs:true,realEntryCancelPreservesSnapshot:true,stackedBackdropComposition:true,bodyObserver:true,pageshow:true,visualViewportResize:true,passed:true});
+    results.push({scenario,theme,standaloneClassFallback:standalone&&width>=760,allExistingScriptsUnchanged:true,headerStableAcrossScroll:true,scrollPositions,capHeaderPixelsContinuous:true,homeGutterPixelsContinuous:visible?true:null,allTabs:true,realEntryCancelPreservesSnapshot:true,stackedBackdropComposition:true,bodyObserver:true,pageshow:true,visualViewportResize:true,passed:true});
     await context.close();
   }
   assert.deepEqual(errors,[],'No application console or page errors');

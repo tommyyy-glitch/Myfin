@@ -643,8 +643,14 @@ img,canvas,svg{max-width:100%;}
 
 /* UI refresh: presentation only; accounting and persistence scripts are unchanged. */
 #s-home{--home-panel:var(--surf);}
-#s-home .hero-card{padding:calc(var(--st) + 16px) 20px 20px;}
+#s-home .hero-card{padding:12px 20px 20px;}
+/* Keep the system edge stationary while only the dashboard underneath scrolls. */
+#home-nav{position:relative;z-index:31;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(var(--st) + 12px) 20px 12px;background:var(--hero-top);}
+#home-nav #ai-hero-btn{position:static!important;flex-shrink:0;}
+.pwa-standalone #s-home{overflow:visible;}
+.pwa-standalone #home-nav::before{content:'';position:absolute;top:0;bottom:0;left:50%;width:100vw;transform:translateX(-50%);background:var(--hero-top);z-index:-1;pointer-events:none;}
 #s-home #profile-chip{min-height:40px;padding:7px 12px!important;margin-bottom:14px!important;border-radius:12px!important;max-width:58%!important;}
+#s-home #home-nav #profile-chip{margin-bottom:0!important;min-width:0;}
 #s-home #ai-hero-btn{top:calc(var(--st) + 16px)!important;right:20px!important;min-height:40px;border-radius:12px!important;box-shadow:none;}
 #s-home .hero-label{font-size:12px;letter-spacing:.03em;}
 #s-home .hero-val{font-size:clamp(26px,8.2vw,36px);line-height:1.2;margin-top:5px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
@@ -694,6 +700,7 @@ body:has(#s-home.active) #global-fab{display:none!important;}
 #s-home .home-add-btn,#s-home .period-btn,#s-home .hero-chip{animation:none;}
 @media(max-width:380px){
   #s-home .hero-card{padding-left:16px;padding-right:16px;}
+  #home-nav{padding-left:16px;padding-right:16px;}
   #s-home #ai-hero-btn{right:16px!important;}
   #s-home #home-summary{padding-left:16px;padding-right:16px;}
   #s-home #period-bar{margin-left:16px;margin-right:16px;}
@@ -713,12 +720,14 @@ body:has(#s-home.active) #global-fab{display:none!important;}
 
 <!-- HOME -->
 <div id="s-home" class="screen active" style="position:relative">
+  <div id="home-nav" class="home-nav">
+    <button id="profile-chip" onclick="openProfilesModal()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.28);color:#fff;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:14px;max-width:62%"><span id="profile-chip-emoji">👤</span><span id="profile-chip-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">我的帳戶</span><i class="ti ti-chevron-down" style="font-size:13px;opacity:0.8"></i></button>
+    <button id="ai-hero-btn" onclick="openAI()" style="position:absolute;top:calc(var(--st) + 22px);right:18px;z-index:3;display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.28);color:#fff;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer"><i class="ti ti-message-circle" style="font-size:14px"></i><span data-i="aiask"></span></button>
+  </div>
   <div class="scroll-body" id="home-scroll">
     <!-- HERO -->
     <div class="hero-card" id="hero-section">
-      <button id="ai-hero-btn" onclick="openAI()" style="position:absolute;top:calc(var(--st) + 22px);right:18px;z-index:3;display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.28);color:#fff;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:700;cursor:pointer"><i class="ti ti-message-circle" style="font-size:14px"></i><span data-i="aiask"></span></button>
       <div style="position:relative;z-index:1">
-        <button id="profile-chip" onclick="openProfilesModal()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.16);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.28);color:#fff;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:14px;max-width:62%"><span id="profile-chip-emoji">👤</span><span id="profile-chip-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">我的帳戶</span><i class="ti ti-chevron-down" style="font-size:13px;opacity:0.8"></i></button>
         <div class="hero-label" data-i="networth"></div>
         <div class="hero-val" id="h-nw">HK$0</div>
         <div class="hero-chips">
