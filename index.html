@@ -4,7 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-title" content="Finance OS">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1D9E75">
+<!-- Paint the canvas before external assets load; applyTheme restores the ledger preference. -->
+<style>html{background:#f0efe9;color-scheme:light}</style>
 <title>Finance OS</title>
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -144,10 +148,8 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
 .scroll-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 0 20px;width:100%}
 .status-guard{
   position:absolute;top:0;left:0;right:0;height:var(--st);
-  background:linear-gradient(to bottom,var(--nav-bg),transparent);
-  -webkit-mask:linear-gradient(to bottom,#000 55%,transparent);mask:linear-gradient(to bottom,#000 55%,transparent);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  z-index:30;pointer-events:none;opacity:0;transition:opacity 0.2s;
+  background:var(--bg);
+  z-index:30;pointer-events:none;opacity:0;
 }
 .status-guard.show{opacity:1}
 /* Floating "island" bottom bar — floats above the bottom with margin all around,
@@ -1906,6 +1908,15 @@ img,canvas,svg{max-width:100%;}
 function applyMotion(){
   document.body.classList.toggle('no-dance',(S.motionMode||'dance')==='quiet');
 }
+function updateBrowserChrome(){
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(!meta)return;
+  const dark=document.body.classList.contains('dark');
+  const home=document.getElementById('s-home');
+  const sc=document.getElementById('home-scroll');
+  const heroVisible=home&&home.classList.contains('active')&&sc&&sc.scrollTop<=0;
+  meta.content=heroVisible?(dark?'#0F6E56':'#1D9E75'):(dark?'#0e0e12':'#f0efe9');
+}
 function applyTheme(){
   let mode=(typeof S!=='undefined')?S.theme:null;
   if(mode!=='light'&&mode!=='dark'){
@@ -1916,6 +1927,8 @@ function applyTheme(){
   applyMotion();
   // Match the root background so the strip below the floating bar (iOS home-indicator area) isn't blank
   document.documentElement.style.background=(mode==='dark')?'#0e0e12':'#f0efe9';
+  document.documentElement.style.colorScheme=mode;
+  updateBrowserChrome();
 }
 function setTheme(m){
   S.theme=m;saveS();applyTheme();
@@ -3167,6 +3180,7 @@ function goTab(n,btn){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
   const screen=document.getElementById('s-'+n);screen.classList.add('active');
+  updateBrowserChrome();
   btn.classList.add('active');btn.classList.add('tab-pop');updateNavIsland(btn);setTimeout(()=>btn.classList.remove('tab-pop'),360);
   S.activeTab=n;updateFab();
   if(n==='home'){checkAutopay();checkAutoincome();checkDebts();renderHome();}
@@ -5907,14 +5921,15 @@ function exportExcel(){
   XLSX.writeFile(wb,fn);
 }
 
-// Show frosted status-bar guard on home once the user scrolls past the hero top
+// Keep scrolled text out of the status area; the hero paints it at scroll position zero.
 (function(){
   const sc=document.getElementById('home-scroll');
   const guard=document.getElementById('home-status-guard');
   if(sc&&guard){
     sc.addEventListener('scroll',()=>{
-      if(sc.scrollTop>40)guard.classList.add('show');
+      if(sc.scrollTop>0)guard.classList.add('show');
       else guard.classList.remove('show');
+      updateBrowserChrome();
     },{passive:true});
   }
 })();
