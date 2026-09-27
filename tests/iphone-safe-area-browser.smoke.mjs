@@ -4,6 +4,7 @@ import http from 'node:http';
 import assert from 'node:assert/strict';
 import {fileURLToPath} from 'node:url';
 const {chromium}=await import(process.env.MYFIN_PLAYWRIGHT_PATH||'playwright');
+const {PNG}=await import(process.env.MYFIN_PNGJS_PATH||'pngjs');
 const root=new URL('../',import.meta.url),out=new URL('../reports/iphone-safe-area-2026-09-27/',import.meta.url);
 fs.mkdirSync(out,{recursive:true});
 const server=http.createServer((req,res)=>{
@@ -32,7 +33,7 @@ try{
       await page.goto(origin,{waitUntil:'commit'});
       await page.waitForFunction(()=>document.documentElement.dataset.initialTheme);
       const first=await page.evaluate(()=>({mode:document.documentElement.dataset.initialTheme,bg:getComputedStyle(document.documentElement).backgroundColor,body:!!document.body}));
-      assert.equal(first.mode,theme);assert.equal(first.bg,theme==='dark'?'rgb(14, 14, 18)':'rgb(240, 239, 233)');
+      assert.equal(first.mode,theme);assert.equal(first.bg,theme==='dark'?'rgb(15, 110, 86)':'rgb(29, 158, 117)');
       assert.equal(first.body,false,'theme must resolve before the blocked body/app is parsed');
     }finally{release();await context.close();}
   }
@@ -53,8 +54,10 @@ try{
       for(const theme of ['light','dark','auto']){
         await page.evaluate(theme=>{S.theme=theme;applyTheme();},theme);
         const paint=await page.evaluate(()=>({root:getComputedStyle(document.documentElement).backgroundColor,body:getComputedStyle(document.body).backgroundColor,bodyImage:getComputedStyle(document.body).backgroundImage,scheme:getComputedStyle(document.documentElement).colorScheme,meta:document.querySelector('meta[name="theme-color"]').content,mode:document.body.classList.contains('dark')?'dark':'light'}));
-        if(paint.bodyImage==='none')assert.equal(paint.root,paint.body);
-        else assert.ok(paint.bodyImage.includes(paint.root),'wide-layout gradient must retain the theme background');
+        const pageColor=paint.mode==='dark'?'rgb(14, 14, 18)':'rgb(240, 239, 233)';
+        assert.equal(paint.root,paint.mode==='dark'?'rgb(15, 110, 86)':'rgb(29, 158, 117)','native canvas must match green hero, not content background');
+        if(paint.bodyImage==='none')assert.equal(paint.body,pageColor);
+        else assert.ok(paint.bodyImage.includes(pageColor),'wide-layout gradient must retain the theme background');
         assert.equal(paint.scheme,paint.mode);
         assert.equal(paint.meta,paint.mode==='dark'?'#0F6E56':'#1D9E75');
         for(let tab=0;tab<4;tab++){
@@ -68,12 +71,27 @@ try{
         assert.ok((await page.locator('#profile-chip').boundingBox()).y>=top);
         await page.evaluate(()=>{const sc=document.getElementById('home-scroll');sc.scrollTop=100;sc.dispatchEvent(new Event('scroll'));});
         const guard=await page.locator('#home-status-guard').evaluate(el=>{const s=getComputedStyle(el);return {opacity:s.opacity,bg:s.backgroundColor,mask:s.maskImage,height:el.getBoundingClientRect().height};});
-        assert.equal(guard.opacity,'1');assert.equal(guard.bg,paint.root);assert.equal(guard.mask,'none');assert.equal(guard.height,top);
+        assert.equal(guard.opacity,'1');assert.equal(guard.bg,pageColor);assert.equal(guard.mask,'none');assert.equal(guard.height,top);
         assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),paint.mode==='dark'?'#0e0e12':'#f0efe9');
         if(width===393&&standalone&&theme!=='auto')await page.screenshot({path:fileURLToPath(new URL(theme+'-scrolled.png',out))});
         await page.evaluate(()=>{const sc=document.getElementById('home-scroll');sc.scrollTop=0;sc.dispatchEvent(new Event('scroll'));});
         assert.equal(await page.locator('#home-status-guard').evaluate(el=>getComputedStyle(el).opacity),'0');
-        if(width===393&&standalone&&theme!=='auto')await page.screenshot({path:fileURLToPath(new URL(theme+'-home.png',out))});
+        if(width===393&&standalone&&theme!=='auto'){
+          await page.screenshot({path:fileURLToPath(new URL(theme+'-home.png',out))});
+          // Model a native status strip outside the body (the user's installed-app symptom).
+          // Compare real rendered pixels across the canvas/header boundary at several x positions.
+          const nativeStrip=await page.addStyleTag({content:`body{top:59px!important}:root{--st:0px!important}`});
+          try{
+            const png=PNG.sync.read(await page.screenshot({path:fileURLToPath(new URL(theme+'-canvas-seam.png',out))}));
+            const pixel=(x,y)=>Array.from(png.data.subarray((y*png.width+x)*4,(y*png.width+x)*4+4));
+            const expected=paint.mode==='dark'?[15,110,86,255]:[29,158,117,255];
+            for(const x of [8,196,384]){
+              assert.deepEqual(pixel(x,30),expected,'status canvas color');
+              assert.deepEqual(pixel(x,59),expected,'hero first row must have no color seam');
+              assert.deepEqual(pixel(x,64),expected,'hero top must stay continuous across full width');
+            }
+          }finally{await nativeStrip.evaluate(el=>el.remove());}
+        }
         results.push({width,height,standaloneSimulated:standalone,theme,safeAreaSimulated:{top,side},passed:true});
       }
       await context.close();

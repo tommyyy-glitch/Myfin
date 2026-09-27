@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1D9E75">
 <!-- Resolve the first paint before blocking CDN assets; never write ledger data here. -->
-<style>html{background:#0e0e12;color-scheme:dark}</style>
+<style>html{background:#0F6E56;color-scheme:dark}</style>
 <script id="initial-theme">
 (function(){
   let mode='auto';
@@ -23,7 +23,7 @@
   }
   const root=document.documentElement;
   root.dataset.initialTheme=mode;
-  root.style.background=mode==='dark'?'#0e0e12':'#f0efe9';
+  root.style.background=mode==='dark'?'#0F6E56':'#1D9E75';
   root.style.colorScheme=mode;
   document.querySelector('meta[name="theme-color"]').content=mode==='dark'?'#0F6E56':'#1D9E75';
 })();
@@ -53,7 +53,8 @@ body.light{
   --bg:#f0efe9;--bg2:#e8e6df;
   --bdr:rgba(0,0,0,0.08);--bdr2:rgba(0,0,0,0.16);
   --card-shadow:0 2px 16px rgba(0,0,0,0.07);
-  --hero-grad:linear-gradient(145deg,#1D9E75 0%,#0F6E56 60%,#0A4D3C 100%);
+  --hero-top:#1D9E75;
+  --hero-grad:linear-gradient(to bottom,var(--hero-top) 0px,var(--hero-top) calc(var(--st) + 32px),#0A4D3C 100%);
   --glass:rgba(255,255,255,0.72);
   --glass-bdr:rgba(255,255,255,0.9);
   --nav-bg:rgba(248,247,242,0.9);
@@ -64,7 +65,8 @@ body.dark{
   --bg:#0e0e12;--bg2:#161618;
   --bdr:rgba(255,255,255,0.09);--bdr2:rgba(255,255,255,0.18);
   --card-shadow:0 2px 20px rgba(0,0,0,0.4);
-  --hero-grad:linear-gradient(145deg,#0F6E56 0%,#085041 50%,#042E2A 100%);
+  --hero-top:#0F6E56;
+  --hero-grad:linear-gradient(to bottom,var(--hero-top) 0px,var(--hero-top) calc(var(--st) + 32px),#042E2A 100%);
   --glass:rgba(255,255,255,0.06);
   --glass-bdr:rgba(255,255,255,0.14);
   --nav-bg:rgba(14,14,18,0.92);
@@ -264,6 +266,9 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
 .hero-card::before{
   content:'';position:absolute;inset:0;
   background:radial-gradient(circle at 80% 20%,rgba(255,255,255,0.12) 0%,transparent 60%);
+  /* Keep the whole top edge identical to the native status-area canvas. */
+  -webkit-mask-image:linear-gradient(to bottom,transparent calc(var(--st) + 32px),#000 calc(var(--st) + 140px));
+  mask-image:linear-gradient(to bottom,transparent calc(var(--st) + 32px),#000 calc(var(--st) + 140px));
 }
 .hero-label{font-size:12px;color:rgba(255,255,255,0.65);font-weight:500;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
 .hero-val{font-size:38px;font-weight:700;color:#fff;letter-spacing:-1.5px;line-height:1}
@@ -1934,7 +1939,11 @@ function updateBrowserChrome(){
   const home=document.getElementById('s-home');
   const sc=document.getElementById('home-scroll');
   const heroVisible=home&&home.classList.contains('active')&&sc&&sc.scrollTop<=0;
-  meta.content=heroVisible?(dark?'#0F6E56':'#1D9E75'):(dark?'#0e0e12':'#f0efe9');
+  const color=heroVisible?(dark?'#0F6E56':'#1D9E75'):(dark?'#0e0e12':'#f0efe9');
+  meta.content=color;
+  // Installed iOS apps can paint the native status area from the root canvas.
+  // Match the actual top surface, not the main content beneath the green hero.
+  document.documentElement.style.background=color;
 }
 function applyTheme(){
   let mode=(typeof S!=='undefined')?S.theme:null;
@@ -1944,8 +1953,6 @@ function applyTheme(){
   }
   document.body.className=mode;
   applyMotion();
-  // Match the root background so the strip below the floating bar (iOS home-indicator area) isn't blank
-  document.documentElement.style.background=(mode==='dark')?'#0e0e12':'#f0efe9';
   document.documentElement.style.colorScheme=mode;
   updateBrowserChrome();
 }

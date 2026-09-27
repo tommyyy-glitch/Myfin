@@ -10,12 +10,12 @@ function paint(store,hour=21,blocked=false){
   return {mode:root.dataset.initialTheme,bg:root.style.background,scheme:root.style.colorScheme,meta:meta.content};
 }
 test('saved dark theme is ready before blocking resources even during daytime',()=>{
-  assert.deepEqual(paint({fos8:JSON.stringify({theme:'dark'})},12),{mode:'dark',bg:'#0e0e12',scheme:'dark',meta:'#0F6E56'});
+  assert.deepEqual(paint({fos8:JSON.stringify({theme:'dark'})},12),{mode:'dark',bg:'#0F6E56',scheme:'dark',meta:'#0F6E56'});
   assert.ok(html.indexOf('id="initial-theme"')<html.indexOf('cdn.jsdelivr.net'));
 });
 test('active profile preference wins over default ledger and clock',()=>{
   const p=paint({fos_profiles:JSON.stringify({active:'second'}),fos8:JSON.stringify({theme:'dark'}),fos8_p_second:JSON.stringify({theme:'light'})});
-  assert.equal(p.mode,'light');assert.equal(p.bg,'#f0efe9');
+  assert.equal(p.mode,'light');assert.equal(p.bg,'#1D9E75');
 });
 test('auto first paint keeps existing 06:00 and 16:00 boundaries',()=>{
   for(const [hour,expected] of [[5,'dark'],[6,'light'],[15,'light'],[16,'dark']])assert.equal(paint({},hour).mode,expected);
