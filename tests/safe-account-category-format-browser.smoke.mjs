@@ -8,7 +8,7 @@ const root=new URL('../',import.meta.url),out=new URL('../reports/safe-account-c
 fs.mkdirSync(out,{recursive:true});
 const server=http.createServer((req,res)=>{
   const name=new URL(req.url,'http://localhost').pathname.slice(1)||'index.html';
-  if(!['index.html','cloud-auth.js','cloud-ui.js'].includes(name)){res.writeHead(404);res.end();return;}
+  if(!['index.html','cloud-auth.js','cloud-ui.js','browser-chrome.js'].includes(name)){res.writeHead(404);res.end();return;}
   res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':'text/html');res.end(fs.readFileSync(new URL(name,root)));
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));

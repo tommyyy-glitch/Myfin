@@ -1,7 +1,7 @@
 // Narrow local preview: serve only public app assets, never backups or repository contents.
 import http from 'node:http';import fs from 'node:fs';
 const root=new URL('../',import.meta.url);
-const allowed=new Set(['index.html','cloud-auth.js','cloud-ui.js','sw.js','manifest.webmanifest','icon-180.png','icon-512.png']);
+const allowed=new Set(['index.html','cloud-auth.js','cloud-ui.js','browser-chrome.js','sw.js','manifest.webmanifest','icon-180.png','icon-512.png']);
 const server=http.createServer((req,res)=>{
   const name=new URL(req.url,'http://127.0.0.1').pathname.slice(1)||'index.html';
   if(!['GET','HEAD'].includes(req.method)||!allowed.has(name)){res.writeHead(404);res.end();return;}

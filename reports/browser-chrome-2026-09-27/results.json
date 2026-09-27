@@ -1,0 +1,272 @@
+{
+  "baseline": "7ea56f04",
+  "engine": "Chromium",
+  "privateDataUsed": false,
+  "limitations": "Synthetic safe-area values and navigator.standalone exercise the authored .pwa-standalone CSS fallback, not Chromium display-mode emulation. Installed-iOS status icons, metadata retention, and system color sampling require separate real-device acceptance.",
+  "startupThemeChecks": 2,
+  "results": [
+    {
+      "scenario": {
+        "name": "portrait",
+        "width": 393,
+        "height": 852,
+        "top": 59,
+        "side": 0,
+        "standalone": true
+      },
+      "theme": "light",
+      "standaloneClassFallback": false,
+      "allExistingScriptsUnchanged": true,
+      "gradientPixels": true,
+      "allTabs": true,
+      "realEntryCancelPreservesSnapshot": true,
+      "stackedBackdropComposition": true,
+      "bodyObserver": true,
+      "pageshow": true,
+      "visualViewportResize": true,
+      "passed": true
+    },
+    {
+      "scenario": {
+        "name": "portrait",
+        "width": 393,
+        "height": 852,
+        "top": 59,
+        "side": 0,
+        "standalone": true
+      },
+      "theme": "dark",
+      "standaloneClassFallback": false,
+      "allExistingScriptsUnchanged": true,
+      "gradientPixels": true,
+      "allTabs": true,
+      "realEntryCancelPreservesSnapshot": true,
+      "stackedBackdropComposition": true,
+      "bodyObserver": true,
+      "pageshow": true,
+      "visualViewportResize": true,
+      "passed": true
+    },
+    {
+      "scenario": {
+        "name": "legacy",
+        "width": 393,
+        "height": 852,
+        "top": 0,
+        "side": 0,
+        "standalone": true
+      },
+      "theme": "light",
+      "standaloneClassFallback": false,
+      "allExistingScriptsUnchanged": true,
+      "gradientPixels": true,
+      "allTabs": true,
+      "realEntryCancelPreservesSnapshot": true,
+      "stackedBackdropComposition": true,
+      "bodyObserver": true,
+      "pageshow": true,
+      "visualViewportResize": true,
+      "passed": true
+    },
+    {
+      "scenario": {
+        "name": "legacy",
+        "width": 393,
+        "height": 852,
+        "top": 0,
+        "side": 0,
+        "standalone": true
+      },
+      "theme": "dark",
+      "standaloneClassFallback": false,
+      "allExistingScriptsUnchanged": true,
+      "gradientPixels": true,
+      "allTabs": true,
+      "realEntryCancelPreservesSnapshot": true,
+      "stackedBackdropComposition": true,
+      "bodyObserver": true,
+      "pageshow": true,
+      "visualViewportResize": true,
+      "passed": true
+    },
+    {
+      "scenario": {
+        "name": "compact",
+        "width": 393,
+        "height": 400,
+        "top": 59,
+        "side": 0,
+        "standalone": true
+      },
+      "theme": "light",
+      "standaloneClassFallback": false,
+      "allExistingScriptsUnchanged": true,
+      "gradientPixels": true,
+      "allTabs": true,
+      "realEntryCancelPreservesSnapshot": true,
+      "stackedBackdropComposition": true,
+      "bodyObserver": true,
+      "pageshow": true,
+      "visualViewportResize": true,
+      "passed": true
+    },
+    {
+      "scenario": {
+        "name": "compact",
+        "width": 393,
+        "height": 400,
+        "top": 59,
+        "side": 0,
+        "standalone": true
+      },
+      "theme": "dark",
+      "standaloneClassFallback": false,
+      "allExistingScriptsUnchanged": true,
+      "gradientPixels": true,
+      "allTabs": true,
+      "realEntryCancelPreservesSnapshot": true,
+      "stackedBackdropComposition": true,
+      "bodyObserver": true,
+      "pageshow": true,
+      "visualViewportResize": true,
+      "passed": true
+    },
+    {
+      "scenario": {
+        "name": "landscape",
+        "width": 852,
+        "height": 393,
+        "top": 0,
+        "side": 59,
+        "standalone": true
+      },
+      "theme": "light",
+      "standaloneClassFallback": true,
+      "allExistingScriptsUnchanged": true,
+      "gradientPixels": true,
+      "allTabs": true,
+      "realEntryCancelPreservesSnapshot": true,
+      "stackedBackdropComposition": true,
+      "bodyObserver": true,
+      "pageshow": true,
+      "visualViewportResize": true,
+      "passed": true
+    },
+    {
+      "scenario": {
+        "name": "landscape",
+        "width": 852,
+        "height": 393,
+        "top": 0,
+        "side": 59,
+        "standalone": true
+      },
+      "theme": "dark",
+      "standaloneClassFallback": true,
+      "allExistingScriptsUnchanged": true,
+      "gradientPixels": true,
+      "allTabs": true,
+      "realEntryCancelPreservesSnapshot": true,
+      "stackedBackdropComposition": true,
+      "bodyObserver": true,
+      "pageshow": true,
+      "visualViewportResize": true,
+      "passed": true
+    },
+    {
+      "scenario": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 900,
+        "top": 0,
+        "side": 0,
+        "standalone": false
+      },
+      "theme": "light",
+      "standaloneClassFallback": false,
+      "allExistingScriptsUnchanged": true,
+      "gradientPixels": true,
+      "allTabs": true,
+      "realEntryCancelPreservesSnapshot": true,
+      "stackedBackdropComposition": true,
+      "bodyObserver": true,
+      "pageshow": true,
+      "visualViewportResize": true,
+      "passed": true
+    },
+    {
+      "scenario": {
+        "name": "desktop",
+        "width": 1280,
+        "height": 900,
+        "top": 0,
+        "side": 0,
+        "standalone": false
+      },
+      "theme": "dark",
+      "standaloneClassFallback": false,
+      "allExistingScriptsUnchanged": true,
+      "gradientPixels": true,
+      "allTabs": true,
+      "realEntryCancelPreservesSnapshot": true,
+      "stackedBackdropComposition": true,
+      "bodyObserver": true,
+      "pageshow": true,
+      "visualViewportResize": true,
+      "passed": true
+    }
+  ],
+  "errors": [],
+  "blockedResourceDiagnostics": [
+    {
+      "label": "portrait-light",
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "label": "portrait-dark",
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "label": "legacy-light",
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "label": "legacy-dark",
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "label": "compact-light",
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "label": "compact-dark",
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "label": "landscape-light",
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "label": "landscape-dark",
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "label": "desktop-light",
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    },
+    {
+      "label": "desktop-dark",
+      "type": "console",
+      "message": "Failed to load resource: net::ERR_FAILED"
+    }
+  ]
+}

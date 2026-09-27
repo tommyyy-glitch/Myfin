@@ -9,7 +9,7 @@ const root=new URL('../',import.meta.url),out=new URL('../reports/iphone-safe-ar
 fs.mkdirSync(out,{recursive:true});
 const server=http.createServer((req,res)=>{
   const name=new URL(req.url,'http://localhost').pathname.slice(1)||'index.html';
-  if(!['index.html','cloud-auth.js','cloud-ui.js','manifest.webmanifest'].includes(name)){res.writeHead(404);res.end();return;}
+  if(!['index.html','cloud-auth.js','cloud-ui.js','browser-chrome.js','manifest.webmanifest'].includes(name)){res.writeHead(404);res.end();return;}
   res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':name.endsWith('.webmanifest')?'application/manifest+json':'text/html');
   res.end(fs.readFileSync(name==='index.html'&&process.env.MYFIN_TEST_HTML?process.env.MYFIN_TEST_HTML:new URL(name,root)));
 });
@@ -62,24 +62,24 @@ try{
         if(paint.bodyImage==='none')assert.equal(paint.body,pageColor);
         else assert.ok(paint.bodyImage.includes(pageColor),'wide-layout gradient must retain the theme background');
         assert.equal(paint.scheme,paint.mode);
-        assert.equal(paint.meta,paint.mode==='dark'?'#0F6E56':'#1D9E75');
+        assert.equal(paint.meta,heroColor);
         for(let tab=0;tab<4;tab++){
           await page.evaluate(tab=>goTabIndex(tab),tab);
           const title=page.locator('.screen.active .nav-title');
           if(await title.count())assert.ok((await title.first().boundingBox()).y>=top,'navigation title must clear status area');
           if(tab>0){
-            assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),paint.mode==='dark'?'#0e0e12':'#f0efe9');
-            assert.equal(await page.locator('#home-status-guard').isVisible(),false,'home cap must not cover another tab');
+            assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),pageColor);
+            assert.equal(await page.locator('#app-status-guard').evaluate(el=>getComputedStyle(el).backgroundColor),pageColor,'global cap follows the active tab');
           }
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
         }
-        await page.evaluate(()=>{goTabIndex(0);const sc=document.getElementById('home-scroll');sc.scrollTop=0;sc.dispatchEvent(new Event('scroll'));});
+        await page.evaluate(()=>{goTabIndex(0);const sc=document.getElementById('home-scroll');sc.scrollTop=0;sc.dispatchEvent(new Event('scroll'));updateBrowserChrome();});
         const profile=await page.locator('#profile-chip').boundingBox();
         assert.ok(profile.y>=top);
-        // navigator.standalone is a JS-only simulation. Use the real media query
-        // result for CSS expectations; this does not simulate standalone CSS at 852px.
-        const capApplies=await page.evaluate(()=>matchMedia('(max-width:759px),(display-mode:standalone)').matches);
-        const cap=await page.locator('#home-status-guard').evaluate(el=>{
+        // The app also uses its existing navigator.standalone class as a CSS fallback.
+        // This exercises that fallback, not native iOS system chrome.
+        const capApplies=await page.evaluate(()=>matchMedia('(max-width:759px),(display-mode:standalone)').matches||document.documentElement.classList.contains('pwa-standalone'));
+        const cap=await page.locator('#app-status-guard').evaluate(el=>{
           const s=getComputedStyle(el),r=el.getBoundingClientRect();
           return {position:s.position,opacity:s.opacity,bg:s.backgroundColor,image:s.backgroundImage,pointerEvents:s.pointerEvents,x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom};
         });
@@ -90,16 +90,16 @@ try{
           assert.equal(cap.height,Math.max(top,12),'a solid edge remains when an older install reports zero safe inset');
           assert.ok(cap.bottom<=profile.y,'fixed cap must stay above profile controls');
         }else{
-          assert.equal(cap.position,'absolute','desktop guard retains its original layout');
-          assert.equal(cap.opacity,'0');assert.equal(cap.height,top);
+          assert.equal(await page.locator('#app-status-guard').isVisible(),false,'desktop layout has no overlay cap');
+          assert.equal(cap.height,0);
         }
-        await page.evaluate(()=>{const sc=document.getElementById('home-scroll');sc.scrollTop=100;sc.dispatchEvent(new Event('scroll'));});
-        const guard=await page.locator('#home-status-guard').evaluate(el=>{const s=getComputedStyle(el);return {opacity:s.opacity,bg:s.backgroundColor,mask:s.maskImage,height:el.getBoundingClientRect().height};});
-        assert.equal(guard.opacity,'1');assert.equal(guard.bg,pageColor);assert.equal(guard.mask,'none');assert.equal(guard.height,capApplies?Math.max(top,12):top);
-        assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),paint.mode==='dark'?'#0e0e12':'#f0efe9');
+        await page.evaluate(()=>{const sc=document.getElementById('home-scroll');sc.scrollTop=100;sc.dispatchEvent(new Event('scroll'));updateBrowserChrome();});
+        const guard=await page.locator('#app-status-guard').evaluate(el=>{const s=getComputedStyle(el);return {opacity:s.opacity,bg:s.backgroundColor,mask:s.maskImage,height:el.getBoundingClientRect().height};});
+        assert.equal(guard.opacity,'1');assert.notEqual(guard.bg,pageColor,'partly visible green hero must not turn the edge black');assert.equal(guard.mask,'none');assert.equal(guard.height,capApplies?Math.max(top,12):0);
+        assert.equal(await page.evaluate(()=>getComputedStyle(document.documentElement).backgroundColor),guard.bg,'native canvas and cap follow the same visible gradient');
         if(width===393&&standalone&&theme!=='auto')await page.screenshot({path:fileURLToPath(new URL(`${theme}-inset-${top}-scrolled.png`,out))});
-        await page.evaluate(()=>{const sc=document.getElementById('home-scroll');sc.scrollTop=0;sc.dispatchEvent(new Event('scroll'));});
-        assert.equal(await page.locator('#home-status-guard').evaluate(el=>getComputedStyle(el).opacity),capApplies?'1':'0');
+        await page.evaluate(()=>{const sc=document.getElementById('home-scroll');sc.scrollTop=0;sc.dispatchEvent(new Event('scroll'));updateBrowserChrome();});
+        assert.equal(await page.locator('#app-status-guard').evaluate(el=>getComputedStyle(el).opacity),'1');
         if(width===393&&standalone&&theme!=='auto'){
           // These are actual DOM cap/hero pixels only. Do not model the native
           // status bar as exposed html: iOS may instead sample a fixed container.
@@ -117,6 +117,6 @@ try{
     }
   }
   assert.deepEqual(errors,[]);
-  fs.writeFileSync(new URL('results.json',out),JSON.stringify({engine:'Chromium',limitations:'Synthetic safe-area and navigator.standalone flag only; CSS standalone media is not emulated. Zero safe inset tests web content geometry, not installed iOS metadata, native color sampling, Safari chrome or iPhone status icons. Native cold-launch acceptance is required.',results,errors},null,2));
+  fs.writeFileSync(new URL('results.json',out),JSON.stringify({engine:'Chromium',limitations:'Synthetic safe-area and navigator.standalone flag only; CSS standalone media is not emulated; the existing pwa-standalone class fallback is exercised. Zero safe inset tests web content geometry, not installed iOS metadata, native color sampling, Safari chrome or iPhone status icons. Native cold-launch acceptance is required.',results,errors},null,2));
   console.log(`2 blocked-startup theme checks and ${results.length} layout/theme scenarios passed; no page errors.`);
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

@@ -3,7 +3,7 @@ const {chromium}=await import(process.env.MYFIN_PLAYWRIGHT_PATH||'playwright');
 const root=new URL('../',import.meta.url),out=new URL('../reports/uiux-home-preview/',import.meta.url);
 fs.mkdirSync(out,{recursive:true});
 const baseline=cp.execFileSync('git',['show','myfin-pre-uiux-2026-09-27:index.html'],{encoding:'utf8'});
-const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://local').pathname.slice(1)||'index.html';if(!['index.html','baseline.html','cloud-auth.js','cloud-ui.js'].includes(name)){res.writeHead(404);res.end();return;}res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':'text/html');res.end(name==='baseline.html'?baseline:fs.readFileSync(new URL(name,root)));});
+const server=http.createServer((req,res)=>{const name=new URL(req.url,'http://local').pathname.slice(1)||'index.html';if(!['index.html','baseline.html','cloud-auth.js','cloud-ui.js','browser-chrome.js'].includes(name)){res.writeHead(404);res.end();return;}res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':'text/html');res.end(name==='baseline.html'?baseline:fs.readFileSync(new URL(name,root)));});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const origin='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({headless:true,executablePath:process.env.MYFIN_BROWSER_EXECUTABLE});const results=[],errors=[];
 async function seed(page,theme){await page.evaluate(theme=>{

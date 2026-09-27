@@ -54,8 +54,8 @@ body.light{
   --bg:#f0efe9;--bg2:#e8e6df;
   --bdr:rgba(0,0,0,0.08);--bdr2:rgba(0,0,0,0.16);
   --card-shadow:0 2px 16px rgba(0,0,0,0.07);
-  --hero-top:#1D9E75;
-  --hero-grad:linear-gradient(to bottom,var(--hero-top) 0px,var(--hero-top) calc(var(--st) + 32px),#0A4D3C 100%);
+  --hero-top:#1D9E75;--hero-bottom:#0A4D3C;
+  --hero-grad:linear-gradient(to bottom,var(--hero-top) 0px,var(--hero-top) calc(var(--st) + 32px),var(--hero-bottom) 100%);
   --glass:rgba(255,255,255,0.72);
   --glass-bdr:rgba(255,255,255,0.9);
   --nav-bg:rgba(248,247,242,0.9);
@@ -66,8 +66,8 @@ body.dark{
   --bg:#0e0e12;--bg2:#161618;
   --bdr:rgba(255,255,255,0.09);--bdr2:rgba(255,255,255,0.18);
   --card-shadow:0 2px 20px rgba(0,0,0,0.4);
-  --hero-top:#0F6E56;
-  --hero-grad:linear-gradient(to bottom,var(--hero-top) 0px,var(--hero-top) calc(var(--st) + 32px),#042E2A 100%);
+  --hero-top:#0F6E56;--hero-bottom:#042E2A;
+  --hero-grad:linear-gradient(to bottom,var(--hero-top) 0px,var(--hero-top) calc(var(--st) + 32px),var(--hero-bottom) 100%);
   --glass:rgba(255,255,255,0.06);
   --glass-bdr:rgba(255,255,255,0.14);
   --nav-bg:rgba(14,14,18,0.92);
@@ -168,18 +168,12 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
 #pnl-addbtns .ab-em{display:none}
 @media (max-width:460px){#pnl-addbtns .ab-tx{display:none}#pnl-addbtns .ab-em{display:inline}#pnl-addbtns .nav-btn{font-size:15px;padding:7px 11px}}
 .scroll-body{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding:0 0 20px;width:100%}
-.status-guard{
-  position:absolute;top:0;left:0;right:0;height:var(--st);
-  background:var(--bg);
-  z-index:30;pointer-events:none;opacity:0;
-}
-.status-guard.show{opacity:1}
-/* A solid fixed top edge lets iOS sample the visible header, including older
-   home-screen installs whose viewport still begins below the native status bar. */
-@media(max-width:759px),(display-mode:standalone){
-  #home-status-guard{position:fixed;height:max(var(--st),12px);background:var(--hero-top);opacity:1;}
-  #home-status-guard.show{background:var(--bg);}
-}
+/* One opaque edge above sheets keeps native iOS chrome and the visible page
+   in sync, including installations with no reported top safe inset. */
+#app-status-guard{display:none;position:fixed;top:0;left:0;right:0;height:12px;min-height:var(--st);background:var(--bg);z-index:100;pointer-events:none;}
+body:has(#s-home.active) #app-status-guard{background:var(--hero-top);}
+.pwa-standalone #app-status-guard{display:block;}
+@media(max-width:759px),(display-mode:standalone){#app-status-guard{display:block;}}
 /* Floating "island" bottom bar — floats above the bottom with margin all around,
    so the home-indicator space below it reads as intentional breathing room
    (this also sidesteps the iOS standalone viewport-bottom quirk). */
@@ -269,13 +263,6 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
   background:var(--hero-grad);
   margin:0;padding:calc(var(--st) + 24px) 22px 28px;
   position:relative;overflow:hidden;
-}
-.hero-card::before{
-  content:'';position:absolute;inset:0;
-  background:radial-gradient(circle at 80% 20%,rgba(255,255,255,0.12) 0%,transparent 60%);
-  /* Keep the whole top edge identical to the native status-area canvas. */
-  -webkit-mask-image:linear-gradient(to bottom,transparent calc(var(--st) + 32px),#000 calc(var(--st) + 140px));
-  mask-image:linear-gradient(to bottom,transparent calc(var(--st) + 32px),#000 calc(var(--st) + 140px));
 }
 .hero-label{font-size:12px;color:rgba(255,255,255,0.65);font-weight:500;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px}
 .hero-val{font-size:38px;font-weight:700;color:#fff;letter-spacing:-1.5px;line-height:1}
@@ -722,9 +709,10 @@ body:has(#s-home.active) #global-fab{display:none!important;}
 <body class="light">
 <script>document.body.className=document.documentElement.dataset.initialTheme||'light';if(window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode:standalone)').matches)){document.documentElement.classList.add('pwa-standalone');}</script>
 
+<div id="app-status-guard" aria-hidden="true"></div>
+
 <!-- HOME -->
 <div id="s-home" class="screen active" style="position:relative">
-  <div class="status-guard" id="home-status-guard"></div>
   <div class="scroll-body" id="home-scroll">
     <!-- HERO -->
     <div class="hero-card" id="hero-section">
@@ -1456,6 +1444,12 @@ body:has(#s-home.active) #global-fab{display:none!important;}
 #m-txn .cat-chip,#m-txn .acct-chip{box-shadow:none;border-radius:10px;}
 #s-wallet button:focus-visible,#s-gamble button:focus-visible,#s-settings button:focus-visible,.modal button:focus-visible{outline:3px solid var(--g);outline-offset:2px;}
 @media(min-width:760px){#s-settings .scroll-body{max-width:720px;margin:0 auto;}}
+@media(max-width:759px),(display-mode:standalone){
+  .modal-wrap{padding-top:calc(max(var(--st),12px) + 8px);padding-bottom:0;}
+  .modal{max-height:min(93dvh,calc(100dvh - max(var(--st),12px) - 8px));}
+}
+.pwa-standalone .modal-wrap{padding-top:calc(max(var(--st),12px) + 8px);padding-bottom:0;}
+.pwa-standalone .modal{max-height:min(93dvh,calc(100dvh - max(var(--st),12px) - 8px));}
 
 </style>
       <div style="font-weight:700;font-size:17px;margin-bottom:8px">Myfin 個人登入 <span class="msub">（可選）</span></div>
@@ -6806,5 +6800,6 @@ document.addEventListener('scroll',function(){
   window._fabScrollT=setTimeout(function(){f.classList.remove('scrolling');},380);
 },{capture:true,passive:true});
 </script>
+<script src="browser-chrome.js"></script>
 </body>
 </html>

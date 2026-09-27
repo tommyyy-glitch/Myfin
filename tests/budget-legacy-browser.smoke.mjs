@@ -6,7 +6,7 @@ const {chromium}=await import(process.env.MYFIN_PLAYWRIGHT_PATH||'playwright');
 const root=new URL('../',import.meta.url);
 const server=http.createServer((req,res)=>{
   const name=new URL(req.url,'http://localhost').pathname.slice(1)||'index.html';
-  if(!['index.html','cloud-auth.js','cloud-ui.js'].includes(name)){res.writeHead(404);res.end();return;}
+  if(!['index.html','cloud-auth.js','cloud-ui.js','browser-chrome.js'].includes(name)){res.writeHead(404);res.end();return;}
   res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':'text/html');
   res.end(fs.readFileSync(new URL(name,root)));
 });
