@@ -17,6 +17,25 @@ const origin='http://127.0.0.1:'+server.address().port;
 const browser=await chromium.launch({headless:true,executablePath:process.env.MYFIN_BROWSER_EXECUTABLE});
 const errors=[],results=[];
 try{
+  // Hold the blocking external script: inspect first paint before app initialization.
+  for(const theme of ['light','dark']){
+    const context=await browser.newContext({serviceWorkers:'block'});
+    await context.addInitScript(theme=>localStorage.setItem('fos8',JSON.stringify({theme})),theme);
+    let release;const gate=new Promise(resolve=>{release=resolve;});
+    await context.route('**/*',async route=>{
+      if(new URL(route.request().url()).origin===origin)return route.continue();
+      if(route.request().url().includes('xlsx.full.min.js'))await gate;
+      return route.abort();
+    });
+    const page=await context.newPage();
+    try{
+      await page.goto(origin,{waitUntil:'commit'});
+      await page.waitForFunction(()=>document.documentElement.dataset.initialTheme);
+      const first=await page.evaluate(()=>({mode:document.documentElement.dataset.initialTheme,bg:getComputedStyle(document.documentElement).backgroundColor,body:!!document.body}));
+      assert.equal(first.mode,theme);assert.equal(first.bg,theme==='dark'?'rgb(14, 14, 18)':'rgb(240, 239, 233)');
+      assert.equal(first.body,false,'theme must resolve before the blocked body/app is parsed');
+    }finally{release();await context.close();}
+  }
   for(const [width,height,top,side] of [[393,852,59,0],[852,393,0,59],[360,780,47,0]]){
     for(const standalone of [false,true]){
       const context=await browser.newContext({viewport:{width,height},isMobile:true,hasTouch:true,serviceWorkers:'block',timezoneId:'Asia/Hong_Kong'});
@@ -62,5 +81,5 @@ try{
   }
   assert.deepEqual(errors,[]);
   fs.writeFileSync(new URL('results.json',out),JSON.stringify({engine:'Chromium',limitations:'Synthetic safe-area and standalone flag; no native Safari chrome or iPhone status icons',results,errors},null,2));
-  console.log(`${results.length} layout/theme scenarios passed; no page errors.`);
+  console.log(`2 blocked-startup theme checks and ${results.length} layout/theme scenarios passed; no page errors.`);
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}

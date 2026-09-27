@@ -7,8 +7,27 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#1D9E75">
-<!-- Paint the canvas before external assets load; applyTheme restores the ledger preference. -->
-<style>html{background:#f0efe9;color-scheme:light}</style>
+<!-- Resolve the first paint before blocking CDN assets; never write ledger data here. -->
+<style>html{background:#0e0e12;color-scheme:dark}</style>
+<script id="initial-theme">
+(function(){
+  let mode='auto';
+  try{
+    const profiles=JSON.parse(localStorage.getItem('fos_profiles')||'null');
+    const id=profiles&&profiles.active||'default';
+    const saved=JSON.parse(localStorage.getItem(id==='default'?'fos8':'fos8_p_'+id)||'null');
+    if(saved)mode=saved.theme;
+  }catch(_){/* A blocked or malformed store must not stop first paint. */}
+  if(mode!=='light'&&mode!=='dark'){
+    const h=new Date().getHours();mode=(h>=16||h<6)?'dark':'light';
+  }
+  const root=document.documentElement;
+  root.dataset.initialTheme=mode;
+  root.style.background=mode==='dark'?'#0e0e12':'#f0efe9';
+  root.style.colorScheme=mode;
+  document.querySelector('meta[name="theme-color"]').content=mode==='dark'?'#0F6E56':'#1D9E75';
+})();
+</script>
 <title>Finance OS</title>
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -625,7 +644,7 @@ img,canvas,svg{max-width:100%;}
 </style>
 </head>
 <body class="light">
-<script>if(window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode:standalone)').matches)){document.documentElement.classList.add('pwa-standalone');}</script>
+<script>document.body.className=document.documentElement.dataset.initialTheme||'light';if(window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode:standalone)').matches)){document.documentElement.classList.add('pwa-standalone');}</script>
 
 <!-- HOME -->
 <div id="s-home" class="screen active" style="position:relative">
