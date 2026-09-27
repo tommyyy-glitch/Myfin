@@ -37,7 +37,9 @@ try{
       assert.equal(first.body,false,'theme must resolve before the blocked body/app is parsed');
     }finally{release();await context.close();}
   }
-  for(const [width,height,top,side] of [[393,852,59,0],[852,393,0,59],[360,780,47,0]]){
+  // A zero top inset matches the layout reported by older installed iOS apps,
+  // but Chromium still cannot model the system-owned area above that viewport.
+  for(const [width,height,top,side] of [[393,852,59,0],[393,852,0,0],[852,393,0,59],[360,780,47,0],[1280,900,0,0]]){
     for(const standalone of [false,true]){
       const context=await browser.newContext({viewport:{width,height},isMobile:true,hasTouch:true,serviceWorkers:'block',timezoneId:'Asia/Hong_Kong'});
       await context.route('**/*',route=>new URL(route.request().url()).origin===origin?route.continue():route.abort());
@@ -55,7 +57,8 @@ try{
         await page.evaluate(theme=>{S.theme=theme;applyTheme();},theme);
         const paint=await page.evaluate(()=>({root:getComputedStyle(document.documentElement).backgroundColor,body:getComputedStyle(document.body).backgroundColor,bodyImage:getComputedStyle(document.body).backgroundImage,scheme:getComputedStyle(document.documentElement).colorScheme,meta:document.querySelector('meta[name="theme-color"]').content,mode:document.body.classList.contains('dark')?'dark':'light'}));
         const pageColor=paint.mode==='dark'?'rgb(14, 14, 18)':'rgb(240, 239, 233)';
-        assert.equal(paint.root,paint.mode==='dark'?'rgb(15, 110, 86)':'rgb(29, 158, 117)','native canvas must match green hero, not content background');
+        const heroColor=paint.mode==='dark'?'rgb(15, 110, 86)':'rgb(29, 158, 117)';
+        assert.equal(paint.root,heroColor,'document canvas must match the green hero');
         if(paint.bodyImage==='none')assert.equal(paint.body,pageColor);
         else assert.ok(paint.bodyImage.includes(pageColor),'wide-layout gradient must retain the theme background');
         assert.equal(paint.scheme,paint.mode);
@@ -64,40 +67,56 @@ try{
           await page.evaluate(tab=>goTabIndex(tab),tab);
           const title=page.locator('.screen.active .nav-title');
           if(await title.count())assert.ok((await title.first().boundingBox()).y>=top,'navigation title must clear status area');
-          if(tab>0)assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),paint.mode==='dark'?'#0e0e12':'#f0efe9');
+          if(tab>0){
+            assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),paint.mode==='dark'?'#0e0e12':'#f0efe9');
+            assert.equal(await page.locator('#home-status-guard').isVisible(),false,'home cap must not cover another tab');
+          }
           assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
         }
-        await page.evaluate(()=>{goTabIndex(0);document.getElementById('home-scroll').scrollTop=0;});
-        assert.ok((await page.locator('#profile-chip').boundingBox()).y>=top);
+        await page.evaluate(()=>{goTabIndex(0);const sc=document.getElementById('home-scroll');sc.scrollTop=0;sc.dispatchEvent(new Event('scroll'));});
+        const profile=await page.locator('#profile-chip').boundingBox();
+        assert.ok(profile.y>=top);
+        // navigator.standalone is a JS-only simulation. Use the real media query
+        // result for CSS expectations; this does not simulate standalone CSS at 852px.
+        const capApplies=await page.evaluate(()=>matchMedia('(max-width:759px),(display-mode:standalone)').matches);
+        const cap=await page.locator('#home-status-guard').evaluate(el=>{
+          const s=getComputedStyle(el),r=el.getBoundingClientRect();
+          return {position:s.position,opacity:s.opacity,bg:s.backgroundColor,image:s.backgroundImage,pointerEvents:s.pointerEvents,x:r.x,y:r.y,width:r.width,height:r.height,bottom:r.bottom};
+        });
+        if(capApplies){
+          assert.equal(cap.position,'fixed');assert.equal(cap.opacity,'1');assert.equal(cap.bg,heroColor);
+          assert.equal(cap.image,'none');assert.equal(cap.pointerEvents,'none');
+          assert.equal(cap.x,0);assert.equal(cap.y,0);assert.equal(cap.width,width);
+          assert.equal(cap.height,Math.max(top,12),'a solid edge remains when an older install reports zero safe inset');
+          assert.ok(cap.bottom<=profile.y,'fixed cap must stay above profile controls');
+        }else{
+          assert.equal(cap.position,'absolute','desktop guard retains its original layout');
+          assert.equal(cap.opacity,'0');assert.equal(cap.height,top);
+        }
         await page.evaluate(()=>{const sc=document.getElementById('home-scroll');sc.scrollTop=100;sc.dispatchEvent(new Event('scroll'));});
         const guard=await page.locator('#home-status-guard').evaluate(el=>{const s=getComputedStyle(el);return {opacity:s.opacity,bg:s.backgroundColor,mask:s.maskImage,height:el.getBoundingClientRect().height};});
-        assert.equal(guard.opacity,'1');assert.equal(guard.bg,pageColor);assert.equal(guard.mask,'none');assert.equal(guard.height,top);
+        assert.equal(guard.opacity,'1');assert.equal(guard.bg,pageColor);assert.equal(guard.mask,'none');assert.equal(guard.height,capApplies?Math.max(top,12):top);
         assert.equal(await page.locator('meta[name="theme-color"]').getAttribute('content'),paint.mode==='dark'?'#0e0e12':'#f0efe9');
-        if(width===393&&standalone&&theme!=='auto')await page.screenshot({path:fileURLToPath(new URL(theme+'-scrolled.png',out))});
+        if(width===393&&standalone&&theme!=='auto')await page.screenshot({path:fileURLToPath(new URL(`${theme}-inset-${top}-scrolled.png`,out))});
         await page.evaluate(()=>{const sc=document.getElementById('home-scroll');sc.scrollTop=0;sc.dispatchEvent(new Event('scroll'));});
-        assert.equal(await page.locator('#home-status-guard').evaluate(el=>getComputedStyle(el).opacity),'0');
+        assert.equal(await page.locator('#home-status-guard').evaluate(el=>getComputedStyle(el).opacity),capApplies?'1':'0');
         if(width===393&&standalone&&theme!=='auto'){
-          await page.screenshot({path:fileURLToPath(new URL(theme+'-home.png',out))});
-          // Model a native status strip outside the body (the user's installed-app symptom).
-          // Compare real rendered pixels across the canvas/header boundary at several x positions.
-          const nativeStrip=await page.addStyleTag({content:`body{top:59px!important}:root{--st:0px!important}`});
-          try{
-            const png=PNG.sync.read(await page.screenshot({path:fileURLToPath(new URL(theme+'-canvas-seam.png',out))}));
-            const pixel=(x,y)=>Array.from(png.data.subarray((y*png.width+x)*4,(y*png.width+x)*4+4));
-            const expected=paint.mode==='dark'?[15,110,86,255]:[29,158,117,255];
-            for(const x of [8,196,384]){
-              assert.deepEqual(pixel(x,30),expected,'status canvas color');
-              assert.deepEqual(pixel(x,59),expected,'hero first row must have no color seam');
-              assert.deepEqual(pixel(x,64),expected,'hero top must stay continuous across full width');
-            }
-          }finally{await nativeStrip.evaluate(el=>el.remove());}
+          // These are actual DOM cap/hero pixels only. Do not model the native
+          // status bar as exposed html: iOS may instead sample a fixed container.
+          const png=PNG.sync.read(await page.screenshot({path:fileURLToPath(new URL(`${theme}-inset-${top}-home.png`,out))}));
+          const pixel=(x,y)=>Array.from(png.data.subarray((y*png.width+x)*4,(y*png.width+x)*4+4));
+          const expected=paint.mode==='dark'?[15,110,86,255]:[29,158,117,255];
+          for(const x of [8,196,384]){
+            assert.deepEqual(pixel(x,4),expected,'fixed cap must paint a solid top edge');
+            assert.deepEqual(pixel(x,cap.height),expected,'cap and hero must match inside the web viewport');
+          }
         }
-        results.push({width,height,standaloneSimulated:standalone,theme,safeAreaSimulated:{top,side},passed:true});
+        results.push({width,height,standaloneSimulated:standalone,theme,safeAreaSimulated:{top,side},fixedCapApplied:capApplies,passed:true});
       }
       await context.close();
     }
   }
   assert.deepEqual(errors,[]);
-  fs.writeFileSync(new URL('results.json',out),JSON.stringify({engine:'Chromium',limitations:'Synthetic safe-area and standalone flag; no native Safari chrome or iPhone status icons',results,errors},null,2));
+  fs.writeFileSync(new URL('results.json',out),JSON.stringify({engine:'Chromium',limitations:'Synthetic safe-area and navigator.standalone flag only; CSS standalone media is not emulated. Zero safe inset tests web content geometry, not installed iOS metadata, native color sampling, Safari chrome or iPhone status icons. Native cold-launch acceptance is required.',results,errors},null,2));
   console.log(`2 blocked-startup theme checks and ${results.length} layout/theme scenarios passed; no page errors.`);
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve));}
