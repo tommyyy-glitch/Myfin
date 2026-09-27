@@ -1,0 +1,77 @@
+{
+  "results": [
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "light",
+      "monetaryAndStoredDataIdentical": true,
+      "budgetMovedUp": 87,
+      "addCancel": true,
+      "longAmountNoOverflow": true
+    },
+    {
+      "width": 360,
+      "height": 800,
+      "theme": "dark",
+      "monetaryAndStoredDataIdentical": true,
+      "budgetMovedUp": 87,
+      "addCancel": true,
+      "longAmountNoOverflow": true
+    },
+    {
+      "width": 393,
+      "height": 852,
+      "theme": "light",
+      "monetaryAndStoredDataIdentical": true,
+      "budgetMovedUp": 108,
+      "addCancel": true,
+      "longAmountNoOverflow": true
+    },
+    {
+      "width": 393,
+      "height": 852,
+      "theme": "dark",
+      "monetaryAndStoredDataIdentical": true,
+      "budgetMovedUp": 108,
+      "addCancel": true,
+      "longAmountNoOverflow": true
+    },
+    {
+      "width": 852,
+      "height": 393,
+      "theme": "light",
+      "monetaryAndStoredDataIdentical": true,
+      "budgetMovedUp": 95,
+      "addCancel": true,
+      "longAmountNoOverflow": true
+    },
+    {
+      "width": 852,
+      "height": 393,
+      "theme": "dark",
+      "monetaryAndStoredDataIdentical": true,
+      "budgetMovedUp": 95,
+      "addCancel": true,
+      "longAmountNoOverflow": true
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "theme": "light",
+      "monetaryAndStoredDataIdentical": true,
+      "budgetMovedUp": 95,
+      "addCancel": true,
+      "longAmountNoOverflow": true
+    },
+    {
+      "width": 1280,
+      "height": 900,
+      "theme": "dark",
+      "monetaryAndStoredDataIdentical": true,
+      "budgetMovedUp": 95,
+      "addCancel": true,
+      "longAmountNoOverflow": true
+    }
+  ],
+  "errors": []
+}

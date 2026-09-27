@@ -646,6 +646,70 @@ img,canvas,svg{max-width:100%;}
   .dash-section{padding-left:24px;padding-right:24px;}
   .metric-row{gap:14px;}
 }
+
+/* UI refresh: presentation only; accounting and persistence scripts are unchanged. */
+#s-home{--home-panel:var(--surf);}
+#s-home .hero-card{padding:calc(var(--st) + 16px) 20px 20px;}
+#s-home #profile-chip{min-height:40px;padding:7px 12px!important;margin-bottom:14px!important;border-radius:12px!important;max-width:58%!important;}
+#s-home #ai-hero-btn{top:calc(var(--st) + 16px)!important;right:20px!important;min-height:40px;border-radius:12px!important;box-shadow:none;}
+#s-home .hero-label{font-size:12px;letter-spacing:.03em;}
+#s-home .hero-val{font-size:clamp(26px,8.2vw,36px);line-height:1.2;margin-top:5px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
+#s-home .hero-chips{margin-top:17px;gap:0;border-top:1px solid rgba(255,255,255,.2);padding-top:12px;}
+#s-home .hero-chip{flex:1;min-width:0;border:0;border-radius:0;background:none;box-shadow:none;padding:0 14px 0 0;}
+#s-home .hero-chip+.hero-chip{border-left:1px solid rgba(255,255,255,.2);padding-left:18px;}
+#s-home .hchip-val{font-size:18px;line-height:1.35;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
+#s-home .hchip-label{font-size:12px;}
+#s-home #period-bar{gap:3px;margin:16px 20px 0;padding:4px;background:var(--bg2);border:1px solid var(--bdr);border-radius:13px;overflow:visible;}
+#s-home .period-btn{flex:1;min-width:0;min-height:38px;padding:5px 2px;border:0;border-radius:9px;font-size:12px;background:none;backdrop-filter:none;box-shadow:none;}
+#s-home .period-btn.active{background:var(--g);color:white;}
+#s-home #home-summary{padding:12px 20px 0;}
+.home-tools{display:flex;gap:7px;align-items:center;margin-bottom:16px;}
+.home-add-btn{display:flex;align-items:center;justify-content:center;gap:6px;min-height:44px;flex:1;border:0;border-radius:12px;background:var(--g);color:white;font-weight:700;font-size:14px;cursor:pointer;}
+.home-add-btn>span:first-child{font-size:22px;font-weight:400;line-height:1;}
+#s-home .home-tools .privacy-btn{margin:0!important;width:44px;height:44px;min-width:44px;border-radius:12px;background:var(--surf2);box-shadow:none;}
+#s-home .metric-row{gap:12px;margin-bottom:16px;}
+#s-home .metric-card{min-width:0;padding:14px;border-radius:14px;background:var(--home-panel);border:1px solid var(--bdr);box-shadow:none;backdrop-filter:none;}
+#s-home .mval{font-size:clamp(17px,5.2vw,23px);line-height:1.4;overflow-wrap:anywhere;font-variant-numeric:tabular-nums;}
+#s-home .mlabel{line-height:1.6;font-size:12px;letter-spacing:0;}
+#s-home .msub{line-height:1.65;color:var(--ink2);}
+#s-home .glass-card{border:1px solid var(--bdr);border-radius:14px;box-shadow:none;background:var(--home-panel);backdrop-filter:none;}
+#s-home .budget-card{background:var(--g2);border-color:var(--bdr2);padding:16px;}
+#s-home .budget-top{display:grid;grid-template-columns:minmax(0,1fr) minmax(76px,.65fr);gap:12px;}
+#s-home .budget-top>*{min-width:0;overflow-wrap:anywhere;}
+#s-home .budget-val{font-size:clamp(22px,6.3vw,28px);font-variant-numeric:tabular-nums;}
+#s-home .budget-mini{background:transparent;border:0;border-top:1px solid var(--bdr2);border-radius:0;padding:10px 0 0;min-width:0;overflow-wrap:anywhere;}
+#s-home #home-priority{padding:0 0 16px!important;border-bottom:1px solid var(--bdr);margin:0 0 20px;}
+#s-home #home-priority .metric-row{display:block;margin-bottom:6px;}
+#s-home #home-priority .metric-card{display:flex;align-items:baseline;justify-content:space-between;gap:14px;width:100%;min-width:0!important;background:none;border:0;padding:8px 0;border-radius:0;}
+#s-home #home-priority .mlabel{flex:0 0 105px;margin:0;}
+#s-home #home-quick-value{font-size:16px;text-align:right;}
+#s-home #home-rp-value{font-size:13px!important;text-align:right;line-height:1.6!important;}
+#s-home #home-quick-hint{font-size:11px;line-height:1.6!important;}
+#s-home .slbl{margin:20px 0 8px;font-size:14px;letter-spacing:0;color:var(--ink);text-transform:none;}
+#s-home #home-recent-hint{font-size:11px;margin-bottom:12px;}
+#s-home .crow{padding:14px;}
+#s-home .ramount{font-variant-numeric:tabular-nums;}
+#s-home button:focus-visible,.bottom-nav button:focus-visible{outline:3px solid var(--g);outline-offset:3px;}
+/* The home add action is in the toolbar: no floating control over the budget. */
+body:has(#s-home.active) #global-fab{display:none!important;}
+.bottom-nav{background:var(--bg);border-color:var(--bdr2);border-radius:18px;box-shadow:0 4px 16px rgba(0,0,0,.12);padding-top:6px;padding-bottom:6px;}
+.nav-island{border-radius:12px;background:var(--g2);border:0;box-shadow:none;backdrop-filter:none;transform:translateX(calc(var(--nav-i) * (100% + var(--nav-gap))));transition:transform .18s ease;}
+.nav-island::after{display:none;}
+.bottom-nav .tab-btn{min-height:48px;animation:none;transform:none;text-shadow:none;box-shadow:none;}
+.bottom-nav .tab-btn.active,.bottom-nav .tab-btn.active i{animation:none;transform:none;box-shadow:none;}
+#s-home .home-add-btn,#s-home .period-btn,#s-home .hero-chip{animation:none;}
+@media(max-width:380px){
+  #s-home .hero-card{padding-left:16px;padding-right:16px;}
+  #s-home #ai-hero-btn{right:16px!important;}
+  #s-home #home-summary{padding-left:16px;padding-right:16px;}
+  #s-home #period-bar{margin-left:16px;margin-right:16px;}
+  #s-home .hchip-val{font-size:16px;}
+  #s-home .metric-card{padding:12px;}
+}
+@media(min-width:760px){
+  #s-home .hero-val{font-size:40px;}
+  #s-home .home-tools{max-width:440px;}
+}
 </style>
 </head>
 <body class="light">
@@ -686,14 +750,6 @@ img,canvas,svg{max-width:100%;}
       </div>
     </div>
 
-    <div class="dash-section" id="home-priority" style="padding-bottom:0">
-      <div class="metric-row" style="flex-wrap:wrap">
-        <div class="metric-card" style="min-width:130px;flex:1"><div class="mlabel" id="home-quick-label"></div><div class="mval" id="home-quick-value" style="overflow-wrap:anywhere"></div></div>
-        <button class="metric-card" type="button" onclick="goTabIndex(1);setWalletPane('ar')" style="min-width:130px;flex:1;text-align:left;color:var(--ink);cursor:pointer"><div class="mlabel" id="home-rp-label"></div><div id="home-rp-value" style="font-size:13px;line-height:1.8;overflow-wrap:anywhere"></div></button>
-      </div>
-      <p class="msub" id="home-quick-hint" style="line-height:1.6"></p>
-      <div id="home-attention" class="glass-card" hidden style="padding:12px;margin-top:10px"></div>
-    </div>
     <!-- PERIOD SELECTOR -->
     <div class="period-bar" id="period-bar">
       <button class="period-btn active" onclick="setPeriod('week',this)" data-i="week"></button>
@@ -710,8 +766,9 @@ img,canvas,svg{max-width:100%;}
     </div>
 
     <!-- SPEND SUMMARY -->
-    <div class="dash-section">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <div class="dash-section" id="home-summary">
+      <div class="home-tools">
+        <button class="home-add-btn" id="home-add-record" type="button" onclick="fabAction()"><span aria-hidden="true">＋</span><span data-i="newtxn"></span></button>
         <button class="privacy-btn" id="privacy-btn" style="margin-left:auto" onclick="togglePrivacy()" aria-label="Hide amounts"><i class="ti ti-eye"></i></button>
         <button class="privacy-btn" onclick="openFxRates()" aria-label="Currency rates"><i class="ti ti-currency-dollar"></i></button>
         <button class="privacy-btn" onclick="openCalendar()" aria-label="Daily balance"><i class="ti ti-calendar"></i></button>
@@ -729,6 +786,15 @@ img,canvas,svg{max-width:100%;}
         </div>
       </div>
       <div class="glass-card budget-card" id="h-budget-card"></div>
+
+    <div class="dash-section" id="home-priority" style="padding-bottom:0">
+      <div class="metric-row" style="flex-wrap:wrap">
+        <div class="metric-card" style="min-width:130px;flex:1"><div class="mlabel" id="home-quick-label"></div><div class="mval" id="home-quick-value" style="overflow-wrap:anywhere"></div></div>
+        <button class="metric-card" type="button" onclick="goTabIndex(1);setWalletPane('ar')" style="min-width:130px;flex:1;text-align:left;color:var(--ink);cursor:pointer"><div class="mlabel" id="home-rp-label"></div><div id="home-rp-value" style="font-size:13px;line-height:1.8;overflow-wrap:anywhere"></div></button>
+      </div>
+      <p class="msub" id="home-quick-hint" style="line-height:1.6"></p>
+      <div id="home-attention" class="glass-card" hidden style="padding:12px;margin-top:10px"></div>
+    </div>
 
       <div class="slbl" id="home-recent-label"></div>
       <p class="msub" id="home-recent-hint" style="line-height:1.6"></p>

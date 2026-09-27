@@ -36,7 +36,8 @@ try{
     await page.screenshot({path:fileURLToPath(new URL('pnl-tools-'+width+'.png',out))});
     await page.locator('#pnl-add-entry').click();assert.equal(await page.locator('#m-txn').evaluate(el=>el.classList.contains('open')),true);
     await page.evaluate(()=>{closeM('m-txn');goTabIndex(0);updateFab();});
-    assert.equal(await page.locator('#global-fab').isVisible(),true);
+    assert.equal(await page.locator('#global-fab').isVisible(),false);
+    assert.equal(await page.locator('#home-add-record').isVisible(),true);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     results.push({width,jump:true,addEntry:true,longAmounts:true});await context.close();
   }
