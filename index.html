@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#1D9E75">
 <!-- Resolve the first paint before blocking CDN assets; never write ledger data here. -->
 <style>html{background:#0F6E56;color-scheme:dark}
+
 </style>
 <script id="initial-theme">
 (function(){
@@ -711,6 +712,25 @@ body:has(#s-home.active) #global-fab{display:none!important;}
   #s-home .hero-val{font-size:40px;}
   #s-home .home-tools{max-width:440px;}
 }
+
+/* User-selected image icons remain small, local, and independent of ledger values. */
+.item-image-icon{width:1.35em;height:1.35em;max-width:none;object-fit:cover;border-radius:24%;vertical-align:middle;display:inline-block;flex-shrink:0;}
+.icon-edit-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:44px;min-height:48px;flex-shrink:0;padding:3px;border:1px solid var(--bdr);border-radius:10px;background:var(--bg2);color:var(--ink);font-size:20px;cursor:pointer;}
+.icon-edit-btn small{font-size:10px;color:var(--ink3);}
+#image-icon-modal .modal{width:min(100%,420px);padding:20px 20px calc(20px + var(--sb));}
+#image-icon-modal .mtitle{padding:0;margin-bottom:10px;}
+.icon-crop-canvas{display:block;width:min(240px,100%);aspect-ratio:1;margin:12px auto;border:2px solid var(--bdr2);border-radius:18px;touch-action:none;cursor:grab;background:repeating-conic-gradient(#ddd 0% 25%,#fff 0% 50%) 50% / 20px 20px;}
+.icon-crop-control{display:grid;grid-template-columns:72px 1fr;align-items:center;gap:12px;font-size:13px;margin:5px 0;}
+.icon-crop-control input{width:100%;min-height:36px;accent-color:var(--g3);}
+.icon-crop-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px;}
+.icon-crop-actions button,.icon-upload-label{min-height:44px;border-radius:10px;padding:10px 14px;border:1px solid var(--bdr2);background:var(--bg2);color:var(--ink);font:inherit;cursor:pointer;}
+.icon-crop-actions button{flex:1;}
+.icon-crop-actions button:disabled{opacity:.4;cursor:default;}
+.icon-crop-actions .icon-save{background:var(--g3);color:var(--bg);}
+.icon-upload-label{display:block;text-align:center;margin:12px 0;}
+#icon-file{display:block;width:100%;margin-top:8px;font-size:12px;}
+#icon-crop-error{color:var(--r3);font-size:13px;min-height:1.4em;}
+
 </style>
 </head>
 <body class="light">
@@ -2050,6 +2070,22 @@ body:has(#s-home.active) #global-fab{display:none!important;}
 <!-- (auto-pay modal removed: bills are now created via the recurring toggle in the new-transaction modal) -->
 
 
+
+<div class="modal-wrap" id="image-icon-modal" role="dialog" aria-modal="true" aria-labelledby="icon-crop-title">
+ <div class="modal">
+  <div class="mtitle" id="icon-crop-title"></div>
+  <p id="icon-crop-hint" style="color:var(--ink3);font-size:13px"></p>
+  <label class="icon-upload-label"><span id="icon-file-label"></span><input id="icon-file" type="file" accept="image/jpeg,image/png,image/webp" onchange="loadIconFile(this.files[0])"></label>
+  <canvas id="icon-crop-canvas" class="icon-crop-canvas" width="240" height="240" aria-label="Image crop preview"></canvas>
+  <div style="text-align:center"><span id="icon-preview" style="font-size:24px"></span></div>
+  <label class="icon-crop-control"><span id="icon-zoom-label"></span><input id="icon-zoom" type="range" min="1" max="4" step="0.01" value="1" oninput="updateIconCrop('zoom',this.value)"></label>
+  <label class="icon-crop-control"><span id="icon-x-label"></span><input id="icon-x" type="range" min="0" max="1" step="0.01" value="0.5" oninput="updateIconCrop('x',this.value)"></label>
+  <label class="icon-crop-control"><span id="icon-y-label"></span><input id="icon-y" type="range" min="0" max="1" step="0.01" value="0.5" oninput="updateIconCrop('y',this.value)"></label>
+  <div id="icon-crop-error" role="status" aria-live="polite"></div>
+  <div class="icon-crop-actions"><button id="icon-restore" onclick="saveImageIcon(true)"></button><button id="icon-cancel" onclick="closeM('image-icon-modal')"></button><button id="icon-save" class="icon-save" onclick="saveImageIcon(false)" disabled></button></div>
+ </div>
+</div>
+
 <script src="./cloud-auth.js?v=1"></script>
 <script src="./cloud-ui.js?v=3"></script>
 <script>
@@ -2882,7 +2918,7 @@ function renderAcctBalances(){
       sub=`<span style="color:var(--g3)">↓${fmtCur(f.inn,ac.cur)}</span> · <span style="color:var(--r3)">↑${fmtCur(f.out,ac.cur)}</span>`;
     }
     return `<div class="crow" onclick="openAcctTxns(${inlineJsString(ac.id)})" style="cursor:pointer;${ac.excluded?'opacity:0.5;':''}">
-      <div class="ibox" style="background:var(--bg2);font-size:22px">${escapeHtml(ac.icon)}</div>
+      <div class="ibox" style="background:var(--bg2);font-size:22px">${itemIcon(ac)}</div>
       <div class="rinfo"><div class="rtitle">${escapeHtml(acctLabel(ac))}${invBadge}${secondBadge}${debtBadge}${exAcctBadge}</div>
         <div class="rsub">${sub}</div></div>
       <div style="text-align:right"><div style="font-size:17px;font-weight:700;color:${balColor}">${fmtCur(bal,ac.cur)}</div>
@@ -3129,7 +3165,7 @@ function renderDebts(){
   set('debt-paid',fmt(debts.reduce((a,d)=>a+(d.paidTotal||0),0)));
   el.innerHTML=debts.length?debts.map(d=>{
     const ac=getAcct(d.acctId);const ml=estMonths(d);
-    return `<div class="crow"><div class="ibox" style="background:var(--p2);color:var(--p3);font-size:18px">🏦</div><div class="rinfo"><div class="rtitle">${escapeHtml(d.name)}${d.paused?` <span class="badge bgr">${t('debtpaused')}</span>`:''}${d.noInterest?` <span class="badge bgr">${t('debtnointerest')}</span>`:''}</div><div class="rsub">APR ${escapeHtml(d.apr||0)}% · ${t('debtmonthly')} ${fmt(d.monthly||0)}${ac?' · '+escapeHtml(ac.icon)+' '+escapeHtml(acctLabel(ac)):''}${ml?' · ~'+ml+t('mo'):''}${d.compound==='simple'?' · '+t('debtcsimple'):d.compound==='annual'?' · '+t('debtcannual'):''}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="toggleDebtPause(${inlineJsString(d.id)})" style="font-size:12px;padding:7px 12px;border:1px solid ${d.paused?'var(--g)':'var(--bdr2)'};border-radius:20px;background:none;color:${d.paused?'var(--g3)':'var(--ink3)'};cursor:pointer">${d.paused?t('resume'):t('pause')}</button><button onclick="openDebtModal(${inlineJsString(d.id)})" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deleteDebt(${inlineJsString(d.id)})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700;color:var(--r3)">${fmt(d.balance||0)}</div><div style="font-size:11px;color:var(--ink3)">${t('debtinterest')} ${fmt(d.accInterest||0)}</div></div></div>`;
+    return `<div class="crow"><div class="ibox" style="background:var(--p2);color:var(--p3);font-size:18px">🏦</div><div class="rinfo"><div class="rtitle">${escapeHtml(d.name)}${d.paused?` <span class="badge bgr">${t('debtpaused')}</span>`:''}${d.noInterest?` <span class="badge bgr">${t('debtnointerest')}</span>`:''}</div><div class="rsub">APR ${escapeHtml(d.apr||0)}% · ${t('debtmonthly')} ${fmt(d.monthly||0)}${ac?' · '+itemIcon(ac)+' '+escapeHtml(acctLabel(ac)):''}${ml?' · ~'+ml+t('mo'):''}${d.compound==='simple'?' · '+t('debtcsimple'):d.compound==='annual'?' · '+t('debtcannual'):''}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="toggleDebtPause(${inlineJsString(d.id)})" style="font-size:12px;padding:7px 12px;border:1px solid ${d.paused?'var(--g)':'var(--bdr2)'};border-radius:20px;background:none;color:${d.paused?'var(--g3)':'var(--ink3)'};cursor:pointer">${d.paused?t('resume'):t('pause')}</button><button onclick="openDebtModal(${inlineJsString(d.id)})" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deleteDebt(${inlineJsString(d.id)})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700;color:var(--r3)">${fmt(d.balance||0)}</div><div style="font-size:11px;color:var(--ink3)">${t('debtinterest')} ${fmt(d.accInterest||0)}</div></div></div>`;
   }).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
 }
 function openDebtModal(id){
@@ -3552,7 +3588,7 @@ function openGambleModal(editId,defaultSecId){
   document.getElementById('g-margin-toggle').classList.toggle('on',!!(g&&g.margin));
   applyI18n();document.getElementById('m-gamble').classList.add('open');
 }
-function closeM(id){document.getElementById(id).classList.remove('open');}
+function closeM(id){document.getElementById(id).classList.remove('open');if(id==='image-icon-modal')cancelImageIcon();}
 // "Position" tab in the + modal: launcher buttons to add P&L holdings (same actions as the old P&L top bar)
 function renderPositionAdders(){
   const el=document.getElementById('pos-adders');if(!el)return;
@@ -3632,7 +3668,7 @@ function renderCatChips(){
   let cats=ids.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean);
   cats=mruSort(cats,'catMRU',c=>c.id);
   if(!cats.find(c=>c.id===S.selCat))S.selCat=cats[0]?.id||'other';
-  const chips=cats.map(c=>`<div class="cat-chip${c.id===S.selCat?' sel':''}" onclick="selCat(${inlineJsString(c.id)},this)"><span style="font-size:20px">${escapeHtml(c.icon)}</span><span>${escapeHtml(catLabel(c))}</span></div>`).join('');
+  const chips=cats.map(c=>`<div class="cat-chip${c.id===S.selCat?' sel':''}" onclick="selCat(${inlineJsString(c.id)},this)"><span style="font-size:20px">${itemIcon(c)}</span><span>${escapeHtml(catLabel(c))}</span></div>`).join('');
   const addChip=`<div class="cat-chip" onclick="toggleInlineCat()" style="border-style:dashed"><span style="font-size:20px">＋</span><span>${t('addcat')}</span></div>`;
   document.getElementById('cat-chips').innerHTML=chips+addChip;
 }
@@ -3658,7 +3694,7 @@ function renderAcctChips(){
   let accts=(S.accounts||[]).slice();
   accts=mruSort(accts,'acctMRU',a=>a.id);
   if(!accts.find(a=>a.id===S.selAcct))S.selAcct=accts[0]?.id;
-  const chips=accts.map(a=>`<div class="cat-chip${a.id===S.selAcct?' sel':''}" onclick="selAcctChip(${inlineJsString(a.id)},this)"><span style="font-size:20px">${escapeHtml(a.icon)}</span><span>${escapeHtml(acctLabel(a))}</span></div>`).join('');
+  const chips=accts.map(a=>`<div class="cat-chip${a.id===S.selAcct?' sel':''}" onclick="selAcctChip(${inlineJsString(a.id)},this)"><span style="font-size:20px">${itemIcon(a)}</span><span>${escapeHtml(acctLabel(a))}</span></div>`).join('');
   const addChip=`<div class="cat-chip" onclick="toggleInlineAcct()" style="border-style:dashed"><span style="font-size:20px">＋</span><span>${t('addacct')}</span></div>`;
   document.getElementById('acct-chips').innerHTML=chips+addChip;
 }
@@ -3667,7 +3703,7 @@ function renderAcctToChips(){
   let accts=(S.accounts||[]).slice();
   accts=mruSort(accts,'acctMRU',a=>a.id);
   if(!accts.find(a=>a.id===S.selAcctTo))S.selAcctTo=accts.find(a=>a.id!==S.selAcct)?.id||accts[0]?.id;
-  document.getElementById('acct-to-chips').innerHTML=accts.map(a=>`<div class="cat-chip${a.id===S.selAcctTo?' sel':''}" onclick="selAcctToChip(${inlineJsString(a.id)},this)"><span style="font-size:20px">${escapeHtml(a.icon)}</span><span>${escapeHtml(acctLabel(a))}</span></div>`).join('');
+  document.getElementById('acct-to-chips').innerHTML=accts.map(a=>`<div class="cat-chip${a.id===S.selAcctTo?' sel':''}" onclick="selAcctToChip(${inlineJsString(a.id)},this)"><span style="font-size:20px">${itemIcon(a)}</span><span>${escapeHtml(acctLabel(a))}</span></div>`).join('');
 }
 function selAcctToChip(id,el){S.selAcctTo=id;document.querySelectorAll('#acct-to-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
 function toggleInlineAcct(){const el=document.getElementById('inline-newacct');el.style.display=el.style.display==='none'?'block':'none';if(el.style.display==='block')document.getElementById('inline-acct-name').focus();}
@@ -3723,10 +3759,10 @@ function txnRow(tx){
   if(tx.rpAccrual){
     const cat=getCat(tx.catId);const rpEditId=inlineJsString(tx.fromRP);const rpLabel=tt('收入應收','Income receivable');
     const rpEditBtn=`<button onclick="editAR(${rpEditId})" title="${t('editpos')}" aria-label="${t('editpos')}" style="padding:10px 9px;border:none;background:none;color:var(--ink3);font-size:15px;cursor:pointer;flex-shrink:0"><i class="ti ti-pencil"></i></button>`;
-    return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${escapeHtml(cat.icon)}</div><div class="rinfo"><div class="rtitle">${note}<span class="badge bg">${rpLabel}</span></div><div class="rsub">${date} · ${cur}${acct?` · ${acct}`:''} · ${tt('尚未收款','Not collected')}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount pos">+${sym}${escapeHtml(tx.amount.toLocaleString())}</span>${rpEditBtn}</div></div>`;
+    return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${itemIcon(cat)}</div><div class="rinfo"><div class="rtitle">${note}<span class="badge bg">${rpLabel}</span></div><div class="rsub">${date} · ${cur}${acct?` · ${acct}`:''} · ${tt('尚未收款','Not collected')}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount pos">+${sym}${escapeHtml(tx.amount.toLocaleString())}</span>${rpEditBtn}</div></div>`;
   }
   const cat=getCat(tx.catId);
-  return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${escapeHtml(cat.icon)}</div><div class="rinfo"><div class="rtitle">${note}${tx.oneOff?`<span class="badge ba">${t('oneoff')}</span>`:''}${tx.autoPayId?'<span class="badge bb">auto</span>':''}${tx.isGroupBill?`<span class="badge bp">${t('group')}</span>`:''}${exBadge}</div><div class="rsub">${date} · ${cur}${acct?` · ${acct}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${cls}">${sign}${sym}${escapeHtml(tx.amount.toLocaleString())}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
+  return `<div class="crow" style="${dim}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${itemIcon(cat)}</div><div class="rinfo"><div class="rtitle">${note}${tx.oneOff?`<span class="badge ba">${t('oneoff')}</span>`:''}${tx.autoPayId?'<span class="badge bb">auto</span>':''}${tx.isGroupBill?`<span class="badge bp">${t('group')}</span>`:''}${exBadge}</div><div class="rsub">${date} · ${cur}${acct?` · ${acct}`:''}</div></div><div style="text-align:right;display:flex;align-items:center;gap:2px"><span class="ramount ${cls}">${sign}${sym}${escapeHtml(tx.amount.toLocaleString())}</span>${editBtn}${exBtn}${delBtn}</div></div>`;
 }
 function toggleTxnExclude(id){const tx=S.txns.find(x=>String(x.id)===String(id));if(tx&&tx.rpAccrual)return;if(tx?.debtId!=null){showToast(tt('連動債務記錄不能單獨排除，否則現金與債務會不一致。','Linked debt entries cannot be excluded separately from the debt.'),1);return;}if(tx){tx.excluded=!tx.excluded;syncAutoPayFromTxn(tx);}saveS();refreshAllViews();}
 function debtRepaymentReversal(tx){
@@ -3901,7 +3937,7 @@ function openSettleGroup(ids,editTxnId){
 }
 function renderSettleAcctChips(){
   const el=document.getElementById('settle-acct-chips');if(!el)return;
-  el.innerHTML=(S.accounts||[]).map(a=>`<div class="cat-chip${a.id===S._settleAcct?' sel':''}" onclick="selSettleAcct(${inlineJsString(a.id)},this)"><span style="font-size:20px">${escapeHtml(a.icon)}</span><span>${escapeHtml(acctLabel(a))}</span></div>`).join('');
+  el.innerHTML=(S.accounts||[]).map(a=>`<div class="cat-chip${a.id===S._settleAcct?' sel':''}" onclick="selSettleAcct(${inlineJsString(a.id)},this)"><span style="font-size:20px">${itemIcon(a)}</span><span>${escapeHtml(acctLabel(a))}</span></div>`).join('');
 }
 function selSettleAcct(id,el){S._settleAcct=id;document.querySelectorAll('#settle-acct-chips .cat-chip').forEach(c=>c.classList.remove('sel'));el.classList.add('sel');}
 function restoreRPSettlement(p,tx){
@@ -3972,7 +4008,7 @@ function renderBillCats(){
   wrap.style.display=S._billMe?'block':'none';
   if(!S._billMe)return;
   const cats=billExpenseCats();if(!cats.find(c=>c.id===S._billCat))S._billCat=cats[0]?.id||'other';
-  el.innerHTML=cats.map(c=>`<div class="cat-chip${c.id===S._billCat?' sel':''}" onclick="selBillCat(${inlineJsString(c.id)},this)"><span style="font-size:20px">${escapeHtml(c.icon)}</span><span>${escapeHtml(catLabel(c))}</span></div>`).join('');
+  el.innerHTML=cats.map(c=>`<div class="cat-chip${c.id===S._billCat?' sel':''}" onclick="selBillCat(${inlineJsString(c.id)},this)"><span style="font-size:20px">${itemIcon(c)}</span><span>${escapeHtml(catLabel(c))}</span></div>`).join('');
 }
 function selBillCat(id,el){S._billCat=id;bumpMRU('catMRU',id);saveS();document.querySelectorAll('#gb-cat-chips .cat-chip').forEach(c=>c.classList.remove('sel'));if(el)el.classList.add('sel');updateSplitPreview();}
 function renderBillFriends(){
@@ -4003,7 +4039,7 @@ function updateSplitPreview(){
   if(!total){pv.textContent=t('totalHKD');return;}
   const ppl=inc.length+(S._billMe?1:0);
   const myCat=getCat(S._billCat||'food');
-  const myPart=S._billMe?` · ${t('yourshare')}: <strong>${fmt(mine)}</strong>${myCat?` <span style="color:var(--ink3)">(${myCat.icon} ${catLabel(myCat)})</span>`:''}`:` · <span style="color:var(--ink3)">${t('helponly')}</span>`;
+  const myPart=S._billMe?` · ${t('yourshare')}: <strong>${fmt(mine)}</strong>${myCat?` <span style="color:var(--ink3)">(${itemIcon(myCat)} ${escapeHtml(catLabel(myCat))})</span>`:''}`:` · <span style="color:var(--ink3)">${t('helponly')}</span>`;
   pv.innerHTML=`<strong>${ppl} ${t('people')}</strong>${myPart} · ${t('totalar')}: <strong style="color:var(--g3)">${fmt(friendsTotal)}</strong>`;
 }
 function saveGroupBill(){
@@ -4183,7 +4219,7 @@ function renderBudgetCategoryFilter(){
   const el=document.getElementById('budget-cat-list'),summary=document.getElementById('budget-cat-summary');if(!el||!summary)return;
   const cfg=budgetCfg(),cats=billExpenseCats(),excluded=new Set(cfg.excludedCats);
   summary.textContent=`${tt('不扣預算類別','Budget exclusions')} · ${excluded.size}`;
-  el.innerHTML=cats.map(c=>{const off=excluded.has(String(c.id));return `<div class="tax-cat-row"><div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="font-size:20px">${escapeHtml(c.icon||'📌')}</span><span style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(catLabel(c))}</span></div><button type="button" aria-pressed="${off}" onclick="toggleBudgetCat(${inlineJsString(c.id)})" style="padding:6px 10px;border:1.5px solid ${off?'var(--a)':'var(--bdr2)'};border-radius:20px;background:${off?'var(--a2)':'transparent'};color:${off?'var(--a3)':'var(--ink3)'};font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">${off?tt('不扣預算','Excluded'):tt('扣預算','Counts')}</button></div>`;}).join('');
+  el.innerHTML=cats.map(c=>{const off=excluded.has(String(c.id));return `<div class="tax-cat-row"><div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="font-size:20px">${itemIcon(c)}</span><span style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(catLabel(c))}</span></div><button type="button" aria-pressed="${off}" onclick="toggleBudgetCat(${inlineJsString(c.id)})" style="padding:6px 10px;border:1.5px solid ${off?'var(--a)':'var(--bdr2)'};border-radius:20px;background:${off?'var(--a2)':'transparent'};color:${off?'var(--a3)':'var(--ink3)'};font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0">${off?tt('不扣預算','Excluded'):tt('扣預算','Counts')}</button></div>`;}).join('');
 }
 function toggleBudgetCat(id){
   if(id===''&&(S.cats||[]).filter(c=>c.id==='').length!==1){showToast(tt('舊分類編號無法唯一識別，請先核對分類；沒有更改預算。','Legacy category ID is ambiguous. Review categories first; budget unchanged.'),1);return;}
@@ -5481,7 +5517,7 @@ function renderAutopay(){
   if(totalEl)totalEl.textContent=fmt(active.reduce((a,ap)=>a+toHKD(ap.amount,ap.cur),0));
   if(ctEl)ctEl.textContent=active.length;
   const listEl=document.getElementById('ap-list');
-  if(listEl)listEl.innerHTML=S.autopay.length?S.autopay.map(ap=>{const cat=getCat(ap.catId),id=inlineJsString(ap.id);return `<div class="crow"><div class="ibox" style="background:${CB[ap.catId]||'#F1EFE8'}">${escapeHtml(cat.icon)}</div><div class="rinfo"><div class="rtitle">${escapeHtml(ap.name)} <span class="badge ${ap.active?'bg':'bgr'}">${ap.active?t('activebadge'):t('pausedbadge')}</span></div><div class="rsub">Day ${escapeHtml(ap.day)} · ${escapeHtml(ap.cur)} ${escapeHtml(ap.amount)}${ap.acct?' · '+escapeHtml(ap.acct):''}</div></div><div style="display:flex;gap:8px;align-items:center"><button onclick="editAP(${id})" style="padding:6px 10px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:var(--b3);font-size:12px;font-weight:600;cursor:pointer">${t('act_edit')}</button><button onclick="toggleAP(${id})" style="padding:6px 12px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);font-size:12px;font-weight:600;cursor:pointer">${ap.active?t('pause'):t('resume')}</button><button onclick="deleteAP(${id})" style="padding:6px 9px;border:none;background:none;color:var(--r3);font-size:20px;cursor:pointer"><i class="ti ti-trash"></i></button></div></div>`;}).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${t('nobills')}</div>`;
+  if(listEl)listEl.innerHTML=S.autopay.length?S.autopay.map(ap=>{const cat=getCat(ap.catId),id=inlineJsString(ap.id);return `<div class="crow"><div class="ibox" style="background:${CB[ap.catId]||'#F1EFE8'}">${itemIcon(cat)}</div><div class="rinfo"><div class="rtitle">${escapeHtml(ap.name)} <span class="badge ${ap.active?'bg':'bgr'}">${ap.active?t('activebadge'):t('pausedbadge')}</span></div><div class="rsub">Day ${escapeHtml(ap.day)} · ${escapeHtml(ap.cur)} ${escapeHtml(ap.amount)}${ap.acct?' · '+escapeHtml(ap.acct):''}</div></div><div style="display:flex;gap:8px;align-items:center"><button onclick="editAP(${id})" style="padding:6px 10px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:var(--b3);font-size:12px;font-weight:600;cursor:pointer">${t('act_edit')}</button><button onclick="toggleAP(${id})" style="padding:6px 12px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);font-size:12px;font-weight:600;cursor:pointer">${ap.active?t('pause'):t('resume')}</button><button onclick="deleteAP(${id})" style="padding:6px 9px;border:none;background:none;color:var(--r3);font-size:20px;cursor:pointer"><i class="ti ti-trash"></i></button></div></div>`;}).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${t('nobills')}</div>`;
 }
 function quoteKeyMask(key){key=String(key||'');const tail=key.slice(-4);return '••••••••'+tail+' · '+key.length+tt(' 字元',' chars');}
 function setSettingsSectionTitle(id,title){const el=document.getElementById(id);if(!el)return;el.dataset.settingsTitle=title;const inner=el.querySelector('.set-title');if(inner)inner.textContent=title;else el.textContent=title;}
@@ -5567,7 +5603,7 @@ function calDayDetail(day){
   else html+=rows.map(tx=>{
     const cat=getCat(tx.catId);const tm=new Date(tx.id);const hh=(tm&&tm.getFullYear()>2000)?String(tm.getHours()).padStart(2,'0')+':'+String(tm.getMinutes()).padStart(2,'0'):'';
     const sym=CUR_SYM[tx.cur]||(tx.cur+' ');const isInc=tx.type==='income';
-    return `<div class="crow" style="${tx.excluded?'opacity:0.45;':''}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${escapeHtml(cat.icon)}</div><div class="rinfo"><div class="rtitle" style="font-size:14px">${escapeHtml(tx.note||catLabel(cat))}${tx.excluded?` <span class="badge bgr">${t('excluded')}</span>`:''}</div><div class="rsub">${hh?hh+' · ':''}${escapeHtml(catLabel(cat))}${tx.acctLabel?' · '+escapeHtml(tx.acctLabel):''}</div></div><div class="ramount ${isInc?'pos':'neg'}">${isInc?'+':'−'}${escapeHtml(sym)}${tx.amount.toLocaleString()}</div></div>`;
+    return `<div class="crow" style="${tx.excluded?'opacity:0.45;':''}"><div class="ibox" style="background:${CB[tx.catId]||'#F1EFE8'}">${itemIcon(cat)}</div><div class="rinfo"><div class="rtitle" style="font-size:14px">${escapeHtml(tx.note||catLabel(cat))}${tx.excluded?` <span class="badge bgr">${t('excluded')}</span>`:''}</div><div class="rsub">${hh?hh+' · ':''}${escapeHtml(catLabel(cat))}${tx.acctLabel?' · '+escapeHtml(tx.acctLabel):''}</div></div><div class="ramount ${isInc?'pos':'neg'}">${isInc?'+':'−'}${escapeHtml(sym)}${tx.amount.toLocaleString()}</div></div>`;
   }).join('');
   det.innerHTML=html;
 }
@@ -5592,7 +5628,7 @@ function renderSettings(){
   document.querySelectorAll('.numfmt-btn').forEach(b=>b.classList.toggle('active',b.dataset.numfmt===(S.numFmt||'full')));
   document.getElementById('alias-target').innerHTML=S.cats.map(c=>`<option value="${escapeHtml(c.id)}">${escapeHtml(c.icon)} ${escapeHtml(catLabel(c))}</option>`).join('');
   renderMergeChips();
-  document.getElementById('cat-mgr').innerHTML=S.cats.map(c=>`<div style="display:flex;align-items:flex-start;padding:12px 15px;gap:12px;border-bottom:0.5px solid var(--bdr)"><div style="font-size:20px;width:28px;padding-top:2px">${escapeHtml(c.icon)}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">${escapeHtml(catLabel(c))}</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">${(c.aliases||[]).map(a=>`<span class="alias-chip">${escapeHtml(a)}</span>`).join('')}</div></div></div>`).join('');
+  document.getElementById('cat-mgr').innerHTML=S.cats.map(c=>`<div style="display:flex;align-items:flex-start;padding:12px 15px;gap:12px;border-bottom:0.5px solid var(--bdr)">${iconEditButton('category',c)}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600">${escapeHtml(catLabel(c))}</div><div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px">${(c.aliases||[]).map(a=>`<span class="alias-chip">${escapeHtml(a)}</span>`).join('')}</div></div></div>`).join('');
   renderAcctMgr();
   setupSettingsCollapse();
 }
@@ -5629,13 +5665,70 @@ function toggleSetSec(key,node,body){
   body.classList.toggle('col',willCol);node.classList.toggle('col',willCol);
   S.setCollapsed=S.setCollapsed||{};S.setCollapsed[key]=willCol;saveS();
 }
+
+// Images are optional metadata on an existing account/category. The emoji remains
+// intact for old backups and native text-only selects; all image data is raster.
+function validIconImage(value){return typeof value==='string'&&value.length<=32768&&/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);}
+function itemIcon(item){return validIconImage(item?.iconImage)?'<img class="item-image-icon" src="'+item.iconImage+'" alt="" draggable="false">':escapeHtml(item?.icon||'');}
+function iconEditButton(kind,item){return `<button type="button" class="icon-edit-btn" onclick="openImageIcon(${inlineJsString(kind)},${inlineJsString(item.id)})" aria-label="${escapeHtml(tt('更改圖示：','Change icon: ')+(item.label||item.id))}">${itemIcon(item)}<small>${tt('圖片','Image')}</small></button>`;}
+let imageIconDraft=null,imageIconLoad=0;
+function cancelImageIcon(){imageIconLoad++;imageIconDraft=null;const input=document.getElementById('icon-file');if(input)input.value='';}
+function openImageIcon(kind,id){
+  const item=(kind==='account'?S.accounts:kind==='category'?S.cats:[]).find(x=>x.id===id);if(!item)return;
+  cancelImageIcon();imageIconDraft={item,state:S,key:profileKey(),image:null,zoom:1,x:.5,y:.5};
+  const labels={'icon-crop-title':tt('自訂圖示 · ','Custom icon · ')+(item.label||id),'icon-crop-hint':tt('選擇圖片後，拖動或用滑桿調整裁剪。只保存小圖示，會隨帳戶備份及已啟用的同步保留。','Choose an image, then drag or use the sliders to crop. Only the small icon is saved, including in backups and enabled sync.'),'icon-file-label':tt('選擇圖片（JPG / PNG / WebP）','Choose image (JPG / PNG / WebP)'),'icon-zoom-label':tt('放大','Zoom'),'icon-x-label':tt('左右位置','Horizontal'),'icon-y-label':tt('上下位置','Vertical'),'icon-restore':tt('還原圖示','Restore emoji'),'icon-cancel':tt('取消','Cancel'),'icon-save':tt('儲存','Save')};
+  Object.entries(labels).forEach(([id,text])=>document.getElementById(id).textContent=text);
+  document.getElementById('icon-crop-error').textContent='';document.getElementById('icon-preview').innerHTML=itemIcon(item);
+  document.getElementById('icon-restore').disabled=!item.iconImage;document.getElementById('icon-save').disabled=true;
+  ['zoom','x','y'].forEach(k=>{document.getElementById('icon-'+k).value=imageIconDraft[k];document.getElementById('icon-'+k).disabled=true;});
+  const canvas=document.getElementById('icon-crop-canvas');canvas.getContext('2d').clearRect(0,0,240,240);
+  let drag=null;
+  canvas.onpointerdown=e=>{if(!imageIconDraft?.image)return;drag={x:e.clientX,y:e.clientY};canvas.setPointerCapture(e.pointerId);};
+  canvas.onpointerup=canvas.onpointercancel=()=>{drag=null;};
+  canvas.onpointermove=e=>{const d=imageIconDraft;if(!drag||!d?.image)return;const size=canvas.getBoundingClientRect().width,scale=Math.max(size/d.image.naturalWidth,size/d.image.naturalHeight)*d.zoom;
+    const dx=size-d.image.naturalWidth*scale,dy=size-d.image.naturalHeight*scale;
+    if(dx<-.01)d.x=Math.max(0,Math.min(1,d.x+(e.clientX-drag.x)/dx));if(dy<-.01)d.y=Math.max(0,Math.min(1,d.y+(e.clientY-drag.y)/dy));
+    drag={x:e.clientX,y:e.clientY};drawIconCrop();};
+  const modal=document.getElementById('image-icon-modal');modal.onkeydown=e=>{if(e.key==='Escape'){e.stopPropagation();closeM('image-icon-modal');}};modal.classList.add('open');document.getElementById('icon-file').focus();
+}
+async function loadIconFile(file){
+  if(!file||!imageIconDraft)return;const d=imageIconDraft,request=++imageIconLoad;
+  const fail=message=>{if(request===imageIconLoad)document.getElementById('icon-crop-error').textContent=message;};
+  document.getElementById('icon-crop-error').textContent='';
+  if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>15*1024*1024){fail(tt('請選擇 15 MB 以下的 JPG、PNG 或 WebP 圖片。','Choose a JPG, PNG or WebP image under 15 MB.'));return;}
+  document.getElementById('icon-save').disabled=true;
+  const url=URL.createObjectURL(file);
+  try{
+    const img=new Image();await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=reject;img.src=url;});
+    if(request!==imageIconLoad||d!==imageIconDraft)return;
+    if(!img.naturalWidth||!img.naturalHeight||img.naturalWidth*img.naturalHeight>40000000)throw new Error('image size');
+    d.image=img;d.zoom=1;d.x=d.y=.5;['zoom','x','y'].forEach(k=>document.getElementById('icon-'+k).disabled=false);
+    drawIconCrop();document.getElementById('icon-save').disabled=false;
+  }catch(e){fail(tt('未能讀取圖片，請轉為 JPG 或 PNG 後再試。','Cannot read this image. Try a JPG or PNG copy.'));if(request===imageIconLoad)document.getElementById('icon-save').disabled=!d.image;}
+  finally{URL.revokeObjectURL(url);document.getElementById('icon-file').value='';}
+}
+function updateIconCrop(key,value){const d=imageIconDraft;if(!d||!['zoom','x','y'].includes(key))return;d[key]=Math.max(key==='zoom'?1:0,Math.min(key==='zoom'?4:1,Number(value)||0));drawIconCrop();}
+function paintIconCrop(canvas,d){const size=canvas.width,scale=Math.max(size/d.image.naturalWidth,size/d.image.naturalHeight)*d.zoom,w=d.image.naturalWidth*scale,h=d.image.naturalHeight*scale,ctx=canvas.getContext('2d');ctx.clearRect(0,0,size,size);ctx.drawImage(d.image,(size-w)*d.x,(size-h)*d.y,w,h);}
+function croppedIconImage(){const canvas=document.createElement('canvas');canvas.width=canvas.height=96;paintIconCrop(canvas,imageIconDraft);return canvas.toDataURL('image/webp',.85);}
+function drawIconCrop(){const d=imageIconDraft;if(!d?.image)return;paintIconCrop(document.getElementById('icon-crop-canvas'),d);['zoom','x','y'].forEach(k=>document.getElementById('icon-'+k).value=d[k]);document.getElementById('icon-preview').innerHTML=itemIcon({iconImage:croppedIconImage()});}
+function saveImageIcon(restore){
+  const d=imageIconDraft;if(!d)return;
+  if(d.state!==S||d.key!==profileKey()||![...(S.accounts||[]),...(S.cats||[])].includes(d.item)){closeM('image-icon-modal');return;}
+  if(!restore&&!d.image)return;
+  const value=restore?null:croppedIconImage();if(value&&!validIconImage(value)){document.getElementById('icon-crop-error').textContent=tt('圖片太大，請選擇較簡單的圖片。','Icon is too large. Choose a simpler image.');return;}
+  const had=Object.hasOwn(d.item,'iconImage'),before=d.item.iconImage;
+  if(restore)delete d.item.iconImage;else d.item.iconImage=value;
+  if(!saveS()){if(had)d.item.iconImage=before;else delete d.item.iconImage;document.getElementById('icon-crop-error').textContent=tt('儲存失敗，原圖示已保留。','Save failed; the original icon was retained.');return;}
+  closeM('image-icon-modal');renderSettings();refreshAllViews();showToast(tt('圖示已更新','Icon updated'));
+}
+
 function renderAcctMgr(){
   const el=document.getElementById('acct-mgr');if(!el)return;
   el.innerHTML=(S.accounts||[]).map(a=>{
     const opts=ACCT_KINDS.map(k=>`<option value="${k}"${(a.kind||'other')===k?' selected':''}>${kindLabel(k)}</option>`).join('');
     const secondOpts=ACCT_SECONDARY_KINDS.map(k=>`<option value="${k}"${(a.secondaryKind||'none')===k?' selected':''}>${secondaryKindLabel(k)}</option>`).join('');
     const curOpts=['HKD','RMB','USD','JPY'].map(c=>`<option value="${c}"${(a.cur||'HKD')===c?' selected':''}>${c}</option>`).join('');
-    return `<div style="display:flex;align-items:center;padding:12px 15px;gap:8px;border-bottom:0.5px solid var(--bdr);${a.excluded?'opacity:0.55;':''}"><div style="font-size:20px;width:26px;flex-shrink:0">${escapeHtml(a.icon)}</div><div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(acctLabel(a))}${a.excluded?`<span class="badge bgr" style="margin-left:6px">${t('excluded')}</span>`:''}</div><div style="display:flex;gap:6px;margin-top:5px"><select onchange="setAcctKind(${inlineJsString(a.id)},this.value)" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${opts}</select><select onchange="setAcctCur(${inlineJsString(a.id)},this.value)" style="width:74px;flex-shrink:0;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${curOpts}</select></div><div style="margin-top:5px"><select onchange="setAcctSecondaryKind(${inlineJsString(a.id)},this.value)" title="${escapeHtml(t('acctsecondary'))}" aria-label="${escapeHtml(t('acctsecondary'))}" style="width:100%;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${secondOpts}</select></div></div><button onclick="toggleAcctExclude(${inlineJsString(a.id)})" title="${escapeHtml(t('excludetip'))}" style="padding:6px 9px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:${a.excluded?'var(--a3)':'var(--ink3)'};font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0">${a.excluded?t('included'):t('exclude')}</button><button onclick="deleteAcct(${inlineJsString(a.id)})" style="padding:6px 8px;border:none;background:none;color:var(--r3);font-size:19px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button></div>`;
+    return `<div style="display:flex;align-items:center;padding:12px 15px;gap:8px;border-bottom:0.5px solid var(--bdr);${a.excluded?'opacity:0.55;':''}">${iconEditButton('account',a)}<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(acctLabel(a))}${a.excluded?`<span class="badge bgr" style="margin-left:6px">${t('excluded')}</span>`:''}</div><div style="display:flex;gap:6px;margin-top:5px"><select onchange="setAcctKind(${inlineJsString(a.id)},this.value)" style="flex:1;min-width:0;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${opts}</select><select onchange="setAcctCur(${inlineJsString(a.id)},this.value)" style="width:74px;flex-shrink:0;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${curOpts}</select></div><div style="margin-top:5px"><select onchange="setAcctSecondaryKind(${inlineJsString(a.id)},this.value)" title="${escapeHtml(t('acctsecondary'))}" aria-label="${escapeHtml(t('acctsecondary'))}" style="width:100%;border:1px solid var(--bdr2);border-radius:8px;padding:5px;background:var(--bg2);color:var(--ink2);font-size:11px;-webkit-appearance:none">${secondOpts}</select></div></div><button onclick="toggleAcctExclude(${inlineJsString(a.id)})" title="${escapeHtml(t('excludetip'))}" style="padding:6px 9px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:${a.excluded?'var(--a3)':'var(--ink3)'};font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0">${a.excluded?t('included'):t('exclude')}</button><button onclick="deleteAcct(${inlineJsString(a.id)})" style="padding:6px 8px;border:none;background:none;color:var(--r3);font-size:19px;cursor:pointer;flex-shrink:0"><i class="ti ti-trash"></i></button></div>`;
   }).join('');
 }
 function toggleAcctExclude(id){const a=(S.accounts||[]).find(x=>x.id===id);if(a)a.excluded=!a.excluded;saveS();renderSettings();renderHome();refreshWallet();}
@@ -5693,9 +5786,9 @@ function newCategoryId(){
 }
 function categoryNameKey(name){return String(name||'').normalize('NFC').trim().replace(/\s+/g,' ').toLowerCase();}
 function findCategoryByName(name){const key=categoryNameKey(name);return key?(S.cats||[]).find(c=>[c.label,c.labelEn].some(label=>categoryNameKey(label)===key)):null;}
-function renderMergeChips(){document.getElementById('merge-chips').innerHTML=S.cats.map(c=>`<div class="cat-chip${S.mergeSelected.includes(c.id)?' merge-sel':''}" onclick="toggleMergeSel(${inlineJsString(c.id)})"><span style="font-size:20px">${escapeHtml(c.icon)}</span><span>${escapeHtml(catLabel(c))}</span></div>`).join('');updateMergePreview();}
+function renderMergeChips(){document.getElementById('merge-chips').innerHTML=S.cats.map(c=>`<div class="cat-chip${S.mergeSelected.includes(c.id)?' merge-sel':''}" onclick="toggleMergeSel(${inlineJsString(c.id)})"><span style="font-size:20px">${itemIcon(c)}</span><span>${escapeHtml(catLabel(c))}</span></div>`).join('');updateMergePreview();}
 function toggleMergeSel(id){const i=S.mergeSelected.indexOf(id);i>=0?S.mergeSelected.splice(i,1):S.mergeSelected.push(id);renderMergeChips();}
-function updateMergePreview(){const sel=S.mergeSelected.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean);const prev=document.getElementById('merge-preview');if(sel.length<2){prev.innerHTML=`<div style="font-size:12px;color:var(--ink3)">${t('mergehint')}</div>`;return;}const newName=document.getElementById('merge-name')?.value||'...';prev.innerHTML=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px">${sel.map(c=>`<span style="background:var(--g2);color:var(--g3);padding:3px 10px;border-radius:20px">${escapeHtml(c.icon)} ${escapeHtml(catLabel(c))}</span>`).join('<span style="color:var(--ink3)">+</span>')}<span style="color:var(--ink3)">→</span><span style="background:var(--p2);color:var(--p3);padding:3px 10px;border-radius:20px">${escapeHtml(newName)}</span></div>`;}
+function updateMergePreview(){const sel=S.mergeSelected.map(id=>S.cats.find(c=>c.id===id)).filter(Boolean);const prev=document.getElementById('merge-preview');if(sel.length<2){prev.innerHTML=`<div style="font-size:12px;color:var(--ink3)">${t('mergehint')}</div>`;return;}const newName=document.getElementById('merge-name')?.value||'...';prev.innerHTML=`<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px">${sel.map(c=>`<span style="background:var(--g2);color:var(--g3);padding:3px 10px;border-radius:20px">${itemIcon(c)} ${escapeHtml(catLabel(c))}</span>`).join('<span style="color:var(--ink3)">+</span>')}<span style="color:var(--ink3)">→</span><span style="background:var(--p2);color:var(--p3);padding:3px 10px;border-radius:20px">${escapeHtml(newName)}</span></div>`;}
 function mergeCats(){
   if(S.mergeSelected.length<2)return;
   const newName=document.getElementById('merge-name').value.trim(),newIcon=document.getElementById('merge-icon').value.trim()||'📌';if(!newName)return;

@@ -27,6 +27,8 @@ const choiceButtons=[0,1].map(()=>({classList:{toggle(){}},setAttribute(){}}));
 const toasts=[];
 const code=[
   declaration('escapeHtml'),
+  declaration('validIconImage'),
+  declaration('itemIcon'),
   declaration('inlineJsString'),
   declaration('isIncomeReceivable'),
   declaration('rpSettlementTxns'),

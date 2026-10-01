@@ -16,6 +16,8 @@ function declaration(name){
 
 const code=[
   declaration('escapeHtml'),
+  declaration('validIconImage'),
+  declaration('itemIcon'),
   declaration('inlineJsString'),
   declaration('txnRow'),
   `
