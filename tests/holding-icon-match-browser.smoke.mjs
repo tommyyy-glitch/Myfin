@@ -35,6 +35,7 @@ try{
       const pos=(id,type,name,extra={})=>({id,type,name,qty:10,entryPrice:10,currentPrice:12,exitPrice:null,exitDate:null,budgetPrice:15,cur:'HKD',apiSymbol:'',notes:'Synthetic only',costHKD:100,valueHKD:120,acctId:'broker',acctLabel:'Broker A',acctIcon:'🏦',margin:false,secId:'',divPct:0,divFreq:'none',date:today(),...extra});
       S.portfolio=[pos(101,'stock','GOOG'),pos(102,'stock','GOOG',{qty:5,costHKD:50,valueHKD:70,exitPrice:14,exitDate:today()}),pos(103,'stock','GOOG',{acctId:'other-broker',acctLabel:'Broker B'}),pos(104,'stock','GOOG',{secId:'custom-stock'}),pos(105,'crypto','GOOG'),pos(106,'crypto','BTC'),pos(107,'crypto','ETH'),pos(108,'stock','TSLA',{exitPrice:12,exitDate:today()}),pos(109,'stock',"<img src=x onerror='alert(1)'>"),pos(110,'stock','中文基金'),pos(111,'pe','Project Alpha',{invested:100,valuation:120,pct:10}),pos(112,'pe','Project Beta',{invested:100,valuation:120,pct:5,secId:'custom-pe'}),pos(113,'stock','GOOG',{acctId:'other-broker',acctLabel:'Broker B',qty:1,exitPrice:13,exitDate:today()})];
       for(let i=0;i<12;i++)S.portfolio.push(pos(200+i,'stock','Synthetic '+i));
+      S.portfolio.find(p=>p.id===200).iconPreset={legacy:'unrecognized-icon',settings:{rank:2}};
       S.customSections=[{id:'custom-stock',name:'Custom stock',base:'stock',icon:'📈'},{id:'custom-pe',name:'Custom PE',base:'pe',icon:'🏢'}];
       S.txns=[{id:'sample',type:'expense',amount:12,amtHKD:12,cur:'HKD',acctId:'broker',catId:'food',note:'Synthetic lunch',date:today()}];
       const c=document.createElement('canvas');c.width=c.height=96;c.getContext('2d').fillStyle='#e11';c.getContext('2d').fillRect(0,0,96,96);
@@ -43,8 +44,8 @@ try{
       localStorage.setItem('myfin.icon-recovery.v1.'+profileKey(),'existing-wallet-icon-recovery');
       localStorage.setItem('myfin.recovery.v1.'+profileKey(),'existing-financial-recovery');
     },theme);
-    const financial=()=>page.evaluate(()=>JSON.stringify({portfolio:S.portfolio.map(({iconImage,...p})=>p),txns:S.txns,accounts:S.accounts,cats:S.cats,people:S.people,gamble:S.gamble,physicalAssets:S.physicalAssets,privateLoans:S.privateLoans,debts:S.debts,autopay:S.autopay,autoincome:S.autoincome,customSections:S.customSections,priceHist:S.priceHist,changelog:S.changelog,budget:S.budget,tax:S.tax,recurringRuns:S.recurringRuns,recurringLedgerVersion:S.recurringLedgerVersion,creditLimit:S.creditLimit,friends:S.friends,tuScores:S.tuScores,rpLabels:S.rpLabels,balanceSheet:balanceSheetBreakdown()}));
-    const icons=()=>page.evaluate(()=>JSON.stringify(S.portfolio.map(p=>({id:p.id,holdingKey:holdingIconGroupKey(p),had:Object.hasOwn(p,'iconImage'),value:p.iconImage}))));
+    const financial=()=>page.evaluate(()=>JSON.stringify({portfolio:S.portfolio.map(({iconImage,iconPreset,...p})=>p),txns:S.txns,accounts:S.accounts,cats:S.cats,people:S.people,gamble:S.gamble,physicalAssets:S.physicalAssets,privateLoans:S.privateLoans,debts:S.debts,autopay:S.autopay,autoincome:S.autoincome,customSections:S.customSections,priceHist:S.priceHist,changelog:S.changelog,budget:S.budget,tax:S.tax,recurringRuns:S.recurringRuns,recurringLedgerVersion:S.recurringLedgerVersion,creditLimit:S.creditLimit,friends:S.friends,tuScores:S.tuScores,rpLabels:S.rpLabels,balanceSheet:balanceSheetBreakdown()}));
+    const icons=()=>page.evaluate(()=>JSON.stringify(S.portfolio.map(p=>({id:p.id,holdingKey:holdingIconGroupKey(p),had:Object.hasOwn(p,'iconImage'),value:p.iconImage,hadPreset:Object.hasOwn(p,'iconPreset'),preset:p.iconPreset}))));
     const recovery=()=>page.evaluate(()=>localStorage.getItem('myfin.holding-icon-recovery.v1.'+profileKey()));
     const protectedRecovery=()=>page.evaluate(()=>({wallet:localStorage.getItem('myfin.icon-recovery.v1.'+profileKey()),financial:localStorage.getItem('myfin.recovery.v1.'+profileKey())}));
     const open=()=>page.evaluate(()=>openWalletIconMatch('holding'));
@@ -73,6 +74,9 @@ try{
       return {valid:validIconImage(data),stable:data===holdingMonogram(p),different:data!==holdingMonogram({...p,name:'Another fund'}),data};
     });
     assert.equal(unknown.valid,true,'unknown Chinese names get valid raster badges');assert.equal(unknown.stable,true,'badge pixels are deterministic');assert.equal(unknown.different,true,'different names get distinct badges');
+    assert.equal(await page.evaluate(()=>suggestedHoldingIcon({name:'Longbrigde',type:'pe'})),'longbridge','common Longbridge typo keeps the public brand image');
+    assert.equal(await page.evaluate(()=>validHoldingIconPreset('https://example.invalid/icon.png')),false,'only local trusted preset keys are accepted');
+    assert.equal(await page.evaluate(()=>holdingIcon({name:'Unknown',type:'stock',iconPreset:'https://example.invalid/icon.png'}).includes('example.invalid')),false,'untrusted preset values cannot introduce external image URLs');
     const dimensions=await page.evaluate(data=>new Promise(resolve=>{const img=new Image();img.onload=()=>resolve([img.naturalWidth,img.naturalHeight]);img.src=data;}),unknown.data);assert.deepEqual(dimensions,[96,96]);
     await page.evaluate(()=>{const i=walletIconMatchDraft.rows.findIndex(r=>r.account.id===109);walletIconMatchDraft.page=Math.floor(i/walletIconMatchDraft.pageSize);renderWalletIconMatchPage();});
     assert.equal(await page.locator('#wallet-icon-match-list [onerror]').count(),0,'holding names cannot inject DOM handlers');
@@ -89,19 +93,43 @@ try{
     assert.equal(await icons(),originalIcons);assert.equal(await recovery(),null);assert.equal(await financial(),before);assert.deepEqual(await protectedRecovery(),protectedBefore);
     await cancel();await page.evaluate(()=>HOLDING_ICON_PRESETS.find(p=>p.key==='google').path=window.googlePath);
 
+    // Even malformed legacy metadata must survive a failed compact save exactly.
+    await page.evaluate(()=>{window.malformedSave=saveS;saveS=()=>false;});
+    await open();await page.locator('#wallet-icon-match-save').click();await page.waitForFunction(()=>document.getElementById('wallet-icon-match-error').textContent.length>0);
+    assert.equal(await icons(),originalIcons,'failed save restores malformed preset values and property presence');assert.equal(await recovery(),null);assert.equal(await financial(),before);
+    await page.evaluate(()=>{saveS=window.malformedSave;closeM('wallet-icon-match-modal');});
+
+    // Model a PNG-only canvas encoder and a nearly full profile store. Compact
+    // metadata must succeed without embedding the decoded logo into each lot.
+    await page.evaluate(()=>{
+      window.quotaCanvas=HTMLCanvasElement.prototype.toDataURL;window.quotaSet=Storage.prototype.setItem;window.pngCalls=0;
+      window.quotaBaseline=JSON.stringify(profileSnapshot()).length;
+      HTMLCanvasElement.prototype.toDataURL=function(type,quality){if(type==='image/webp'){window.pngCalls++;return window.quotaCanvas.call(this,'image/png');}return window.quotaCanvas.call(this,type,quality);};
+      Storage.prototype.setItem=function(key,value){if(key===profileKey()&&String(value).length>window.quotaBaseline+12288)throw new DOMException('synthetic nearly full profile','QuotaExceededError');return window.quotaSet.call(this,key,value);};
+    });
+    await open();await page.locator('#wallet-icon-match-save').click();await closed();
+    const compact=await page.evaluate(()=>({pngCalls:window.pngCalls,growth:localStorage.getItem(profileKey()).length-window.quotaBaseline,images:S.portfolio.filter(p=>validIconImage(p.iconImage)).map(p=>p.id),presets:S.portfolio.filter(p=>validHoldingIconPreset(p.iconPreset)).length}));
+    assert(compact.pngCalls>0,'PNG encoder fallback was exercised');assert(compact.growth<=12288,'metadata fits within 12 KB of available profile space');
+    assert.deepEqual(compact.images,[113],'only the original uploaded image is embedded');assert.equal(compact.presets,23,'new compact presets cover all selected lots');
+    assert.equal(await financial(),before);assert.deepEqual(await protectedRecovery(),protectedBefore);
+    await page.evaluate(()=>{HTMLCanvasElement.prototype.toDataURL=window.quotaCanvas;Storage.prototype.setItem=window.quotaSet;});
+    await open();await page.locator('#wallet-icon-match-restore').click();await closed();assert.equal(await icons(),originalIcons,'quota-safe batch recovery restores exact metadata');
+
     // Checkbox state survives page changes; a hidden group is included in Apply.
-    await open();await page.locator('#wallet-icon-match-all').uncheck();await page.locator('#wallet-icon-match-list input[data-index="0"]').check();
+    await open();await page.locator('#wallet-icon-match-all').check();await page.locator('#wallet-icon-match-all').uncheck();await page.locator('#wallet-icon-match-list input[data-index="0"]').check();
     const pageSize=await page.evaluate(()=>walletIconMatchDraft.pageSize),lastPage=Math.ceil(groupCount/pageSize)-1;
     for(let i=0;i<lastPage;i++)await page.locator('#wallet-icon-match-next').click();
     await page.locator('#wallet-icon-match-list input[data-index="'+(groupCount-1)+'"]').check();
     const selectedIds=await page.evaluate(()=>[...walletIconMatchDraft.selected].flatMap(i=>walletIconMatchDraft.rows[i].items.map(p=>p.id)).sort((a,b)=>a-b));
+    assert.deepEqual(await page.evaluate(()=>[...walletIconMatchDraft.selected].sort((a,b)=>a-b)),[0,groupCount-1],'only two groups are selected across pages');
     for(let i=0;i<lastPage;i++)await page.locator('#wallet-icon-match-prev').click();
     assert.equal(await page.locator('#wallet-icon-match-list input[data-index="0"]').isChecked(),true);
     await page.locator('#wallet-icon-match-save').click();await closed();
-    assert.deepEqual(await page.evaluate(()=>S.portfolio.filter(p=>validIconImage(p.iconImage)&&p.id!==113).map(p=>p.id).sort((a,b)=>a-b)),selectedIds,'selected off-page group and all its lots get images');
-    assert.equal(await page.evaluate(()=>S.portfolio.find(p=>p.id===101).iconImage===S.portfolio.find(p=>p.id===102).iconImage),true);
+    assert.deepEqual(await page.evaluate(()=>S.portfolio.filter(p=>validHoldingIconPreset(p.iconPreset)).map(p=>p.id).sort((a,b)=>a-b)),selectedIds,'selected off-page group and all its lots get compact icon references');
+    assert.equal(await page.evaluate(()=>S.portfolio.find(p=>p.id===101).iconPreset===S.portfolio.find(p=>p.id===102).iconPreset),true);
     assert.equal(await financial(),before);assert.deepEqual(await protectedRecovery(),protectedBefore);
     const partial=JSON.parse(await recovery());assert.equal(partial.icons.length,selectedIds.length);assert(partial.icons.every(p=>typeof p.id==='string'&&typeof p.holdingKey==='string'&&!p.had));
+    await page.evaluate(()=>{const key='myfin.holding-icon-recovery.v1.'+profileKey(),legacy=JSON.parse(localStorage.getItem(key));legacy.icons=legacy.icons.map(({hadPreset,presetValue,...icon})=>icon);localStorage.setItem(key,JSON.stringify(legacy));});
     await open();await page.locator('#wallet-icon-match-restore').click();await closed();assert.equal(await icons(),originalIcons);
 
     // The default selection fills every remaining group while preserving uploaded pixels.
@@ -109,7 +137,9 @@ try{
     await open();await page.locator('#wallet-icon-match-save').click();await closed();
     assert.equal(await page.evaluate(()=>S.portfolio.find(p=>p.id===113).iconImage),upload,'existing uploaded image bytes stay unchanged');
     assert.equal(await page.evaluate(()=>Object.hasOwn(S.portfolio.find(p=>p.id===103),'iconImage')),false,'existing group is not rewritten');
-    assert.equal(await page.evaluate(()=>S.portfolio.every(p=>holdingIconGroup(p).some(x=>validIconImage(x.iconImage)))),true,'every holding group has a saved raster image');
+    assert.equal(await page.evaluate(()=>S.portfolio.every(p=>holdingIconGroup(p).some(x=>validIconImage(x.iconImage)||validHoldingIconPreset(x.iconPreset)))),true,'every holding group has an uploaded image or trusted compact preset');
+    assert.equal(await page.evaluate(()=>S.portfolio.find(p=>p.id===109).iconPreset),'__name__','unknown names store only the monogram marker');
+    assert.equal(await page.evaluate(()=>S.portfolio.find(p=>p.id===110).iconPreset),'__name__');
     assert.equal(await financial(),before);assert.deepEqual(await protectedRecovery(),protectedBefore);
     const allIcons=await icons(),allRecovery=await recovery();assert(JSON.stringify(JSON.parse(allRecovery)).length<20000,'checkpoint stores only icon metadata');
     await open();assert.equal(await page.evaluate(()=>walletIconMatchDraft.selected.size),0);assert.equal(await page.locator('#wallet-icon-match-save').isDisabled(),true);
@@ -117,6 +147,7 @@ try{
     await cancel();await page.reload();assert.equal(await icons(),allIcons);assert.equal(await financial(),before,'cold reload keeps images and all financial fields');
     const exported=await page.evaluate(()=>buildSafeTransfer());
     assert.deepEqual(exported.profiles[0].data.portfolio.map(p=>p.iconImage),JSON.parse(allIcons).map(p=>p.value),'safe transfer keeps per-lot images');
+    assert.deepEqual(exported.profiles[0].data.portfolio.map(p=>p.iconPreset),JSON.parse(allIcons).map(p=>p.preset),'safe transfer keeps compact icon references');
     const imported=await page.evaluate(data=>{const plan=planBackupImport(data);plan.profiles[0].data.accounts[0].label+=' copy';const ids=commitBackupImport(plan);return JSON.parse(localStorage.getItem(profileKey(ids[0])));},exported);
     assert.deepEqual(imported.portfolio,exported.profiles[0].data.portfolio,'actual import path keeps holding metadata and all financial fields');
 
@@ -184,12 +215,20 @@ try{
     await page.evaluate(()=>{S.portfolio=window.restorePortfolio;closeM('wallet-icon-match-modal');});
 
     // Recovery targets previous lot IDs only; a new related lot stays untouched.
-    await page.evaluate(()=>{const lot={...S.portfolio.find(p=>p.id===102),id:999};delete lot.iconImage;S.portfolio.push(lot);saveS({skipCloud:true});});
+    await page.evaluate(()=>{const lot={...S.portfolio.find(p=>p.id===102),id:999};delete lot.iconImage;delete lot.iconPreset;S.portfolio.push(lot);saveS({skipCloud:true});});
     const extendedBefore=await financial();await open();await page.locator('#wallet-icon-match-restore').click();await closed();
     assert.equal(await page.evaluate(()=>Object.hasOwn(S.portfolio.find(p=>p.id===999),'iconImage')),false,'new lot is not included in old recovery');
+    assert.equal(await page.evaluate(()=>Object.hasOwn(S.portfolio.find(p=>p.id===999),'iconPreset')),false,'new lot does not receive a compact preset from old recovery');
     assert.equal(await financial(),extendedBefore);assert.deepEqual(await protectedRecovery(),protectedBefore);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'no horizontal overflow');
-    results.push({width,height,theme,groups:groupCount,numericIds:true,groupedOpenAndClosedLots:true,accountSectionTypeIsolation:true,existingUploadPreserved:true,paginationAndOffPageApply:true,cancel:true,unknownRasterAndEscapedNames:true,assetFailureAtomic:true,quotaRollback:true,exactRecoveryRollback:true,decodeInteractionGuard:true,singleBatchWrite:true,cancelProfileAndGroupGuards:true,ambiguousIdsRejected:true,newLotsExcludedFromRestore:true,coldReloadAndTransfer:true,allFinancialFieldsUnchanged:true});
+    // A deliberate synthetic partial sale carries only the compact icon key.
+    const sale=await page.evaluate(()=>{
+      const existing=new Set(S.portfolio.map(p=>String(p.id)));openSell('101');document.getElementById('sell-qty').value='2';document.getElementById('sell-price').value='14';confirmSell();
+      const open=S.portfolio.find(p=>p.id===101),closed=S.portfolio.find(p=>!existing.has(String(p.id)));
+      return {openPreset:open.iconPreset,closedPreset:closed?.iconPreset,closedHasImage:Object.hasOwn(closed||{},'iconImage'),qty:open.qty+Number(closed?.qty),cost:open.costHKD+Number(closed?.costHKD)};
+    });
+    assert.equal(sale.openPreset,'google');assert.equal(sale.closedPreset,'google');assert.equal(sale.closedHasImage,false);assert.equal(sale.qty,10);assert.equal(sale.cost,100);
+    results.push({width,height,theme,groups:groupCount,numericIds:true,groupedOpenAndClosedLots:true,accountSectionTypeIsolation:true,existingUploadPreserved:true,paginationAndOffPageApply:true,cancel:true,unknownRasterAndEscapedNames:true,longbridgeTypo:true,pngCanvasWith12KBHeadroom:true,compactPresetRoundtrip:true,assetFailureAtomic:true,quotaRollback:true,exactRecoveryRollback:true,legacyRecovery:true,malformedPresetRollback:true,decodeInteractionGuard:true,singleBatchWrite:true,cancelProfileAndGroupGuards:true,ambiguousIdsRejected:true,newLotsExcludedFromRestore:true,coldReloadAndTransfer:true,partialSaleRetainsCompactPreset:true,allFinancialFieldsUnchanged:true});
     await context.close();
   }
   assert.deepEqual(errors,[]);console.log(JSON.stringify({passed:true,results},null,2));
