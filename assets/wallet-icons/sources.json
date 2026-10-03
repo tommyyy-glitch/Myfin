@@ -110,5 +110,157 @@
     "source": "https://www.hkma.gov.hk/media/eng/img/key-functions/money/hong-kong-currency/10%20Dollar/Polymer%20Note/notefront_1_mark.jpg",
     "file": "hkd.jpg",
     "bytes": 60744
+  },
+  {
+    "key": "hsbc-red",
+    "label": "滙豐 Red 信用卡",
+    "page": "https://www.redhotoffers.hsbc.com.hk/en/latest-offers/card-online-flash_bk20260511/red/",
+    "source": "https://www.redhotoffers.hsbc.com.hk/media/109716922/hsbc-red-card.png",
+    "file": "hsbc-red.png",
+    "bytes": 102404
+  },
+  {
+    "key": "hang-seng-cityu",
+    "label": "恒生香港城市大學信用卡",
+    "page": "https://www.hangseng.com/personal/cards/online-applications/",
+    "source": "https://www.hangseng.com/content/dam/wpb/hase/rwd/personal/cards/online-applications/credit-cards/images/CityU_Platinum_1280x808px.jpg",
+    "file": "hang-seng-cityu.jpg",
+    "bytes": 257027
+  },
+  {
+    "key": "hsbc-logo",
+    "label": "滙豐銀行",
+    "page": "https://www.hsbc.com.hk/credit-cards/products/red/",
+    "source": "https://www.hsbc.com.hk/content/dam/hsbc/hk/images/hongkong-hsbc-logo-en.svg",
+    "file": "hsbc-logo.svg",
+    "bytes": 5004
+  },
+  {
+    "key": "longbridge",
+    "label": "長橋 Longbridge",
+    "page": "https://longbridge.com/hk/en/download",
+    "source": "https://assets.wbrks.com/assets/manifest-icons/icon-128x128.png",
+    "file": "longbridge.png",
+    "bytes": 1210
+  },
+  {
+    "key": "natural8",
+    "label": "Natural8",
+    "page": "https://www.youtube.com/channel/UCedWDmchMCK_KApL0Y02cjw",
+    "source": "https://yt3.googleusercontent.com/_iTaYBwdoqwRjlLzTOoc1sY63E1_B168asf62MZb_3I2Sm5qSb_yV2-SxvnIu--veCy2S8uWdQ=s160-c-k-c0x00ffffff-no-rj",
+    "file": "natural8.jpg",
+    "bytes": 6011
+  },
+  {
+    "key": "forthright",
+    "label": "方德智投",
+    "page": "https://apps.apple.com/hk/app/id1236038032",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/39/02/c3/3902c307-34e1-d43a-6f0c-b4868cd07fab/AppIcon-0-0-1x_U007ephone-0-1-0-85-220.png/100x100bb.jpg",
+    "file": "forthright.jpg",
+    "bytes": 4656
+  },
+  {
+    "key": "jpy",
+    "label": "日圓現金",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "jpy.svg",
+    "bytes": 506
+  },
+  {
+    "key": "cny-card",
+    "label": "人民幣銀行卡",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "cny-card.svg",
+    "bytes": 448
+  },
+  {
+    "key": "coin-jar",
+    "label": "零錢罐",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "coin-jar.svg",
+    "bytes": 510
+  },
+  {
+    "key": "government",
+    "label": "政府貸款",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "government.svg",
+    "bytes": 507
+  },
+  {
+    "key": "poker",
+    "label": "撲克與籌碼",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "poker.svg",
+    "bytes": 695
+  },
+  {
+    "key": "hair",
+    "label": "理髮卡",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "hair.svg",
+    "bytes": 444
+  },
+  {
+    "key": "project",
+    "label": "項目預算",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "project.svg",
+    "bytes": 447
+  },
+  {
+    "key": "bank-card",
+    "label": "銀行戶口",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "bank-card.svg",
+    "bytes": 416
+  },
+  {
+    "key": "credit-card",
+    "label": "信用卡",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "credit-card.svg",
+    "bytes": 407
+  },
+  {
+    "key": "cash",
+    "label": "現金與紙幣",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "cash.svg",
+    "bytes": 496
+  },
+  {
+    "key": "investment",
+    "label": "投資戶口",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "investment.svg",
+    "bytes": 446
+  },
+  {
+    "key": "digital-wallet",
+    "label": "電子錢包",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "digital-wallet.svg",
+    "bytes": 412
+  },
+  {
+    "key": "wallet",
+    "label": "其他戶口",
+    "page": null,
+    "source": "Myfin original vector artwork",
+    "file": "wallet.svg",
+    "bytes": 370
   }
 ]

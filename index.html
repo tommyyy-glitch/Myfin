@@ -736,11 +736,30 @@ body:has(#s-home.active) #global-fab{display:none!important;}
 #wallet-icon-match-modal .modal{padding:20px 20px calc(20px + var(--sb));width:min(100%,480px);display:flex;flex-direction:column;overflow:hidden;}
 #wallet-icon-match-modal .modal>*{flex-shrink:0;}
 #wallet-icon-match-list{min-height:0;flex-shrink:1!important;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
-#wallet-icon-match-modal .mtitle{padding:0;margin-bottom:10px;}
+#wallet-icon-match-modal .mtitle{padding:0;margin-bottom:6px;min-height:30px;font-size:20px;}
+#wallet-icon-match-hint{margin:4px 0 8px;}
+.wallet-icon-all{display:flex;align-items:center;gap:8px;min-height:36px;font-size:13px;}
+.wallet-icon-all input{width:22px;height:22px;accent-color:var(--g3);}
+.wallet-icon-pages{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px;font-size:12px;color:var(--ink3);}
+.wallet-icon-pages button{min-width:70px;min-height:38px;padding:5px 8px;background:var(--surf2);border:1px solid var(--bdr2);border-radius:9px;color:var(--ink);font:inherit;}
+.wallet-icon-pages button:disabled{opacity:.35;}
 .wallet-icon-match{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr);font-size:13px;}
 .wallet-icon-match input{width:22px;height:22px;accent-color:var(--g3);flex-shrink:0;}
 .wallet-icon-match img{width:38px;height:38px;object-fit:contain;background:white;border-radius:9px;flex-shrink:0;}
 .wallet-icon-match span{min-width:0;overflow-wrap:anywhere;}
+@media(max-height:480px){
+  #wallet-icon-match-modal .modal{padding:10px 16px calc(8px + var(--sb));}
+  #wallet-icon-match-modal .mtitle{font-size:17px;min-height:24px;margin-bottom:2px;}
+  #wallet-icon-match-hint{font-size:11px!important;margin:0 0 3px;}
+  #wallet-icon-match-error:empty{display:none;}
+  #wallet-icon-match-modal .wallet-icon-all{min-height:28px;}
+  #wallet-icon-match-modal .wallet-icon-pages{margin-top:3px;}
+  #wallet-icon-match-modal .wallet-icon-pages button{min-height:32px;}
+  #wallet-icon-match-restore{min-height:32px!important;margin-bottom:4px!important;}
+  #wallet-icon-match-modal .icon-crop-actions{margin-top:4px;}
+  #wallet-icon-match-modal .icon-crop-actions button{min-height:40px;padding:8px;}
+}
+
 
 #icon-crop-error{color:var(--r3);font-size:13px;min-height:1.4em;}
 
@@ -2105,7 +2124,10 @@ body:has(#s-home.active) #global-fab{display:none!important;}
 <div class="modal-wrap" id="wallet-icon-match-modal" role="dialog" aria-modal="true" aria-labelledby="wallet-icon-match-title">
  <div class="modal">
   <div class="mtitle" id="wallet-icon-match-title"></div><p id="wallet-icon-match-hint" style="font-size:13px;color:var(--ink3)"></p>
-  <div id="wallet-icon-match-list"></div><p id="wallet-icon-match-error" role="status" style="color:var(--r3);font-size:13px"></p>
+  <label class="wallet-icon-all"><input type="checkbox" id="wallet-icon-match-all" onchange="selectAllWalletIconMatches(this.checked)"><span id="wallet-icon-match-all-label"></span></label>
+  <div id="wallet-icon-match-list"></div>
+  <div class="wallet-icon-pages"><button id="wallet-icon-match-prev" type="button" onclick="moveWalletIconMatchPage(-1)"></button><span id="wallet-icon-match-page"></span><button id="wallet-icon-match-next" type="button" onclick="moveWalletIconMatchPage(1)"></button></div>
+  <p id="wallet-icon-match-error" role="status" style="color:var(--r3);font-size:13px"></p>
   <button type="button" id="wallet-icon-match-restore" onclick="restoreWalletIconMatch()" style="min-height:44px;margin-bottom:8px;border:1px solid var(--bdr2);border-radius:12px;background:var(--surf2);color:var(--ink);font:inherit" hidden></button>
   <div class="icon-crop-actions"><button id="wallet-icon-match-cancel" onclick="closeM('wallet-icon-match-modal')"></button><button id="wallet-icon-match-save" class="icon-save" onclick="applyWalletIconMatch()"></button></div>
  </div>
@@ -5695,11 +5717,24 @@ function toggleSetSec(key,node,body){
 // intact for old backups and native text-only selects; all image data is raster.
 
 // Curated local assets. No account labels or ledger data leave the device to match.
-const WALLET_ICON_PRESETS=[{"key":"ibkr","label":"IBKR","file":"ibkr.jpg"},{"key":"payme","label":"PayMe","file":"payme.jpg"},{"key":"alipay-hk","label":"AlipayHK","file":"alipay-hk.jpg"},{"key":"alipay","label":"Alipay","file":"alipay.jpg"},{"key":"wechat","label":"WeChat","file":"wechat.jpg"},{"key":"mexc","label":"MEXC","file":"mexc.jpg"},{"key":"futu","label":"富途牛牛","file":"futu.jpg"},{"key":"octopus","label":"八達通","file":"octopus.jpg"},{"key":"metamask","label":"MetaMask","file":"metamask.jpg"},{"key":"app-store","label":"App Store","file":"app-store.png"},{"key":"mpfa","label":"積金局","file":"mpfa.svg"},{"key":"lisboa","label":"葡京","file":"lisboa.png"},{"key":"polymarket","label":"Polymarket","file":"polymarket.png"},{"key":"hkd","label":"港紙","file":"hkd.jpg"}];
+const WALLET_ICON_PRESETS=[{"key":"ibkr","label":"IBKR","file":"ibkr.jpg"},{"key":"payme","label":"PayMe","file":"payme.jpg"},{"key":"alipay-hk","label":"AlipayHK","file":"alipay-hk.jpg"},{"key":"alipay","label":"Alipay","file":"alipay.jpg"},{"key":"wechat","label":"WeChat","file":"wechat.jpg"},{"key":"mexc","label":"MEXC","file":"mexc.jpg"},{"key":"futu","label":"富途牛牛","file":"futu.jpg"},{"key":"octopus","label":"八達通","file":"octopus.jpg"},{"key":"metamask","label":"MetaMask","file":"metamask.jpg"},{"key":"app-store","label":"App Store","file":"app-store.png"},{"key":"mpfa","label":"積金局","file":"mpfa.svg"},{"key":"lisboa","label":"葡京","file":"lisboa.png"},{"key":"polymarket","label":"Polymarket","file":"polymarket.png"},{"key":"hkd","label":"港紙","file":"hkd.jpg"},{"key":"hsbc-red","label":"匯豐 Red 卡","file":"hsbc-red.png"},{"key":"hang-seng-cityu","label":"恆生城大信用卡","file":"hang-seng-cityu.jpg"},{"key":"hsbc-logo","label":"匯豐銀行","file":"hsbc-logo.svg"},{"key":"longbridge","label":"長橋","file":"longbridge.png"},{"key":"natural8","label":"Natural8","file":"natural8.jpg"},{"key":"forthright","label":"方德智投","file":"forthright.jpg"},{"key":"jpy","label":"日圓現金","file":"jpy.svg"},{"key":"cny-card","label":"人民幣銀行卡","file":"cny-card.svg"},{"key":"coin-jar","label":"零錢罐","file":"coin-jar.svg"},{"key":"government","label":"政府貸款","file":"government.svg"},{"key":"poker","label":"撲克與籌碼","file":"poker.svg"},{"key":"hair","label":"理髮卡","file":"hair.svg"},{"key":"project","label":"項目預算","file":"project.svg"},{"key":"bank-card","label":"銀行戶口","file":"bank-card.svg"},{"key":"credit-card","label":"信用卡","file":"credit-card.svg"},{"key":"cash","label":"現金與紙幣","file":"cash.svg"},{"key":"investment","label":"投資戶口","file":"investment.svg"},{"key":"digital-wallet","label":"電子錢包","file":"digital-wallet.svg"},{"key":"wallet","label":"其他戶口","file":"wallet.svg"}];
 let walletIconMatchDraft=null;
 function walletIconAsset(key){const preset=WALLET_ICON_PRESETS.find(p=>p.key===key);return preset?'assets/wallet-icons/'+preset.file:null;}
 function suggestedWalletIcon(account){
   const name=String(account.label||account.labelEn||'').normalize('NFKC').trim().replace(/\s+/g,' ').toLowerCase();
+  if(['hsbc credit','hsbc red','hsbc red card','red card','匯豐 red','匯豐red卡'].includes(name))return 'hsbc-red';
+  if(['hang credit','hang seng credit','hang seng cityu','cityu credit','城大信用卡','香港城市大學信用卡'].includes(name))return 'hang-seng-cityu';
+  if(['hsbc debt card','hsbc debit card','hsbc bank','匯豐銀行','匯豐扣帳卡'].includes(name))return 'hsbc-logo';
+  if(['長橋','长桥','longbridge','long bridge'].includes(name))return 'longbridge';
+  if(['方德','方德智投','方德證券','forthright'].includes(name))return 'forthright';
+  if(['n8','natural8','natural 8'].includes(name))return 'natural8';
+  if(['jpy cash','日圓現金','日元現金'].includes(name)||(account.kind==='cash'&&account.cur==='JPY'))return 'jpy';
+  if(['china debt card','china debit card','人民幣銀行卡','中國銀行卡'].includes(name))return 'cny-card';
+  if(/^(?:changing|change) pot$|零錢|找續/.test(name))return 'coin-jar';
+  if(/gov(?:ernment)? loan|政府.*(?:貸|借)|學貸/.test(name))return 'government';
+  if(/live poker|現場撲克|撲克|poker/.test(name))return 'poker';
+  if(/hair card|理髮|髮型/.test(name))return 'hair';
+  if(/project budget|項目預算/.test(name))return 'project';
   if(['mop cash','mop','澳門幣','澳門現金','葡京','lisboa'].includes(name))return 'lisboa';
   if(['現金','港幣現金','港幣','cash','hkd cash'].includes(name))return 'hkd';
   if(['ib','ibkr','interactive brokers'].includes(name))return 'ibkr';
@@ -5714,7 +5749,8 @@ function suggestedWalletIcon(account){
   if(['投資戶口','投資帳戶','投資','investment','investment account','invest','富途牛牛','futu'].includes(name))return 'futu';
   if(['八達通','百達通','octopus'].includes(name))return 'octopus';
   if(['metamask','meta mask'].includes(name))return 'metamask';
-  return null;
+  if(account.secondaryKind==='business')return 'project';
+  return ({cash:'cash',bank:'bank-card',debit:'bank-card',credit:'credit-card',invest:'investment',ewallet:'digital-wallet'})[account.kind]||'wallet';
 }
 async function walletPresetRaster(key){
   const src=walletIconAsset(key);if(!src)throw Error('Unknown icon');
@@ -5749,7 +5785,7 @@ function checkpointWalletIcons(key,accounts){
   localStorage.setItem('myfin.icon-recovery.v1.'+key,JSON.stringify({v:1,profile:key,createdAt:Date.now(),icons:accounts.map(account=>({id:String(account.id),had:validIconImage(account.iconImage),...(validIconImage(account.iconImage)?{value:account.iconImage}:{})}))}));
 }
 function restoreWalletIconMatch(){
-  const draft=walletIconMatchDraft,recovery=walletIconRecovery(profileKey());if(!draft||draft.state!==S||draft.profile!==profileKey()||!recovery)return;
+  const draft=walletIconMatchDraft,recovery=walletIconRecovery(profileKey());if(!draft||draft.applying||draft.state!==S||draft.profile!==profileKey()||!recovery)return;
   const rows=recovery.icons.map(icon=>({icon,account:(S.accounts||[]).find(a=>String(a.id)===icon.id)}));
   if(rows.some(r=>!r.account)){document.getElementById('wallet-icon-match-error').textContent=tt('戶口已變更，請逐個還原圖示。','Accounts have changed. Restore the icons individually.');return;}
   const before=rows.map(({account})=>({account,had:Object.hasOwn(account,'iconImage'),value:account.iconImage}));
@@ -5757,35 +5793,50 @@ function restoreWalletIconMatch(){
   if(!saveS()){before.forEach(({account,had,value})=>{if(had)account.iconImage=value;else delete account.iconImage;});document.getElementById('wallet-icon-match-error').textContent=tt('未能儲存，圖示保持不變。','Could not save; icons are unchanged.');return;}
   closeM('wallet-icon-match-modal');renderSettings();refreshAllViews();showToast(tt('已還原上次配圖','Previous icons restored'));
 }
+function renderWalletIconMatchPage(){
+  const draft=walletIconMatchDraft;if(!draft)return;
+  const pages=Math.max(1,Math.ceil(draft.rows.length/draft.pageSize));draft.page=Math.max(0,Math.min(pages-1,draft.page));
+  const start=draft.page*draft.pageSize;
+  document.getElementById('wallet-icon-match-list').innerHTML=draft.rows.slice(start,start+draft.pageSize).map((r,offset)=>{const index=start+offset,preset=WALLET_ICON_PRESETS.find(p=>p.key===r.key);return `<label class="wallet-icon-match"><input type="checkbox" data-index="${index}" ${draft.selected.has(index)?'checked':''} ${draft.applying?'disabled':''} onchange="toggleWalletIconMatch(${index},this.checked)"><img src="${walletIconAsset(r.key)}" alt=""><span>${escapeHtml(acctLabel(r.account))}<br><small style="color:var(--ink3)">${escapeHtml(preset.label)}${validIconImage(r.account.iconImage)?tt(' · 已有圖片',' · image already set'):''}</small></span></label>`;}).join('')||`<p>${tt('未有戶口。','No accounts.')}</p>`;
+  document.getElementById('wallet-icon-match-list').scrollTop=0;
+  const all=document.getElementById('wallet-icon-match-all');all.disabled=!!draft.applying;all.checked=!!draft.rows.length&&draft.selected.size===draft.rows.length;all.indeterminate=draft.selected.size>0&&!all.checked;
+  document.getElementById('wallet-icon-match-all-label').textContent=tt('全部選取','Select all');
+  document.getElementById('wallet-icon-match-page').textContent=tt('已選 ','Selected ')+draft.selected.size+'/'+draft.rows.length+' · '+(draft.page+1)+'/'+pages;
+  document.getElementById('wallet-icon-match-prev').textContent=tt('上一頁','Previous');document.getElementById('wallet-icon-match-prev').disabled=!!draft.applying||draft.page===0;
+  document.getElementById('wallet-icon-match-next').textContent=tt('下一頁','Next');document.getElementById('wallet-icon-match-next').disabled=!!draft.applying||draft.page===pages-1;
+  document.getElementById('wallet-icon-match-save').disabled=!!draft.applying||!draft.selected.size;document.getElementById('wallet-icon-match-restore').disabled=!!draft.applying;
+}
+function toggleWalletIconMatch(index,checked){const draft=walletIconMatchDraft;if(!draft||draft.applying||!draft.rows[index])return;checked?draft.selected.add(index):draft.selected.delete(index);renderWalletIconMatchPage();}
+function selectAllWalletIconMatches(checked){const draft=walletIconMatchDraft;if(!draft||draft.applying)return;draft.selected=checked?new Set(draft.rows.map((r,i)=>i)):new Set();renderWalletIconMatchPage();}
+function moveWalletIconMatchPage(delta){if(!walletIconMatchDraft||walletIconMatchDraft.applying)return;walletIconMatchDraft.page+=delta;renderWalletIconMatchPage();}
 function openWalletIconMatch(){
-  const rows=(S.accounts||[]).map(account=>({account,key:suggestedWalletIcon(account)})).filter(r=>r.key);
-  walletIconMatchDraft={state:S,profile:profileKey(),rows};
+  const rows=(S.accounts||[]).map(account=>({account,key:suggestedWalletIcon(account)}));
+  walletIconMatchDraft={state:S,profile:profileKey(),rows,page:0,pageSize:Math.max(1,Math.min(7,Math.floor(((window.visualViewport?.height||innerHeight)-340)/60))),selected:new Set(rows.map((r,i)=>validIconImage(r.account.iconImage)?null:i).filter(i=>i!==null))};
   document.getElementById('wallet-icon-match-title').textContent=tt('按戶口名稱配圖','Match account icons');
-  document.getElementById('wallet-icon-match-hint').textContent=tt('只更新下列已勾選戶口的圖示。套用前會保留本機復原副本。','Only the checked account icons will change. A local recovery copy is saved first.');
-  document.getElementById('wallet-icon-match-list').innerHTML=rows.map((r,index)=>`<label class="wallet-icon-match"><input type="checkbox" data-index="${index}" checked><img src="${walletIconAsset(r.key)}" alt=""><span>${escapeHtml(acctLabel(r.account))}<br><small style="color:var(--ink3)">${escapeHtml(WALLET_ICON_PRESETS.find(p=>p.key===r.key).label)}</small></span></label>`).join('')||`<p>${tt('未有對應名稱；可以逐個戶口揀圖片。','No matching names. Choose an image for each account instead.')}</p>`;
+  document.getElementById('wallet-icon-match-hint').textContent=tt('預設只補未有圖片嘅戶口。更換前保存圖示復原副本。','Existing images stay unselected. Previous icons are saved before changes.');
   document.getElementById('wallet-icon-match-error').textContent='';
-  document.getElementById('wallet-icon-match-save').textContent=tt('套用圖示','Apply icons');document.getElementById('wallet-icon-match-save').disabled=!rows.length;
+  document.getElementById('wallet-icon-match-save').textContent=tt('套用圖示','Apply icons');
   document.getElementById('wallet-icon-match-cancel').textContent=tt('取消','Cancel');
   const restore=document.getElementById('wallet-icon-match-restore');restore.textContent=tt('還原上次配圖','Restore previous icons');restore.hidden=!walletIconRecovery(profileKey());
-  document.getElementById('wallet-icon-match-modal').classList.add('open');
+  renderWalletIconMatchPage();document.getElementById('wallet-icon-match-modal').classList.add('open');
 }
 async function applyWalletIconMatch(){
-  const draft=walletIconMatchDraft;if(!draft)return;
+  const draft=walletIconMatchDraft;if(!draft||draft.applying)return;
   const current=()=>walletIconMatchDraft===draft&&draft.state===S&&draft.profile===profileKey()&&draft.rows.every(r=>(S.accounts||[]).includes(r.account));
   if(!current()){closeM('wallet-icon-match-modal');return;}
-  const chosen=[...document.querySelectorAll('#wallet-icon-match-list input:checked')].map(el=>draft.rows[Number(el.dataset.index)]).filter(Boolean);
+  const chosen=[...draft.selected].sort((a,b)=>a-b).map(index=>draft.rows[index]).filter(Boolean);
   if(!chosen.length)return;
-  const button=document.getElementById('wallet-icon-match-save');button.disabled=true;let stage='images',imageLabel='';
+  const button=document.getElementById('wallet-icon-match-save');draft.applying=true;renderWalletIconMatchPage();let stage='images',imageLabel='';const recoveryKey='myfin.icon-recovery.v1.'+profileKey();let previousRecovery=null;
   try{
     const data=await Promise.all(chosen.map(async row=>{try{return {...row,data:await walletPresetRaster(row.key)};}catch(e){imageLabel=WALLET_ICON_PRESETS.find(p=>p.key===row.key)?.label||row.key;throw e;}}));
     if(!current())return;
-    stage='recovery';checkpointWalletIcons(profileKey(),data.map(r=>r.account));
+    stage='recovery';previousRecovery=localStorage.getItem(recoveryKey);checkpointWalletIcons(profileKey(),data.map(r=>r.account));
     stage='save';const before=data.map(({account})=>({account,had:Object.hasOwn(account,'iconImage'),value:account.iconImage}));
     data.forEach(({account,data})=>account.iconImage=data);
-    if(!saveS()){before.forEach(({account,had,value})=>{if(had)account.iconImage=value;else delete account.iconImage;});throw Error('Save failed');}
+    if(!saveS()){before.forEach(({account,had,value})=>{if(had)account.iconImage=value;else delete account.iconImage;});if(previousRecovery===null)localStorage.removeItem(recoveryKey);else localStorage.setItem(recoveryKey,previousRecovery);throw Error('Save failed');}
     closeM('wallet-icon-match-modal');renderSettings();refreshAllViews();showToast(tt('已更新 ','Updated ')+data.length+tt(' 個戶口圖示',' account icons'));
   }catch(e){if(current())document.getElementById('wallet-icon-match-error').textContent=stage==='images'?tt('圖片未能處理：','Could not process image: ')+imageLabel+tt('。原圖示未改，請連線後重試。','. Original icons are unchanged. Connect and retry.'):stage==='recovery'?tt('未能建立復原副本；原圖示未改。請先匯出備份，並檢查儲存空間。','Could not create a recovery copy; original icons are unchanged. Export a backup and check storage.'):tt('未能儲存，原圖示已保留。請檢查儲存空間。','Could not save; original icons retained. Check storage.');}
-  finally{button.disabled=false;}
+  finally{draft.applying=false;if(walletIconMatchDraft===draft)renderWalletIconMatchPage();}
 }
 
 function validIconImage(value){return typeof value==='string'&&value.length<=32768&&/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);}
