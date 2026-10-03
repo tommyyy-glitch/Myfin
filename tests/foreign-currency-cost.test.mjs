@@ -18,7 +18,7 @@ function fixture(patch={}){
     rate:7.8,toHKD:(a,cur)=>cur==='HKD'?a:a*c.rate,t:s=>s,today:()=> '2026-09-07',
     tt:s=>s,showToast:(s)=>c.toast=s,getAcct:()=>({id:'a'}),acctLabel:()=> 'Test',acctAvailableCash:()=>1e9,
     logChange:()=>{},recordPriceSnapshot:()=>{},saveS:()=>true,closeM:()=>{},refreshAllViews:()=>{},renderGamble:()=>{},renderHome:()=>{},refreshWallet:()=>{}});
-  vm.runInContext(['confirmSell','savePortfolio','acctPositionsCash'].map(declaration).join('\n'),c);
+  vm.runInContext(['validIconImage','confirmSell','savePortfolio','acctPositionsCash'].map(declaration).join('\n'),c);
   c.S._sellId='p';
   const fill=(id,value)=>c.document.getElementById(id).value=String(value);
   const sell=(qty,px=100)=>{fill('sell-qty',qty);fill('sell-price',px);c.confirmSell();};

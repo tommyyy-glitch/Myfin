@@ -717,6 +717,12 @@ body:has(#s-home.active) #global-fab{display:none!important;}
 .item-image-icon{width:1.35em;height:1.35em;max-width:none;object-fit:cover;border-radius:24%;vertical-align:middle;display:inline-block;flex-shrink:0;}
 .icon-edit-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:44px;min-height:48px;flex-shrink:0;padding:3px;border:1px solid var(--bdr);border-radius:10px;background:var(--bg2);color:var(--ink);font-size:20px;cursor:pointer;}
 .icon-edit-btn small{font-size:10px;color:var(--ink3);}
+.holding-icon-btn{border:1px solid var(--bdr);padding:3px;min-width:44px;min-height:44px;font:inherit;cursor:pointer;position:relative;overflow:hidden;}
+.holding-icon-btn .item-image-icon{width:34px;height:34px;object-fit:contain;}
+.holding-preset-icon{background:#fff;padding:2px;box-sizing:border-box;object-fit:contain;}
+.holding-icon-btn:focus-visible{outline:2px solid var(--g3);outline-offset:3px;}
+.holding-icon-btn::after{content:'＋';position:absolute;bottom:0;right:1px;font-size:10px;line-height:12px;color:var(--ink3);background:var(--surf);border-radius:4px;}
+#image-icon-modal{z-index:55;}
 #image-icon-modal .modal{width:min(100%,420px);padding:20px 20px calc(20px + var(--sb));}
 #image-icon-modal .mtitle{padding:0;margin-bottom:10px;}
 .icon-crop-canvas{display:block;width:min(240px,100%);aspect-ratio:1;margin:12px auto;border:2px solid var(--bdr2);border-radius:18px;touch-action:none;cursor:grab;background:repeating-conic-gradient(#ddd 0% 25%,#fff 0% 50%) 50% / 20px 20px;}
@@ -2065,6 +2071,7 @@ body:has(#s-home.active) #global-fab{display:none!important;}
   <input type="hidden" id="port-type" value="stock">
   <input type="hidden" id="port-edit-id" value="">
   <input type="hidden" id="port-secid" value="">
+  <div id="port-image-edit" class="fsec" hidden></div>
   <div class="fsec">
     <div class="frow"><span class="flbl" data-i="ticker"></span><input class="fval" id="port-name" data-ph="tickerph" placeholder="TSLA, BTC, 0700…"></div>
     <div class="frow"><span class="flbl" data-i="qty"></span><input class="fval" type="number" inputmode="decimal" id="port-qty" placeholder="0" style="text-align:right"></div>
@@ -3393,7 +3400,7 @@ function renderAutoincome(){
   const fLbl={day:t('freqday'),month:t('freqmonth'),quarter:t('freqquarter'),half:t('freqhalf'),year:t('freqyear'),none:t('freqnone')};
   let html=(S.autoincome||[]).map(a=>`<div class="crow"><div class="ibox" style="background:var(--g2)">💰</div><div class="rinfo"><div class="rtitle">${escapeHtml(a.name)} <span class="badge ${a.active?'bg':'bgr'}">${a.active?t('activebadge'):t('pausedbadge')}</span></div><div class="rsub">${escapeHtml(freqLbl[a.freq]||a.freq)} · ${t('payday')} ${escapeHtml(a.day)} · ${escapeHtml(a.cur)} ${escapeHtml(a.amount)}${a.posName?' · '+escapeHtml(a.posName):''}</div></div><div style="display:flex;gap:8px;align-items:center"><button onclick="toggleAI2(${inlineJsString(a.id)})" style="padding:6px 12px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);font-size:12px;font-weight:600;cursor:pointer">${a.active?t('pause'):t('resume')}</button><button onclick="delAI2(${inlineJsString(a.id)})" style="padding:6px 9px;border:none;background:none;color:var(--r3);font-size:20px;cursor:pointer"><i class="ti ti-trash"></i></button></div></div>`).join('');
   // Position-linked dividends (read-only here; edit from the position). Shows annual amount.
-  html+=(S.portfolio||[]).filter(p=>!p.exitPrice&&parseFloat(p.divPct||0)>0&&divFreqCode(p.divFreq)!=='none').map(p=>`<div class="crow"><div class="ibox" style="background:var(--b2)">📈</div><div class="rinfo"><div class="rtitle">${escapeHtml(p.name)} <span class="badge bb">${t('dividend')}</span></div><div class="rsub">${escapeHtml(fLbl[divFreqCode(p.divFreq)])} · ${escapeHtml(p.divPct)}% · ${fmt(toHKD(divAnnual(p),p.cur))}${t('peryearshort')}</div></div><div style="display:flex;gap:8px;align-items:center"><button onclick="${p.type==='pe'?`openPEModal(${inlineJsString(p.id)})`:`openPortModal(${inlineJsString(p.type)},${inlineJsString(p.id)})`}" style="padding:6px 12px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);font-size:12px;font-weight:600;cursor:pointer">${t('editpos')}</button></div></div>`).join('');
+  html+=(S.portfolio||[]).filter(p=>!p.exitPrice&&parseFloat(p.divPct||0)>0&&divFreqCode(p.divFreq)!=='none').map(p=>`<div class="crow"><div class="ibox" style="background:var(--b2)">${holdingIcon(p)}</div><div class="rinfo"><div class="rtitle">${escapeHtml(p.name)} <span class="badge bb">${t('dividend')}</span></div><div class="rsub">${escapeHtml(fLbl[divFreqCode(p.divFreq)])} · ${escapeHtml(p.divPct)}% · ${fmt(toHKD(divAnnual(p),p.cur))}${t('peryearshort')}</div></div><div style="display:flex;gap:8px;align-items:center"><button onclick="${p.type==='pe'?`openPEModal(${inlineJsString(p.id)})`:`openPortModal(${inlineJsString(p.type)},${inlineJsString(p.id)})`}" style="padding:6px 12px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);font-size:12px;font-weight:600;cursor:pointer">${t('editpos')}</button></div></div>`).join('');
   el.innerHTML=html||`<div style="text-align:center;padding:16px;color:var(--ink3);font-size:13px">—</div>`;
 }
 
@@ -4689,6 +4696,9 @@ function drawSparkline(canvasId, vals, color){
 }
 
 function openPortModal(type,editId,defaultSecId){
+  const iconPosition=(S.portfolio||[]).find(p=>String(p.id)===String(editId));
+  const imageEdit=document.getElementById('port-image-edit');imageEdit.hidden=!iconPosition;
+  imageEdit.innerHTML=iconPosition?holdingImageEditRow(iconPosition):'';
   document.getElementById('port-type').value=type;
   document.getElementById('port-edit-id').value=editId||'';
   document.getElementById('port-modal-title').textContent=editId?t(type==='stock'?'addstock':'addcrypto')+' (edit)':t(type==='stock'?'addstock':'addcrypto');
@@ -4795,7 +4805,7 @@ function openRecord(name,acctId,secId,type){
   let html=lots.map(p=>{
     const closed=!!p.exitPrice;const pnl=(p.valueHKD||0)-(p.costHKD||0);
     const line=closed?`${t('act_sell')} ${p.qty} @ ${p.cur}${p.exitPrice}`:`${p.qty} ${t('unitslbl')} · ${t('entrylbl')} ${p.cur}${p.entryPrice||0}`;
-    return `<div class="crow"><div class="ibox" style="background:${closed?'var(--bg2)':'var(--g2)'};font-size:14px">${closed?'✓':'•'}</div><div class="rinfo"><div class="rtitle" style="font-size:14px">${escapeHtml(line)}</div><div class="rsub">${escapeHtml(p.date||'')}${closed?` · <span style="color:${pnl>=0?'var(--g3)':'var(--r3)'}">${pnl>=0?'+':''}${fmt(pnl)}</span>`:''}</div></div></div>`;
+    return `<div class="crow">${holdingIconButton(p,'var(--ink3)',closed?'var(--bg2)':'var(--g2)')}<div class="rinfo"><div class="rtitle" style="font-size:14px">${escapeHtml(line)}</div><div class="rsub">${escapeHtml(p.date||'')}${closed?` · <span style="color:${pnl>=0?'var(--g3)':'var(--r3)'}">${pnl>=0?'+':''}${fmt(pnl)}</span>`:''}</div></div></div>`;
   }).join('');
   // (2) change log entries
   const rows=(S.changelog||[]).filter(c=>c.type===type&&c.name===name&&(c.acctId||'')===(acctId||'')&&(c.secId||'')===(secId||''));
@@ -4847,7 +4857,7 @@ function confirmSell(){
     const originalCost=p.costHKD;
     const lotCost=parseFloat((originalCost*sellQty/p.qty).toFixed(2));
     const lotValue=parseFloat(toHKD(sellPx*sellQty,p.cur).toFixed(2));
-    S.portfolio.unshift({id:Date.now(),type:p.type,name:p.name,qty:sellQty,entryPrice:p.entryPrice,currentPrice:sellPx,exitPrice:sellPx,exitDate:today(),exitAt:closedAt,budgetPrice:null,cur:p.cur,apiSymbol:'',notes:t('soldlot')+' '+today(),costHKD:lotCost,valueHKD:lotValue,acctId:p.acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',margin:p.margin,secId:p.secId||'',date:today()});
+    S.portfolio.unshift({id:Date.now(),type:p.type,name:p.name,qty:sellQty,entryPrice:p.entryPrice,currentPrice:sellPx,exitPrice:sellPx,exitDate:today(),exitAt:closedAt,budgetPrice:null,cur:p.cur,apiSymbol:'',notes:t('soldlot')+' '+today(),costHKD:lotCost,valueHKD:lotValue,acctId:p.acctId,acctLabel:acctLabel(acct),acctIcon:acct?acct.icon:'',...(validIconImage(p.iconImage)?{iconImage:p.iconImage}:{}),margin:p.margin,secId:p.secId||'',date:today()});
     const remQty=p.qty-sellQty;
     p.qty=parseFloat(remQty.toFixed(6));
     // Allocate stored basis; the remainder receives the rounding residual.
@@ -5302,7 +5312,7 @@ function renderGamble(){
   document.getElementById('pe-ct').textContent=pes.length;
   document.getElementById('pe-list').innerHTML=pes.length?pes.map(p=>{
     const pnl=(p.valueHKD||0)-(p.costHKD||0);const pct=p.costHKD?(pnl/p.costHKD*100).toFixed(1):'0.0';
-    return `<div class="crow"><div class="ibox" style="background:var(--b2);font-size:11px;font-weight:700;color:var(--b3)">${escapeHtml(p.name.slice(0,4).toUpperCase())}</div><div class="rinfo"><div class="rtitle" style="font-size:14px">${escapeHtml(p.name)}${p.pct!=null?` <span class="badge bb">${escapeHtml(p.pct)}%</span>`:''}${p.notes?` <span style="font-size:11px;color:var(--ink3)">· ${escapeHtml(p.notes)}</span>`:''}</div><div class="rsub">${t('invested')} ${escapeHtml(p.cur)}${escapeHtml(p.invested||0)}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openPEModal(${inlineJsString(p.id)})" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePort(${inlineJsString(p.id)})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700">${fmtCur(p.valueHKD,p.cur)}</div><div class="${pnl>=0?'pos':'neg'}" style="font-size:12px">${pnl>=0?'+':''}${pct}%</div><div style="font-size:11px;color:var(--ink3)">${pnl>=0?'+':''}${fmtCur(pnl,p.cur)}</div></div></div>`;
+    return `<div class="crow">${holdingIconButton(p,'var(--b3)','var(--b2)')}<div class="rinfo"><div class="rtitle" style="font-size:14px">${escapeHtml(p.name)}${p.pct!=null?` <span class="badge bb">${escapeHtml(p.pct)}%</span>`:''}${p.notes?` <span style="font-size:11px;color:var(--ink3)">· ${escapeHtml(p.notes)}</span>`:''}</div><div class="rsub">${t('invested')} ${escapeHtml(p.cur)}${escapeHtml(p.invested||0)}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openPEModal(${inlineJsString(p.id)})" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePort(${inlineJsString(p.id)})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700">${fmtCur(p.valueHKD,p.cur)}</div><div class="${pnl>=0?'pos':'neg'}" style="font-size:12px">${pnl>=0?'+':''}${pct}%</div><div style="font-size:11px;color:var(--ink3)">${pnl>=0?'+':''}${fmtCur(pnl,p.cur)}</div></div></div>`;
   }).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
   document.getElementById('g-pe-pnl').textContent=fmt(pePnl);
   document.getElementById('g-pe-pnl').className='pnl-simple-val '+(pePnl>=0?' pos':' neg');
@@ -5388,7 +5398,7 @@ function renderGamble(){
     const divTxt=parseFloat(p.divPct||0)>0?` · ${t('dividend')} ${p.divPct}% (${fmtCur(toHKD(divAnnual(p),p.cur),p.cur)}${t('peryearshort')})`:'';
     const recArgs=[p.name,p.acctId||'',p.secId||'',p.type].map(inlineJsString).join(',');
     return `<div class="crow">
-      <div class="ibox" style="background:${bgColor};font-size:11px;font-weight:700;color:${color}">${escapeHtml(p.name.slice(0,4).toUpperCase())}</div>
+      ${holdingIconButton(p,color,bgColor)}
       <div class="rinfo">
         <div class="rtitle" style="font-size:14px">${liveDot}<span style="${nameStyle}">${escapeHtml(p.name)}</span>${p.margin?`<span class="badge ba" style="margin-left:6px">${t('marginbadge')}</span>`:''}${p.notes?` <span style="font-size:11px;color:var(--ink3)">· ${escapeHtml(p.notes)}</span>`:''}</div>
         <div class="rsub">${p.qty?`${p.qty} ${t('unitslbl')} · `:''}${t('entrylbl')} ${p.cur}${p.entryPrice||0}${hasBudget?` · ${t('targetlbl')} ${p.cur}${p.budgetPrice}${distToBudget?` <span style="color:${parseFloat(distToBudget)>=0?'var(--g)':'var(--r)'}">(${parseFloat(distToBudget)>=0?'+':''}${distToBudget}%)</span>`:''}`:''}</div>
@@ -5414,7 +5424,7 @@ function renderGamble(){
   function closedGroupRow(g,color,bgColor,realizedHKD){
     const p=g[0];const recArgs=[p.name,p.acctId||'',p.secId||'',p.type].map(inlineJsString).join(',');
     return `<div class="crow" style="opacity:0.75">
-      <div class="ibox" style="background:var(--bg2);font-size:11px;font-weight:700;color:var(--ink3)">${escapeHtml(p.name.slice(0,4).toUpperCase())}</div>
+      ${holdingIconButton(p,'var(--ink3)','var(--bg2)')}
       <div class="rinfo"><div class="rtitle" style="font-size:14px">${escapeHtml(p.name)} <span class="badge bgr">${t('closedstr')}</span></div>
         <div class="rsub">${t('act_sell')} · <span style="color:${realizedHKD>=0?'var(--g3)':'var(--r3)'}">${realizedHKD>=0?'+':''}${fmtCur(realizedHKD,p.cur)}</span></div>
         <div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap">
@@ -5440,7 +5450,7 @@ function renderGamble(){
   }
   function peRowHTML(p){
     const pnl=(p.valueHKD||0)-(p.costHKD||0);const pct=p.costHKD?(pnl/p.costHKD*100).toFixed(1):'0.0';
-    return `<div class="crow"><div class="ibox" style="background:var(--b2);font-size:11px;font-weight:700;color:var(--b3)">${escapeHtml(p.name.slice(0,4).toUpperCase())}</div><div class="rinfo"><div class="rtitle" style="font-size:14px">${escapeHtml(p.name)}${p.pct!=null?` <span class="badge bb">${escapeHtml(p.pct)}%</span>`:''}${p.notes?` <span style="font-size:11px;color:var(--ink3)">· ${escapeHtml(p.notes)}</span>`:''}</div><div class="rsub">${t('invested')} ${escapeHtml(p.cur)}${escapeHtml(p.invested||0)}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openPEModal(${inlineJsString(p.id)})" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePort(${inlineJsString(p.id)})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700">${fmtCur(p.valueHKD,p.cur)}</div><div class="${pnl>=0?'pos':'neg'}" style="font-size:12px">${pnl>=0?'+':''}${pct}%</div><div style="font-size:11px;color:var(--ink3)">${pnl>=0?'+':''}${fmtCur(pnl,p.cur)}</div></div></div>`;
+    return `<div class="crow">${holdingIconButton(p,'var(--b3)','var(--b2)')}<div class="rinfo"><div class="rtitle" style="font-size:14px">${escapeHtml(p.name)}${p.pct!=null?` <span class="badge bb">${escapeHtml(p.pct)}%</span>`:''}${p.notes?` <span style="font-size:11px;color:var(--ink3)">· ${escapeHtml(p.notes)}</span>`:''}</div><div class="rsub">${t('invested')} ${escapeHtml(p.cur)}${escapeHtml(p.invested||0)}</div><div style="margin-top:5px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openPEModal(${inlineJsString(p.id)})" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePort(${inlineJsString(p.id)})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,0.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:700">${fmtCur(p.valueHKD,p.cur)}</div><div class="${pnl>=0?'pos':'neg'}" style="font-size:12px">${pnl>=0?'+':''}${pct}%</div><div style="font-size:11px;color:var(--ink3)">${pnl>=0?'+':''}${fmtCur(pnl,p.cur)}</div></div></div>`;
   }
   // ── SESSIONS LIST ──
   document.getElementById('g-sessions').innerHTML=builtPoker.length?builtPoker.map(g=>pokerRowHTML(g)).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${t('nosessions')}</div>`;
@@ -5753,7 +5763,7 @@ function suggestedWalletIcon(account){
   return ({cash:'cash',bank:'bank-card',debit:'bank-card',credit:'credit-card',invest:'investment',ewallet:'digital-wallet'})[account.kind]||'wallet';
 }
 async function walletPresetRaster(key){
-  const src=walletIconAsset(key);if(!src)throw Error('Unknown icon');
+  const src=iconPresetAsset(key);if(!src)throw Error('Unknown icon');
   const image=new Image();await new Promise((resolve,reject)=>{image.onload=resolve;image.onerror=()=>reject(Error('Could not load '+key));image.src=src;});
   const canvas=document.createElement('canvas');canvas.width=canvas.height=96;
   const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,96,96);
@@ -5762,9 +5772,10 @@ async function walletPresetRaster(key){
   const data=canvas.toDataURL('image/webp',.9);if(!validIconImage(data))throw Error('Icon is too large');return data;
 }
 function renderWalletIconPresets(){
-  document.getElementById('wallet-icon-presets-label').textContent=tt('揀現成圖示','Choose a ready-made icon');
+  const holding=imageIconDraft?.kind==='holding',presets=holding?HOLDING_ICON_PRESETS:WALLET_ICON_PRESETS;
+  document.getElementById('wallet-icon-presets-label').textContent=holding?tt('揀公司／基金／幣種圖示','Choose a company, fund or coin icon'):tt('揀現成圖示','Choose a ready-made icon');
   document.getElementById('wallet-icon-presets').open=false;
-  document.getElementById('wallet-icon-grid').innerHTML=WALLET_ICON_PRESETS.map(p=>`<button type="button" class="wallet-icon-choice" onclick="chooseWalletIconPreset(${inlineJsString(p.key)})"><img src="${walletIconAsset(p.key)}" alt=""><span>${escapeHtml(p.label)}</span></button>`).join('');
+  document.getElementById('wallet-icon-grid').innerHTML=presets.map(p=>`<button type="button" class="wallet-icon-choice" onclick="chooseWalletIconPreset(${inlineJsString(p.key)})"><img src="${iconPresetAsset(p.key)}" alt=""><span>${escapeHtml(p.label)}</span></button>`).join('');
 }
 async function chooseWalletIconPreset(key){
   const draft=imageIconDraft,request=++imageIconLoad;if(!draft)return;
@@ -5842,15 +5853,51 @@ async function applyWalletIconMatch(){
 function validIconImage(value){return typeof value==='string'&&value.length<=32768&&/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);}
 function itemIcon(item){return validIconImage(item?.iconImage)?'<img class="item-image-icon" src="'+item.iconImage+'" alt="" draggable="false">':escapeHtml(item?.icon||'');}
 function iconEditButton(kind,item){return `<button type="button" class="icon-edit-btn" onclick="openImageIcon(${inlineJsString(kind)},${inlineJsString(item.id)})" aria-label="${escapeHtml(tt('更改圖示：','Change icon: ')+(item.label||item.id))}">${itemIcon(item)}<small>${tt('圖片','Image')}</small></button>`;}
+// Holding icons are display metadata; changing one never invokes a purchase or sale save.
+const HOLDING_ICON_PRESETS=[
+  {key:'google',label:'Google · GOOG / GOOGL',path:'assets/holding-icons/google.png'},
+  {key:'amazon',label:'Amazon · AMZN',path:'assets/holding-icons/amazon.png'},
+  {key:'nvidia',label:'NVIDIA · NVDA',path:'assets/holding-icons/nvidia.svg'},
+  {key:'vanguard',label:'Vanguard · VOO / VT',path:'assets/holding-icons/vanguard.png'},
+  {key:'invesco',label:'Invesco · QQQ',path:'assets/holding-icons/invesco.png'},
+  {key:'bitcoin',label:'Bitcoin · BTC',path:'assets/holding-icons/bitcoin.svg'},
+  {key:'ethereum',label:'Ethereum · ETH',path:'assets/holding-icons/ethereum.png'},
+  {key:'bnb',label:'BNB',path:'assets/holding-icons/bnb.png'},
+  ...['futu','mpfa','hsbc-logo','longbridge','mexc','metamask','polymarket','natural8'].map(key=>({...WALLET_ICON_PRESETS.find(p=>p.key===key),path:walletIconAsset(key)}))
+];
+function iconPresetAsset(key){return WALLET_ICON_PRESETS.some(p=>p.key===key)?walletIconAsset(key):HOLDING_ICON_PRESETS.find(p=>p.key===key)?.path;}
+function suggestedHoldingIcon(p){
+  const name=String(p?.name||'').trim(),symbol=String(p?.apiSymbol||name).trim().toUpperCase().replace(/^(NASDAQ|NYSE|HKEX):/,'').split(':')[0];
+  const tickers={GOOG:'google',GOOGL:'google',AMZN:'amazon',NVDA:'nvidia',VOO:'vanguard',VT:'vanguard',QQQ:'invesco',BTC:'bitcoin',BITCOIN:'bitcoin',ETH:'ethereum',ETHEREUM:'ethereum',BNB:'bnb',FUTU:'futu',HSBC:'hsbc-logo','0005.HK':'hsbc-logo','0005':'hsbc-logo'};
+  if(tickers[symbol])return tickers[symbol];
+  if(/futu|富途/i.test(name))return 'futu';
+  if(/mpf|強積金|積金易/i.test(name))return 'mpfa';
+  if(/longbridge|長橋/i.test(name))return 'longbridge';
+  if(/mexc/i.test(name))return 'mexc';
+  if(/metamask/i.test(name))return 'metamask';
+  if(/polymarket/i.test(name))return 'polymarket';
+  if(/^natural8$|^n8$/i.test(name))return 'natural8';
+  return null;
+}
+function holdingIconGroupKey(p){return JSON.stringify([p.type,p.name,p.acctId||'',p.secId||'']);}
+function holdingIconGroup(p){return (S.portfolio||[]).filter(x=>x.type===p.type&&x.name===p.name&&(x.acctId||'')===(p.acctId||'')&&(x.secId||'')===(p.secId||''));}
+function holdingIcon(p){
+  const image=validIconImage(p?.iconImage)?p.iconImage:holdingIconGroup(p).find(x=>validIconImage(x.iconImage))?.iconImage;
+  if(image)return itemIcon({iconImage:image});
+  const preset=HOLDING_ICON_PRESETS.find(x=>x.key===suggestedHoldingIcon(p));
+  return preset?`<img class="item-image-icon holding-preset-icon" src="${preset.path}" alt="" draggable="false">`:escapeHtml(String(p?.name||'').slice(0,4).toUpperCase());
+}
+function holdingIconButton(p,color='var(--ink2)',bg='var(--bg2)'){return `<button type="button" class="ibox holding-icon-btn" style="background:${bg};font-size:11px;font-weight:700;color:${color}" onclick="openImageIcon('holding',${inlineJsString(p.id)})" aria-label="${escapeHtml(tt('更改持倉圖示：','Change holding icon: ')+p.name)}" title="${escapeHtml(tt('點擊更換圖片','Tap to change image'))}">${holdingIcon(p)}</button>`;}
+function holdingImageEditRow(p){return `<div class="frow"><span class="flbl">${tt('圖片圖示','Image icon')}</span>${holdingIconButton(p)}<span style="font-size:12px;color:var(--ink3)">${tt('點圖示更換圖片','Tap the icon to change its image')}</span></div>`;}
 let imageIconDraft=null,imageIconLoad=0;
 function cancelImageIcon(){imageIconLoad++;imageIconDraft=null;const input=document.getElementById('icon-file');if(input)input.value='';}
 function openImageIcon(kind,id){
-  const item=(kind==='account'?S.accounts:kind==='category'?S.cats:[]).find(x=>x.id===id);if(!item)return;
-  cancelImageIcon();imageIconDraft={item,state:S,key:profileKey(),image:null,zoom:1,x:.5,y:.5};renderWalletIconPresets();
-  const labels={'icon-crop-title':tt('自訂圖示 · ','Custom icon · ')+(item.label||id),'icon-crop-hint':tt('選擇圖片後，拖動或用滑桿調整裁剪。只保存小圖示，會隨帳戶備份及已啟用的同步保留。','Choose an image, then drag or use the sliders to crop. Only the small icon is saved, including in backups and enabled sync.'),'icon-file-label':tt('選擇圖片（JPG / PNG / WebP）','Choose image (JPG / PNG / WebP)'),'icon-zoom-label':tt('放大','Zoom'),'icon-x-label':tt('左右位置','Horizontal'),'icon-y-label':tt('上下位置','Vertical'),'icon-restore':tt('還原圖示','Restore emoji'),'icon-cancel':tt('取消','Cancel'),'icon-save':tt('儲存','Save')};
+  const item=(kind==='account'?S.accounts:kind==='category'?S.cats:kind==='holding'?S.portfolio:[]).find(x=>String(x.id)===String(id));if(!item)return;
+  cancelImageIcon();imageIconDraft={kind,item,holdingKey:kind==='holding'?holdingIconGroupKey(item):null,items:kind==='holding'?holdingIconGroup(item):[item],state:S,key:profileKey(),image:null,zoom:1,x:.5,y:.5};renderWalletIconPresets();
+  const labels={'icon-crop-title':tt('自訂圖示 · ','Custom icon · ')+(item.label||item.name||id),'icon-crop-hint':tt('選擇圖片後，拖動或用滑桿調整裁剪。只保存小圖示，會隨帳戶備份及已啟用的同步保留。','Choose an image, then drag or use the sliders to crop. Only the small icon is saved, including in backups and enabled sync.'),'icon-file-label':tt('選擇圖片（JPG / PNG / WebP）','Choose image (JPG / PNG / WebP)'),'icon-zoom-label':tt('放大','Zoom'),'icon-x-label':tt('左右位置','Horizontal'),'icon-y-label':tt('上下位置','Vertical'),'icon-restore':kind==='holding'?tt('還原預設圖示','Restore default icon'):tt('還原圖示','Restore emoji'),'icon-cancel':tt('取消','Cancel'),'icon-save':tt('儲存','Save')};
   Object.entries(labels).forEach(([id,text])=>document.getElementById(id).textContent=text);
-  document.getElementById('icon-crop-error').textContent='';document.getElementById('icon-preview').innerHTML=itemIcon(item);
-  document.getElementById('icon-restore').disabled=!item.iconImage;document.getElementById('icon-save').disabled=true;
+  document.getElementById('icon-crop-error').textContent='';document.getElementById('icon-preview').innerHTML=kind==='holding'?holdingIcon(item):itemIcon(item);
+  document.getElementById('icon-restore').disabled=!imageIconDraft.items.some(x=>validIconImage(x.iconImage));document.getElementById('icon-save').disabled=true;
   ['zoom','x','y'].forEach(k=>{document.getElementById('icon-'+k).value=imageIconDraft[k];document.getElementById('icon-'+k).disabled=true;});
   const canvas=document.getElementById('icon-crop-canvas');canvas.getContext('2d').clearRect(0,0,240,240);
   let drag=null;
@@ -5884,13 +5931,16 @@ function croppedIconImage(){const canvas=document.createElement('canvas');canvas
 function drawIconCrop(){const d=imageIconDraft;if(!d?.image)return;paintIconCrop(document.getElementById('icon-crop-canvas'),d);['zoom','x','y'].forEach(k=>document.getElementById('icon-'+k).value=d[k]);document.getElementById('icon-preview').innerHTML=itemIcon({iconImage:croppedIconImage()});}
 function saveImageIcon(restore){
   const d=imageIconDraft;if(!d)return;
-  if(d.state!==S||d.key!==profileKey()||![...(S.accounts||[]),...(S.cats||[])].includes(d.item)){closeM('image-icon-modal');return;}
+  const currentItems=d.kind==='holding'?holdingIconGroup(d.item):[...(S.accounts||[]),...(S.cats||[])];
+  if(d.state!==S||d.key!==profileKey()||!d.items.every(x=>currentItems.includes(x))||(d.kind==='holding'&&(currentItems.length!==d.items.length||d.items.some(x=>holdingIconGroupKey(x)!==d.holdingKey)))){closeM('image-icon-modal');return;}
   if(!restore&&!d.image)return;
   const value=restore?null:croppedIconImage();if(value&&!validIconImage(value)){document.getElementById('icon-crop-error').textContent=tt('圖片太大，請選擇較簡單的圖片。','Icon is too large. Choose a simpler image.');return;}
-  const had=Object.hasOwn(d.item,'iconImage'),before=d.item.iconImage;
-  if(restore)delete d.item.iconImage;else d.item.iconImage=value;
-  if(!saveS()){if(had)d.item.iconImage=before;else delete d.item.iconImage;document.getElementById('icon-crop-error').textContent=tt('儲存失敗，原圖示已保留。','Save failed; the original icon was retained.');return;}
-  closeM('image-icon-modal');renderSettings();refreshAllViews();showToast(tt('圖示已更新','Icon updated'));
+  const before=d.items.map(item=>({item,had:Object.hasOwn(item,'iconImage'),value:item.iconImage}));
+  d.items.forEach(item=>{if(restore)delete item.iconImage;else item.iconImage=value;});
+  if(!saveS()){before.forEach(({item,had,value})=>{if(had)item.iconImage=value;else delete item.iconImage;});document.getElementById('icon-crop-error').textContent=tt('儲存失敗，原圖示已保留。','Save failed; the original icon was retained.');return;}
+  closeM('image-icon-modal');renderSettings();refreshAllViews();
+  const imageEdit=document.getElementById('port-image-edit');if(d.kind==='holding'&&imageEdit&&!imageEdit.hidden)imageEdit.innerHTML=holdingImageEditRow(d.item);
+  showToast(tt('圖示已更新','Icon updated'));
 }
 
 function renderAcctMgr(){

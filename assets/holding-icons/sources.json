@@ -1,0 +1,130 @@
+[
+  {
+    "key": "google",
+    "label": "Google / Alphabet",
+    "page": "https://about.google/",
+    "source": "https://www.gstatic.com/marketing-cms/assets/images/33/52/d31eb4894f69969b24d075e0d33c/favicon.png=s180",
+    "file": "google.png",
+    "symbols": [
+      "GOOG",
+      "GOOGL"
+    ],
+    "bytes": 14127,
+    "sha256": "b5a2d723ccc14cf6b422a7e4d4665f91c4bcc37439a8bc71cd629b61597eae4d",
+    "retrievedAt": "2026-10-03",
+    "rights": "Original publisher retains trademark and artwork rights. No affiliation or endorsement is implied."
+  },
+  {
+    "key": "amazon",
+    "label": "Amazon",
+    "page": "https://www.aboutamazon.com/",
+    "source": "https://www.aboutamazon.com/_next/static/media/apple-touch-icon.706b1b87.png",
+    "file": "amazon.png",
+    "symbols": [
+      "AMZN"
+    ],
+    "bytes": 4366,
+    "sha256": "f8184c36ab5439a22007f105d0366f10bbb782ab1d379e38759e452965c18805",
+    "retrievedAt": "2026-10-03",
+    "rights": "Original publisher retains trademark and artwork rights. No affiliation or endorsement is implied."
+  },
+  {
+    "key": "nvidia",
+    "label": "NVIDIA",
+    "page": "https://www.nvidia.com/en-us/about-nvidia/legal-info/logo-brand-usage/",
+    "source": "https://www.nvidia.com/content/nvidiaGDC/us/en_US/about-nvidia/legal-info/logo-brand-usage/_jcr_content/root/responsivegrid/nv_container_392921705/nv_container/nv_image.coreimg.svg/1776076920288/nvidia-logo-vert.svg",
+    "file": "nvidia.svg",
+    "symbols": [
+      "NVDA"
+    ],
+    "bytes": 2832,
+    "sha256": "5347e5188c74204767d2d4daa17b59b5a18ccd7ad0a7281e7961a83c20c96808",
+    "retrievedAt": "2026-10-03",
+    "rights": "Original publisher retains trademark and artwork rights. No affiliation or endorsement is implied."
+  },
+  {
+    "key": "vanguard",
+    "label": "Vanguard issuer icon",
+    "page": "https://investor.vanguard.com/",
+    "source": "https://investor.vanguard.com/favicon.ico",
+    "file": "vanguard.png",
+    "symbols": [
+      "VOO",
+      "VT"
+    ],
+    "transformation": "ICO decoded to PNG at its original 32 by 32 size; no artwork changes",
+    "sourceBytes": 3638,
+    "note": "Issuer identifier shared across Vanguard funds; not an ETF-specific logo.",
+    "bytes": 1873,
+    "sha256": "4a134aa6f86bb7b4141c0fa39b4fa143b5ebac01b5810f89c87d87dd8fb20f42",
+    "retrievedAt": "2026-10-03",
+    "rights": "Original publisher retains trademark and artwork rights. No affiliation or endorsement is implied."
+  },
+  {
+    "key": "invesco",
+    "label": "Invesco issuer icon",
+    "page": "https://www.invesco.com/qqq-etf/en/home.html",
+    "source": "https://www.invesco.com/etc.clientlibs/invesco/clientlibs/main/resources/images/apple-touch-icon.png",
+    "file": "invesco.png",
+    "symbols": [
+      "QQQ"
+    ],
+    "note": "Issuer identifier, not an ETF-specific logo.",
+    "bytes": 2652,
+    "sha256": "f7a90fad3534a06b2286224fdaa68e8a2944a9f48cfe98bcac256983e0450bcb",
+    "retrievedAt": "2026-10-03",
+    "rights": "Original publisher retains trademark and artwork rights. No affiliation or endorsement is implied."
+  },
+  {
+    "key": "bitcoin",
+    "label": "Bitcoin",
+    "page": "https://github.com/bitpay/bitcoin-brand",
+    "source": "https://raw.githubusercontent.com/bitpay/bitcoin-brand/master/bitcoin.svg",
+    "file": "bitcoin.svg",
+    "symbols": [
+      "BTC"
+    ],
+    "license": "CC0-1.0",
+    "licensePage": "https://github.com/bitpay/bitcoin-brand#license",
+    "note": "Public vector graphic published by BitPay; Bitcoin has no central brand owner.",
+    "bytes": 1437,
+    "sha256": "5083e5447d66c4654977a891c79d3abd3fb03c2a5e6b759458c70147cd48bd9f",
+    "retrievedAt": "2026-10-03",
+    "rights": "BitPay waived copyright and related rights under CC0-1.0. No affiliation or endorsement is implied.",
+    "originalSha256": "3672ebaa9a2c6e7490636c8f3fc093ed1601f9aca103f164a6926cd1a5488d77",
+    "processing": "Normalize CRLF to LF; vector artwork unchanged."
+  },
+  {
+    "key": "ethereum",
+    "label": "Ethereum",
+    "page": "https://ethereum.org/assets/",
+    "source": "https://raw.githubusercontent.com/ethereum/ethereum-org-website/dev/public/images/assets/eth-diamond-purple.png",
+    "file": "ethereum.png",
+    "symbols": [
+      "ETH"
+    ],
+    "repositoryPage": "https://github.com/ethereum/ethereum-org-website/tree/dev/public/images/assets",
+    "note": "Official website repository public brand asset.",
+    "bytes": 12821,
+    "sha256": "9eb3a3787b884a9886859dd8ab2cb8d2b2c4f19c0c4d6f7f199dc2defa404fcd",
+    "retrievedAt": "2026-10-03",
+    "rights": "Original publisher retains trademark and artwork rights. No affiliation or endorsement is implied."
+  },
+  {
+    "key": "bnb",
+    "label": "BNB Chain",
+    "page": "https://www.bnbchain.org/en/brand-guidelines",
+    "source": "https://static.bnbchain.org/home-ui/static/images/favicon.ico",
+    "file": "bnb.png",
+    "symbols": [
+      "BNB"
+    ],
+    "transformation": "ICO decoded to PNG at its original 32 by 32 size; no artwork changes",
+    "sourceBytes": 4286,
+    "note": "Current official yellow BNB Chain logomark used for BNB identification.",
+    "bytes": 1382,
+    "sha256": "897b3127a9aedb67230be95609e02ee9eea15f25eaaed4bc45ad3daf2f003f80",
+    "retrievedAt": "2026-10-03",
+    "rights": "Original publisher retains trademark and artwork rights. No affiliation or endorsement is implied."
+  }
+]
