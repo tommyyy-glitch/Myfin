@@ -1,0 +1,114 @@
+[
+  {
+    "key": "ibkr",
+    "label": "IBKR Mobile",
+    "page": "https://apps.apple.com/hk/app/ibkr-mobile/id454558592?uo=4",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/c4/eb/22/c4eb22fc-92e3-aad5-6d01-f219903b4904/AppIcon-0-0-1x_U007emarketing-0-8-0-0-85-220.png/128x128bb.jpg",
+    "file": "ibkr.jpg",
+    "bytes": 3725
+  },
+  {
+    "key": "payme",
+    "label": "PayMe by HSBC",
+    "page": "https://apps.apple.com/hk/app/payme-by-hsbc/id1184264977?uo=4",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/6f/3d/0c/6f3d0c2b-34f9-ee5c-1c42-9e6b2574f882/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/128x128bb.jpg",
+    "file": "payme.jpg",
+    "bytes": 5378
+  },
+  {
+    "key": "alipay-hk",
+    "label": "AlipayHK (支付寶香港)",
+    "page": "https://apps.apple.com/hk/app/alipayhk-%E6%94%AF%E4%BB%98%E5%AF%B6%E9%A6%99%E6%B8%AF/id1210638245?uo=4",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/76/2f/48/762f48eb-b69b-6f76-655a-86b48ee2c9fb/AppIcon-0-0-1x_U007emarketing-0-8-0-85-220.png/128x128bb.jpg",
+    "file": "alipay-hk.jpg",
+    "bytes": 6200
+  },
+  {
+    "key": "alipay",
+    "label": "支付宝",
+    "page": "https://apps.apple.com/hk/app/%E6%94%AF%E4%BB%98%E5%AE%9D-%E7%94%9F%E6%B4%BB%E5%A5%BD-%E6%94%AF%E4%BB%98%E5%AE%9D/id333206289?uo=4",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/49/83/3c/49833c6e-247b-4abd-bc82-459887acd961/AppIcon-0-0-1x_U007epad-0-1-0-85-220.png/128x128bb.jpg",
+    "file": "alipay.jpg",
+    "bytes": 5320
+  },
+  {
+    "key": "wechat",
+    "label": "WeChat",
+    "page": "https://apps.apple.com/hk/app/wechat/id414478124?uo=4",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/61/70/2e/61702e05-0531-165f-5cd3-012c8b5b3b20/AppIcon-0-0-1x_U007epad-0-1-0-sRGB-0-85-220.png/128x128bb.jpg",
+    "file": "wechat.jpg",
+    "bytes": 4193
+  },
+  {
+    "key": "mexc",
+    "label": "MEXC: 購買比特幣，加密貨幣交易平臺",
+    "page": "https://apps.apple.com/hk/app/mexc-%E8%B3%BC%E8%B2%B7%E6%AF%94%E7%89%B9%E5%B9%A3-%E5%8A%A0%E5%AF%86%E8%B2%A8%E5%B9%A3%E4%BA%A4%E6%98%93%E5%B9%B3%E8%87%BA/id1605393003?uo=4",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/f9/ca/83/f9ca83ea-e851-42aa-368b-84e535a9522d/AppIcon-Blue-0-0-1x_U007epad-0-11-0-0-85-220.png/128x128bb.jpg",
+    "file": "mexc.jpg",
+    "bytes": 4560
+  },
+  {
+    "key": "futu",
+    "label": "富途牛牛",
+    "page": "https://apps.apple.com/hk/app/%E5%AF%8C%E9%80%94%E7%89%9B%E7%89%9B-%E6%B8%AF%E8%82%A1%E7%BE%8E%E8%82%A1-crypto-%E6%9C%9F%E6%AC%8A-etf-%E5%AF%A6%E6%99%82%E5%A0%B1%E5%83%B9/id592031984?uo=4",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple221/v4/9d/f7/18/9df718f1-8fce-f1c0-144b-573c778bd420/AppIcon-NiuNiu-0-0-1x_U007epad-0-1-sRGB-85-220.png/128x128bb.jpg",
+    "file": "futu.jpg",
+    "bytes": 5464
+  },
+  {
+    "key": "octopus",
+    "label": "Octopus 八達通",
+    "page": "https://apps.apple.com/hk/app/octopus-%E5%85%AB%E9%81%94%E9%80%9A/id1114430602?uo=4",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/0b/ae/9a/0bae9a16-5215-c875-cdb6-f0fa69d3d65a/AppIcon-0-0-1x_U007emarketing-0-5-0-sRGB-85-220.png/128x128bb.jpg",
+    "file": "octopus.jpg",
+    "bytes": 4922
+  },
+  {
+    "key": "metamask",
+    "label": "MetaMask: Trade Crypto",
+    "page": "https://apps.apple.com/hk/app/metamask-trade-crypto/id1438144202?uo=4",
+    "source": "https://is1-ssl.mzstatic.com/image/thumb/Purple211/v4/6e/db/0d/6edb0d6c-b2a4-e574-c884-b0aac467ba2b/AppIcon-0-0-1x_U007ephone-0-11-0-85-220.png/128x128bb.jpg",
+    "file": "metamask.jpg",
+    "bytes": 5533
+  },
+  {
+    "key": "app-store",
+    "label": "App Store",
+    "page": "https://www.apple.com/app-store/",
+    "source": "https://www.apple.com/v/app-store/c/images/overview/icon_appstore__ev0z770zyxoy_small_2x.png",
+    "file": "app-store.png",
+    "bytes": 6483
+  },
+  {
+    "key": "mpfa",
+    "label": "積金局 MPFA",
+    "page": "https://www.mpfa.org.hk/",
+    "source": "https://www.mpfa.org.hk/-/media/mpfa/images/logo/logo_bilingual.svg",
+    "file": "mpfa.svg",
+    "bytes": 89189
+  },
+  {
+    "key": "lisboa",
+    "label": "葡京 Lisboa",
+    "page": "https://hotelisboa.com/",
+    "source": "https://hotelisboa.com/wp-content/uploads/cropped-hotel-lisboa-logo-512x512-1-180x180.png",
+    "file": "lisboa.png",
+    "bytes": 6797
+  },
+  {
+    "key": "polymarket",
+    "label": "Polymarket",
+    "page": "https://polymarket.com/brand",
+    "source": "https://polymarket.com/icons/apple-touch-icon.png",
+    "file": "polymarket.png",
+    "bytes": 12190
+  },
+  {
+    "key": "hkd",
+    "label": "港幣紙鈔",
+    "page": "https://www.hkma.gov.hk/eng/key-functions/money/hong-kong-currency/notes/design-security-features-of-ten-dollar-polymer-notes/",
+    "source": "https://www.hkma.gov.hk/media/eng/img/key-functions/money/hong-kong-currency/10%20Dollar/Polymer%20Note/notefront_1_mark.jpg",
+    "file": "hkd.jpg",
+    "bytes": 60744
+  }
+]
