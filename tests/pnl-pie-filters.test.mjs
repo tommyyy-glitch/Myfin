@@ -19,6 +19,7 @@ const code=[
   declaration('pnlPieFilterMeta'),
   declaration('togglePnlPieFilter'),
   declaration('renderPnlPieFilters'),
+  declaration('pnlSectionImage'),
   `
   const S={pnlPieFilters:[]};
   const document={getElementById(id){return fields[id]||null;}};
@@ -27,6 +28,7 @@ const code=[
   function assetLabel(){return 'Physical fixed assets';}
   function escapeHtml(v){return String(v);}
   function secIcon(){return 'All';}
+  function iconPresetAsset(k){return 'assets/'+k+'.svg';}
   function saveS(){}
   function renderGamble(){}
   togglePnlPieFilter('cash');
@@ -48,6 +50,7 @@ assert.deepEqual([...context.result.cashStock],['cash','stock']);
 assert.deepEqual([...context.result.stockOnly],['stock']);
 assert.deepEqual([...context.result.all],[]);
 assert.match(context.result.rendered,/fchip active/);
+assert.match(context.result.rendered,/<img class="item-image-icon pnl-section-image"/);
 assert.match(context.result.rendered,/aria-label="crypto"/);
 assert.match(context.result.rendered,/aria-label="Physical fixed assets"/);
 assert.doesNotMatch(context.result.rendered,/>₿ crypto</);
