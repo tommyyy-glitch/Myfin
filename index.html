@@ -1166,6 +1166,7 @@ body:has(#s-home.active) #global-fab{display:none!important;}
   <div class="nav-bar"><span class="nav-title" data-i="settings"></span><button class="ai-top-btn" onclick="openAI()"><i class="ti ti-message-circle"></i><span data-i="aiask"></span></button></div>
   <div class="scroll-body" style="padding:16px 20px 28px">
     <button type="button" id="wallet-icon-match-btn" onclick="openWalletIconMatch()" style="grid-column:1/-1;min-height:52px;border:1px solid var(--bdr2);border-radius:12px;padding:10px 14px;margin-bottom:12px;background:var(--g2);color:var(--g3);font:inherit"></button>
+    <button type="button" id="category-icon-match-btn" onclick="openWalletIconMatch('category')" style="grid-column:1/-1;min-height:52px;border:1px solid var(--bdr2);border-radius:12px;padding:10px 14px;margin-bottom:12px;background:var(--g2);color:var(--g3);font:inherit">按分類名稱配圖</button>
     <button type="button" id="holding-icon-match-btn" data-holding-icon-match onclick="openWalletIconMatch('holding')" style="grid-column:1/-1;min-height:52px;border:1px solid var(--bdr2);border-radius:12px;padding:10px 14px;margin-bottom:12px;background:var(--g2);color:var(--g3);font:inherit">按持倉名稱配圖</button>
     <div class="set-group" data-i="sg1"></div>
     <div class="slbl" data-i="language"></div>
@@ -3400,7 +3401,7 @@ function renderAutoincome(){
   const el=document.getElementById('ai2-list');if(!el)return;
   const freqLbl={0:t('freqnone'),1:t('freqmonth'),3:t('freqquarter'),6:t('freqhalf'),12:t('freqyear')};
   const fLbl={day:t('freqday'),month:t('freqmonth'),quarter:t('freqquarter'),half:t('freqhalf'),year:t('freqyear'),none:t('freqnone')};
-  let html=(S.autoincome||[]).map(a=>`<div class="crow"><div class="ibox" style="background:var(--g2)">💰</div><div class="rinfo"><div class="rtitle">${escapeHtml(a.name)} <span class="badge ${a.active?'bg':'bgr'}">${a.active?t('activebadge'):t('pausedbadge')}</span></div><div class="rsub">${escapeHtml(freqLbl[a.freq]||a.freq)} · ${t('payday')} ${escapeHtml(a.day)} · ${escapeHtml(a.cur)} ${escapeHtml(a.amount)}${a.posName?' · '+escapeHtml(a.posName):''}</div></div><div style="display:flex;gap:8px;align-items:center"><button onclick="toggleAI2(${inlineJsString(a.id)})" style="padding:6px 12px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);font-size:12px;font-weight:600;cursor:pointer">${a.active?t('pause'):t('resume')}</button><button onclick="delAI2(${inlineJsString(a.id)})" style="padding:6px 9px;border:none;background:none;color:var(--r3);font-size:20px;cursor:pointer"><i class="ti ti-trash"></i></button></div></div>`).join('');
+  let html=(S.autoincome||[]).map(a=>`<div class="crow"><div class="ibox" style="background:var(--g2)">${a.posId&&(S.portfolio||[]).some(p=>String(p.id)===String(a.posId))?holdingIcon(S.portfolio.find(p=>String(p.id)===String(a.posId))):itemIcon(getCat(a.catId||'other_inc'))}</div><div class="rinfo"><div class="rtitle">${escapeHtml(a.name)} <span class="badge ${a.active?'bg':'bgr'}">${a.active?t('activebadge'):t('pausedbadge')}</span></div><div class="rsub">${escapeHtml(freqLbl[a.freq]||a.freq)} · ${t('payday')} ${escapeHtml(a.day)} · ${escapeHtml(a.cur)} ${escapeHtml(a.amount)}${a.posName?' · '+escapeHtml(a.posName):''}</div></div><div style="display:flex;gap:8px;align-items:center"><button onclick="toggleAI2(${inlineJsString(a.id)})" style="padding:6px 12px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);font-size:12px;font-weight:600;cursor:pointer">${a.active?t('pause'):t('resume')}</button><button onclick="delAI2(${inlineJsString(a.id)})" style="padding:6px 9px;border:none;background:none;color:var(--r3);font-size:20px;cursor:pointer"><i class="ti ti-trash"></i></button></div></div>`).join('');
   // Position-linked dividends (read-only here; edit from the position). Shows annual amount.
   html+=(S.portfolio||[]).filter(p=>!p.exitPrice&&parseFloat(p.divPct||0)>0&&divFreqCode(p.divFreq)!=='none').map(p=>`<div class="crow"><div class="ibox" style="background:var(--b2)">${holdingIcon(p)}</div><div class="rinfo"><div class="rtitle">${escapeHtml(p.name)} <span class="badge bb">${t('dividend')}</span></div><div class="rsub">${escapeHtml(fLbl[divFreqCode(p.divFreq)])} · ${escapeHtml(p.divPct)}% · ${fmt(toHKD(divAnnual(p),p.cur))}${t('peryearshort')}</div></div><div style="display:flex;gap:8px;align-items:center"><button onclick="${p.type==='pe'?`openPEModal(${inlineJsString(p.id)})`:`openPortModal(${inlineJsString(p.type)},${inlineJsString(p.id)})`}" style="padding:6px 12px;border:1.5px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);font-size:12px;font-weight:600;cursor:pointer">${t('editpos')}</button></div></div>`).join('');
   el.innerHTML=html||`<div style="text-align:center;padding:16px;color:var(--ink3);font-size:13px">—</div>`;
@@ -4372,7 +4373,7 @@ function renderTaxSettings(){
   document.getElementById('tax-hint').innerHTML=tt('初版：按香港薪俸稅年度（4月1日至翌年3月31日）用收入記錄粗略估算。你可以排除某啲收入類別；免稅額/扣除額可手動調整。','First draft: estimates HK Salaries Tax by tax year (Apr 1 to Mar 31) from income records. You can exclude income categories; allowance/deductions are editable.')+' <a href="https://www.gov.hk/en/residents/taxes/etax/services/tax_computation.htm" target="_blank" rel="noopener" style="color:var(--g3);font-weight:800">'+tt('官方計算器','Official calculator')+'</a>';
   document.getElementById('tax-result').innerHTML=`<div class="metric-row" style="margin-bottom:8px"><div class="metric-card"><div class="mlabel">${tt('應課稅收入','Taxable income')}</div><div class="mval">${fmt(e.chargeable)}</div><div class="msub">${cfg.year}/${String(cfg.year+1).slice(2)}</div></div><div class="metric-card"><div class="mlabel">${tt('預計稅款','Est. tax')}</div><div class="mval neg">${fmt(e.tax)}</div><div class="msub">${tt('較低者','Lower of')} ${fmt(e.progressive)} / ${fmt(e.standard)}</div></div></div><div class="msub">${tt('已計入收入','Included income')}: ${fmt(e.gross)} · ${tt('扣除','Deduction')}: ${fmt(cfg.deductions)} · ${tt('免稅額','Allowance')}: ${fmt(cfg.allowance)}</div>`;
   const list=document.getElementById('tax-cat-list');
-  list.innerHTML=e.rows.length?e.rows.map(r=>{const off=cfg.excludedCats.includes(r.id);return `<div class="tax-cat-row ${off?'off':''}"><div style="min-width:0"><div style="font-size:14px;font-weight:800">${escapeHtml(r.icon)} ${escapeHtml(r.label)}</div><div class="msub">${fmt(r.total)}</div></div><button onclick="toggleTaxCat(${inlineJsString(r.id)})" style="padding:7px 12px;border:1.5px solid var(--bdr2);border-radius:20px;background:${off?'var(--surf2)':'var(--g2)'};color:${off?'var(--ink3)':'var(--g3)'};font-size:12px;font-weight:800;cursor:pointer">${off?t('excluded'):t('included')}</button></div>`;}).join(''):`<div class="msub" style="text-align:center;padding:12px">${tt('呢個稅務年度未有收入記錄。','No income records in this tax year.')}</div>`;
+  list.innerHTML=e.rows.length?e.rows.map(r=>{const off=cfg.excludedCats.includes(r.id);return `<div class="tax-cat-row ${off?'off':''}"><div style="min-width:0"><div style="font-size:14px;font-weight:800">${itemIcon(getCat(r.id))} ${escapeHtml(r.label)}</div><div class="msub">${fmt(r.total)}</div></div><button onclick="toggleTaxCat(${inlineJsString(r.id)})" style="padding:7px 12px;border:1.5px solid var(--bdr2);border-radius:20px;background:${off?'var(--surf2)':'var(--g2)'};color:${off?'var(--ink3)':'var(--g3)'};font-size:12px;font-weight:800;cursor:pointer">${off?t('excluded'):t('included')}</button></div>`;}).join(''):`<div class="msub" style="text-align:center;padding:12px">${tt('呢個稅務年度未有收入記錄。','No income records in this tax year.')}</div>`;
 }
 function saveTaxSettings(){
   const cfg=taxCfg();S.tax={year:parseInt(document.getElementById('tax-year').value)||cfg.year,allowance:Math.max(0,parseFloat(document.getElementById('tax-allowance').value)||0),deductions:Math.max(0,parseFloat(document.getElementById('tax-deductions').value)||0),excludedCats:cfg.excludedCats};
@@ -5730,6 +5731,19 @@ function toggleSetSec(key,node,body){
 
 // Curated local assets. No account labels or ledger data leave the device to match.
 const WALLET_ICON_PRESETS=[{"key":"ibkr","label":"IBKR","file":"ibkr.jpg"},{"key":"payme","label":"PayMe","file":"payme.jpg"},{"key":"alipay-hk","label":"AlipayHK","file":"alipay-hk.jpg"},{"key":"alipay","label":"Alipay","file":"alipay.jpg"},{"key":"wechat","label":"WeChat","file":"wechat.jpg"},{"key":"mexc","label":"MEXC","file":"mexc.jpg"},{"key":"futu","label":"富途牛牛","file":"futu.jpg"},{"key":"octopus","label":"八達通","file":"octopus.jpg"},{"key":"metamask","label":"MetaMask","file":"metamask.jpg"},{"key":"app-store","label":"App Store","file":"app-store.png"},{"key":"mpfa","label":"積金局","file":"mpfa.svg"},{"key":"lisboa","label":"葡京","file":"lisboa.png"},{"key":"polymarket","label":"Polymarket","file":"polymarket.png"},{"key":"hkd","label":"港紙","file":"hkd.jpg"},{"key":"hsbc-red","label":"匯豐 Red 卡","file":"hsbc-red.png"},{"key":"hang-seng-cityu","label":"恆生城大信用卡","file":"hang-seng-cityu.jpg"},{"key":"hsbc-logo","label":"匯豐銀行","file":"hsbc-logo.svg"},{"key":"longbridge","label":"長橋","file":"longbridge.png"},{"key":"natural8","label":"Natural8","file":"natural8.jpg"},{"key":"forthright","label":"方德智投","file":"forthright.jpg"},{"key":"jpy","label":"日圓現金","file":"jpy.svg"},{"key":"cny-card","label":"人民幣銀行卡","file":"cny-card.svg"},{"key":"coin-jar","label":"零錢罐","file":"coin-jar.svg"},{"key":"government","label":"政府貸款","file":"government.svg"},{"key":"poker","label":"撲克與籌碼","file":"poker.svg"},{"key":"hair","label":"理髮卡","file":"hair.svg"},{"key":"project","label":"項目預算","file":"project.svg"},{"key":"bank-card","label":"銀行戶口","file":"bank-card.svg"},{"key":"credit-card","label":"信用卡","file":"credit-card.svg"},{"key":"cash","label":"現金與紙幣","file":"cash.svg"},{"key":"investment","label":"投資戶口","file":"investment.svg"},{"key":"digital-wallet","label":"電子錢包","file":"digital-wallet.svg"},{"key":"wallet","label":"其他戶口","file":"wallet.svg"}];
+const CATEGORY_ICON_PRESETS=[{"key":"category-food","label":"飲食 · Food","path":"assets/category-icons/food.svg"},{"key":"category-transport","label":"交通 · Transport","path":"assets/category-icons/transport.svg"},{"key":"category-daily","label":"日用 · Daily","path":"assets/category-icons/daily.svg"},{"key":"category-entertainment","label":"娛樂 · Entertainment","path":"assets/category-icons/entertainment.svg"},{"key":"category-travel","label":"旅行 · Travel","path":"assets/category-icons/travel.svg"},{"key":"category-health","label":"醫療 · Health","path":"assets/category-icons/health.svg"},{"key":"category-fitness","label":"健身 · Fitness","path":"assets/category-icons/fitness.svg"},{"key":"category-clothing","label":"服飾 · Clothing","path":"assets/category-icons/clothing.svg"},{"key":"category-housing","label":"住房物業 · Housing","path":"assets/category-icons/housing.svg"},{"key":"category-beauty","label":"美容 · Beauty","path":"assets/category-icons/beauty.svg"},{"key":"category-education","label":"教育 · Education","path":"assets/category-icons/education.svg"},{"key":"category-telecom","label":"通信 · Telecom","path":"assets/category-icons/telecom.svg"},{"key":"category-social","label":"社交 · Social","path":"assets/category-icons/social.svg"},{"key":"category-bigitem","label":"大宗消費 · Big item","path":"assets/category-icons/bigitem.svg"},{"key":"category-shopping","label":"購物 · Shopping","path":"assets/category-icons/shopping.svg"},{"key":"category-gambling","label":"博彩 · Gambling","path":"assets/category-icons/gambling.svg"},{"key":"category-loss","label":"金損 · Loss","path":"assets/category-icons/loss.svg"},{"key":"category-longdebt","label":"長期負債 · Long-term debt","path":"assets/category-icons/longdebt.svg"},{"key":"category-invest","label":"理財投資 · Invest","path":"assets/category-icons/invest.svg"},{"key":"category-income","label":"主工 · Salary","path":"assets/category-icons/income.svg"},{"key":"category-freelance","label":"副業 · Freelance","path":"assets/category-icons/freelance.svg"},{"key":"category-cashback","label":"現金回贈 · Cash rebate","path":"assets/category-icons/cashback.svg"},{"key":"category-other_inc","label":"其他收入 · Other income","path":"assets/category-icons/other_inc.svg"},{"key":"category-other","label":"其他 · Other","path":"assets/category-icons/other.svg"}];
+function suggestedCategoryIcon(category){
+  const name=String(category.label||category.labelEn||'').normalize('NFKC').trim().toLowerCase();
+  const brand=suggestedWalletIcon({label:name});
+  if(!['wallet','cash','investment','bank-card','credit-card','digital-wallet'].includes(brand))return brand;
+  const rules=[['other_inc',/other income|其他收入/],['longdebt',/long.term debt|長期負債|貸款|借貸/],['cashback',/cash ?back|cash rebate|回贈|回赠|退款|refund/],['freelance',/freelance|副業|副业|自由職業/],['income',/salary|工資|工资|主工|人工|薪水/],['loss',/^(?:loss|金損|虧損|亏损)$/],['bigitem',/big item|大宗|電器|电器/],['food',/food|dining|飲食|饮食|餐飲|餐饮|食飯|早餐|午餐|晚餐|咖啡|coffee/],['transport',/transport|交通|地鐵|地铁|巴士|的士|taxi|uber|mtr/],['daily',/daily|日用|日常/],['entertainment',/entertainment|娛樂|娱乐|遊戲|游戏|gaming|game|電影|电影/],['travel',/travel|旅行|旅遊|旅游/],['health',/health|medical|醫療|医疗|藥|药/],['fitness',/fitness|gym|健身|運動|运动/],['clothing',/clothing|服飾|服饰|衣服|衫|鞋/],['housing',/housing|rent|物業|物业|住房|租金/],['beauty',/beauty|美容|護膚|护肤|化妝|化妆/],['education',/education|教育|學費|学费|課程|课程/],['telecom',/telecom|internet|通信|電話費|电话费|上網|上网/],['social',/social|社交|聚會|聚会/],['shopping',/shopping|購物|购物|網購|网购/],['gambling',/gambl|博彩|賭|赌|hkjc/],['invest',/invest|理財|理财|投資|股票|基金/],['other',/^(?:other|其他)$/]];
+  const key=rules.find(([,re])=>re.test(name))?.[0];return key?'category-'+key:null;
+}
+function iconMatchItems(kind){return kind==='holding'?(S.portfolio||[]):kind==='category'?(S.cats||[]):(S.accounts||[]);}
+function categoryMatchSignature(item){return JSON.stringify([String(item.id),item.label,item.labelEn]);}
+function categoryMatchRows(){return (S.cats||[]).map(account=>({account,key:suggestedCategoryIcon(account),signature:categoryMatchSignature(account),category:true}));}
+function itemMonogram(item){return holdingMonogram({name:item?.label||item?.labelEn||item?.name||item?.id||'?'});}
+function validItemIconPreset(value){return value==='__name__'||CATEGORY_ICON_PRESETS.some(p=>p.key===value)||WALLET_ICON_PRESETS.some(p=>p.key===value);}
 let walletIconMatchDraft=null;
 function walletIconAsset(key){const preset=WALLET_ICON_PRESETS.find(p=>p.key===key);return preset?'assets/wallet-icons/'+preset.file:null;}
 function suggestedWalletIcon(account){
@@ -5774,8 +5788,8 @@ async function walletPresetRaster(key){
   const data=canvas.toDataURL('image/webp',.9);if(!validIconImage(data))throw Error('Icon is too large');return data;
 }
 function renderWalletIconPresets(){
-  const holding=imageIconDraft?.kind==='holding',presets=holding?HOLDING_ICON_PRESETS:WALLET_ICON_PRESETS;
-  document.getElementById('wallet-icon-presets-label').textContent=holding?tt('揀公司／基金／幣種圖示','Choose a company, fund or coin icon'):tt('揀現成圖示','Choose a ready-made icon');
+  const holding=imageIconDraft?.kind==='holding',category=imageIconDraft?.kind==='category',presets=holding?HOLDING_ICON_PRESETS:category?[...CATEGORY_ICON_PRESETS,...WALLET_ICON_PRESETS]:WALLET_ICON_PRESETS;
+  document.getElementById('wallet-icon-presets-label').textContent=holding?tt('揀公司／基金／幣種圖示','Choose a company, fund or coin icon'):category?tt('揀分類／品牌圖示','Choose a category or brand icon'):tt('揀現成圖示','Choose a ready-made icon');
   document.getElementById('wallet-icon-presets').open=false;
   document.getElementById('wallet-icon-grid').innerHTML=presets.map(p=>`<button type="button" class="wallet-icon-choice" onclick="chooseWalletIconPreset(${inlineJsString(p.key)})"><img src="${iconPresetAsset(p.key)}" alt=""><span>${escapeHtml(p.label)}</span></button>`).join('');
 }
@@ -5789,32 +5803,32 @@ async function chooseWalletIconPreset(key){
     ['zoom','x','y'].forEach(k=>document.getElementById('icon-'+k).disabled=false);drawIconCrop();document.getElementById('icon-save').disabled=false;
   }catch(e){if(request===imageIconLoad){document.getElementById('icon-crop-error').textContent=tt('圖示未能載入，請連線後再試。','Could not load icon. Connect and try again.');document.getElementById('icon-save').disabled=!draft.image;}}
 }
-function iconMatchRecoveryKey(key,kind='account'){return (kind==='holding'?'myfin.holding-icon-recovery.v1.':'myfin.icon-recovery.v1.')+key;}
+function iconMatchRecoveryKey(key,kind='account'){return (kind==='holding'?'myfin.holding-icon-recovery.v1.':kind==='category'?'myfin.category-icon-recovery.v1.':'myfin.icon-recovery.v1.')+key;}
 function walletIconRecovery(key,kind='account'){
-  try{const data=JSON.parse(localStorage.getItem(iconMatchRecoveryKey(key,kind))||'null');return data&&data.v===1&&data.profile===key&&Array.isArray(data.icons)&&data.icons.length&&data.icons.every(r=>r&&typeof r.id==='string'&&typeof r.had==='boolean'&&(kind!=='holding'||(typeof r.holdingKey==='string'&&(r.hadPreset===undefined||typeof r.hadPreset==='boolean')))&&(!r.had||validIconImage(r.value)))?data:null;}catch(e){return null;}
+  try{const data=JSON.parse(localStorage.getItem(iconMatchRecoveryKey(key,kind))||'null');return data&&data.v===1&&data.profile===key&&Array.isArray(data.icons)&&data.icons.length&&data.icons.every(r=>r&&typeof r.id==='string'&&typeof r.had==='boolean'&&(kind!=='holding'||typeof r.holdingKey==='string')&&(kind==='account'||r.hadPreset===undefined||typeof r.hadPreset==='boolean')&&(!r.had||validIconImage(r.value)))?data:null;}catch(e){return null;}
 }
 function checkpointWalletIcons(key,accounts,kind='account'){
   // Store only changed image metadata; keep the full financial recovery copy untouched.
-  localStorage.setItem(iconMatchRecoveryKey(key,kind),JSON.stringify({v:1,profile:key,createdAt:Date.now(),icons:accounts.map(account=>({id:String(account.id),...(kind==='holding'?{holdingKey:holdingIconGroupKey(account),hadPreset:Object.hasOwn(account,'iconPreset'),...(Object.hasOwn(account,'iconPreset')?{presetValue:account.iconPreset}:{})}:{}),had:validIconImage(account.iconImage),...(validIconImage(account.iconImage)?{value:account.iconImage}:{})}))}));
+  localStorage.setItem(iconMatchRecoveryKey(key,kind),JSON.stringify({v:1,profile:key,createdAt:Date.now(),icons:accounts.map(account=>({id:String(account.id),...(kind==='holding'?{holdingKey:holdingIconGroupKey(account)}:{}),...(kind!=='account'?{hadPreset:Object.hasOwn(account,'iconPreset'),...(Object.hasOwn(account,'iconPreset')?{presetValue:account.iconPreset}:{})}:{}),had:validIconImage(account.iconImage),...(validIconImage(account.iconImage)?{value:account.iconImage}:{})}))}));
 }
 function captureIconMetadata(item){return {had:Object.hasOwn(item,'iconImage'),value:item.iconImage,hadPreset:Object.hasOwn(item,'iconPreset'),presetValue:item.iconPreset};}
 function restoreIconMetadata(item,icon,holding){if(icon.had)item.iconImage=icon.value;else delete item.iconImage;if(holding){if(icon.hadPreset)item.iconPreset=icon.presetValue;else delete item.iconPreset;}}
 function restoreWalletIconMatch(){
   const draft=walletIconMatchDraft;if(!draft||draft.applying||draft.state!==S||draft.profile!==profileKey())return;
-  const holding=draft.kind==='holding',recovery=walletIconRecovery(profileKey(),draft.kind);if(!recovery)return;
-  const items=holding?(S.portfolio||[]):(S.accounts||[]),used=new Set();
+  const holding=draft.kind==='holding',compact=draft.kind!=='account',recovery=walletIconRecovery(profileKey(),draft.kind);if(!recovery)return;
+  const items=iconMatchItems(draft.kind),used=new Set();
   const rows=recovery.icons.map(icon=>{const matches=items.filter(a=>String(a.id)===icon.id&&(!holding||holdingIconGroupKey(a)===icon.holdingKey));return {icon,account:matches.length===1?matches[0]:null};});
-  if(rows.some(r=>{if(!r.account||used.has(r.account))return true;used.add(r.account);return false;})){document.getElementById('wallet-icon-match-error').textContent=holding?tt('持倉記錄已變更，無法安全還原。原圖示未改。','Holding records changed; icons cannot be safely restored and remain unchanged.'):tt('戶口已變更，請逐個還原圖示。','Accounts have changed. Restore the icons individually.');return;}
+  if(rows.some(r=>{if(!r.account||used.has(r.account))return true;used.add(r.account);return false;})){document.getElementById('wallet-icon-match-error').textContent=holding?tt('持倉記錄已變更，無法安全還原。原圖示未改。','Holding records changed; icons cannot be safely restored and remain unchanged.'):draft.kind==='category'?tt('分類已變更，無法安全還原。原圖示未改。','Categories changed; icons cannot be safely restored and remain unchanged.'):tt('戶口已變更，請逐個還原圖示。','Accounts have changed. Restore the icons individually.');return;}
   const before=rows.map(({account})=>({account,...captureIconMetadata(account)}));
-  rows.forEach(({icon,account})=>restoreIconMetadata(account,icon,holding));
-  if(!saveS()){before.forEach(icon=>restoreIconMetadata(icon.account,icon,holding));document.getElementById('wallet-icon-match-error').textContent=tt('未能儲存，圖示保持不變。','Could not save; icons are unchanged.');return;}
+  rows.forEach(({icon,account})=>restoreIconMetadata(account,icon,compact));
+  if(!saveS()){before.forEach(icon=>restoreIconMetadata(icon.account,icon,compact));document.getElementById('wallet-icon-match-error').textContent=tt('未能儲存，圖示保持不變。','Could not save; icons are unchanged.');return;}
   closeM('wallet-icon-match-modal');renderSettings();refreshAllViews();showToast(tt('已還原上次配圖','Previous icons restored'));
 }
 function holdingMatchRows(){
   const groups=new Map();(S.portfolio||[]).forEach(p=>{const key=holdingIconGroupKey(p);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(p);});
   return [...groups.entries()].map(([groupKey,items])=>{const account=items.find(p=>!p.exitPrice)||items[0];return {account,items,groupKey,key:suggestedHoldingIcon(account)};});
 }
-function iconMatchRowHasImage(row){return (row.items||[row.account]).some(p=>validIconImage(p.iconImage)||(row.items&&validHoldingIconPreset(p.iconPreset)));}
+function iconMatchRowHasImage(row){return (row.items||[row.account]).some(p=>validIconImage(p.iconImage)||(row.items&&validHoldingIconPreset(p.iconPreset))||(row.category&&validItemIconPreset(p.iconPreset)));}
 function holdingMonogram(p){
   const name=String(p?.name||'?').trim()||'?',letters=/[\u3400-\u9fff]/.test(name)?(name.match(/[\u3400-\u9fff]/g)||[]).slice(0,2).join(''):name.replace(/[^A-Za-z0-9]/g,'').slice(0,3).toUpperCase()||'?';
   let hash=0;for(const char of name)hash=(hash*31+char.codePointAt(0))>>>0;
@@ -5824,6 +5838,7 @@ function holdingMonogram(p){
 }
 function iconMatchCurrent(draft){
   if(walletIconMatchDraft!==draft||draft.state!==S||draft.profile!==profileKey())return false;
+  if(draft.kind==='category')return draft.rows.length===(S.cats||[]).length&&draft.rows.every(r=>(S.cats||[]).includes(r.account)&&categoryMatchSignature(r.account)===r.signature);
   if(draft.kind!=='holding')return draft.rows.every(r=>(S.accounts||[]).includes(r.account));
   return draft.rows.every(r=>{const current=holdingIconGroup(r.account);return current.length===r.items.length&&r.items.every(p=>current.includes(p)&&holdingIconGroupKey(p)===r.groupKey);});
 }
@@ -5831,8 +5846,8 @@ function iconMatchCurrent(draft){
 function renderWalletIconMatchPage(){
   const draft=walletIconMatchDraft;if(!draft)return;
   const pages=Math.max(1,Math.ceil(draft.rows.length/draft.pageSize));draft.page=Math.max(0,Math.min(pages-1,draft.page));
-  const start=draft.page*draft.pageSize,holding=draft.kind==='holding';
-  document.getElementById('wallet-icon-match-list').innerHTML=draft.rows.slice(start,start+draft.pageSize).map((r,offset)=>{const index=start+offset,preset=(holding?HOLDING_ICON_PRESETS:WALLET_ICON_PRESETS).find(p=>p.key===r.key),src=holding?(r.key?iconPresetAsset(r.key):holdingMonogram(r.account)):walletIconAsset(r.key),label=holding?String(r.account.name||'')+' · '+acctLabel(getAcct(r.account.acctId)):acctLabel(r.account);return `<label class="wallet-icon-match"><input type="checkbox" data-index="${index}" ${draft.selected.has(index)?'checked':''} ${draft.applying?'disabled':''} onchange="toggleWalletIconMatch(${index},this.checked)"><img src="${src}" alt=""><span>${escapeHtml(label)}<br><small style="color:var(--ink3)">${escapeHtml(preset?.label||tt('名稱圖示','Name icon'))}${iconMatchRowHasImage(r)?tt(' · 已有圖片',' · image already set'):''}</small></span></label>`;}).join('')||`<p>${tt('未有戶口。','No accounts.')}</p>`;
+  const start=draft.page*draft.pageSize,holding=draft.kind==='holding',category=draft.kind==='category';
+  document.getElementById('wallet-icon-match-list').innerHTML=draft.rows.slice(start,start+draft.pageSize).map((r,offset)=>{const index=start+offset,preset=(holding?HOLDING_ICON_PRESETS:category?[...CATEGORY_ICON_PRESETS,...WALLET_ICON_PRESETS]:WALLET_ICON_PRESETS).find(p=>p.key===r.key),src=holding||category?(r.key?iconPresetAsset(r.key):category?itemMonogram(r.account):holdingMonogram(r.account)):walletIconAsset(r.key),label=holding?String(r.account.name||'')+' · '+acctLabel(getAcct(r.account.acctId)):category?catLabel(r.account):acctLabel(r.account);return `<label class="wallet-icon-match"><input type="checkbox" data-index="${index}" ${draft.selected.has(index)?'checked':''} ${draft.applying?'disabled':''} onchange="toggleWalletIconMatch(${index},this.checked)"><img src="${src}" alt=""><span>${escapeHtml(label)}<br><small style="color:var(--ink3)">${escapeHtml(preset?.label||tt('名稱圖示','Name icon'))}${iconMatchRowHasImage(r)?tt(' · 已有圖片',' · image already set'):''}</small></span></label>`;}).join('')||`<p>${category?tt('未有分類。','No categories.'):holding?tt('未有持倉。','No holdings.'):tt('未有戶口。','No accounts.')}</p>`;
   document.getElementById('wallet-icon-match-list').scrollTop=0;
   const all=document.getElementById('wallet-icon-match-all');all.disabled=!!draft.applying;all.checked=!!draft.rows.length&&draft.selected.size===draft.rows.length;all.indeterminate=draft.selected.size>0&&!all.checked;
   document.getElementById('wallet-icon-match-all-label').textContent=tt('全部選取','Select all');
@@ -5845,11 +5860,11 @@ function toggleWalletIconMatch(index,checked){const draft=walletIconMatchDraft;i
 function selectAllWalletIconMatches(checked){const draft=walletIconMatchDraft;if(!draft||draft.applying)return;draft.selected=checked?new Set(draft.rows.map((r,i)=>i)):new Set();renderWalletIconMatchPage();}
 function moveWalletIconMatchPage(delta){if(!walletIconMatchDraft||walletIconMatchDraft.applying)return;walletIconMatchDraft.page+=delta;renderWalletIconMatchPage();}
 function openWalletIconMatch(kind='account'){
-  kind=kind==='holding'?'holding':'account';const holding=kind==='holding';
-  const rows=holding?holdingMatchRows():(S.accounts||[]).map(account=>({account,key:suggestedWalletIcon(account)}));
+  kind=['holding','category'].includes(kind)?kind:'account';const holding=kind==='holding',category=kind==='category';
+  const rows=holding?holdingMatchRows():category?categoryMatchRows():(S.accounts||[]).map(account=>({account,key:suggestedWalletIcon(account)}));
   walletIconMatchDraft={kind,state:S,profile:profileKey(),rows,page:0,pageSize:Math.max(1,Math.min(7,Math.floor(((window.visualViewport?.height||innerHeight)-340)/60))),selected:new Set(rows.map((r,i)=>iconMatchRowHasImage(r)?null:i).filter(i=>i!==null))};
-  document.getElementById('wallet-icon-match-title').textContent=holding?tt('按持倉名稱配圖','Match holding icons'):tt('按戶口名稱配圖','Match account icons');
-  document.getElementById('wallet-icon-match-hint').textContent=holding?tt('已涵蓋持倉及已賣出記錄。保留已有圖片；只改圖示，並保存復原副本。','Includes open and sold holdings. Existing images stay unselected; only icons change, with a recovery copy.'):tt('預設只補未有圖片嘅戶口。更換前保存圖示復原副本。','Existing images stay unselected. Previous icons are saved before changes.');
+  document.getElementById('wallet-icon-match-title').textContent=holding?tt('按持倉名稱配圖','Match holding icons'):category?tt('按分類名稱配圖','Match category icons'):tt('按戶口名稱配圖','Match account icons');
+  document.getElementById('wallet-icon-match-hint').textContent=holding?tt('已涵蓋持倉及已賣出記錄。保留已有圖片；只改圖示，並保存復原副本。','Includes open and sold holdings. Existing images stay unselected; only icons change, with a recovery copy.'):category?tt('分類圖片會同步顯示於記錄、分帳、預算及自動收支。保留已有圖片，只改圖示，並保存復原副本。','Category icons appear in records, split bills, budgets and recurring entries. Existing images are kept, with a recovery copy.'):tt('預設只補未有圖片嘅戶口。更換前保存圖示復原副本。','Existing images stay unselected. Previous icons are saved before changes.');
   document.getElementById('wallet-icon-match-error').textContent='';
   document.getElementById('wallet-icon-match-save').textContent=tt('套用圖示','Apply icons');
   document.getElementById('wallet-icon-match-cancel').textContent=tt('取消','Cancel');
@@ -5858,30 +5873,34 @@ function openWalletIconMatch(kind='account'){
 }
 async function applyWalletIconMatch(){
   const draft=walletIconMatchDraft;if(!draft||draft.applying)return;
-  const current=()=>iconMatchCurrent(draft),holding=draft.kind==='holding';
+  const current=()=>iconMatchCurrent(draft),holding=draft.kind==='holding',category=draft.kind==='category',compact=holding||category;
   if(!current()){closeM('wallet-icon-match-modal');return;}
   const chosen=[...draft.selected].sort((a,b)=>a-b).map(index=>draft.rows[index]).filter(Boolean);
   if(!chosen.length)return;
   draft.applying=true;renderWalletIconMatchPage();let stage='images',imageLabel='';const recoveryKey=iconMatchRecoveryKey(profileKey(),draft.kind);let previousRecovery=null;
   try{
-    const decoded=await Promise.all(chosen.map(async row=>{try{return {...row,data:holding&&!row.key?holdingMonogram(row.account):await walletPresetRaster(row.key)};}catch(e){imageLabel=(holding?HOLDING_ICON_PRESETS:WALLET_ICON_PRESETS).find(p=>p.key===row.key)?.label||String(row.account.name||row.key);throw e;}}));
+    const decoded=await Promise.all(chosen.map(async row=>{try{return {...row,data:compact&&!row.key?(category?itemMonogram(row.account):holdingMonogram(row.account)):await walletPresetRaster(row.key)};}catch(e){imageLabel=(holding?HOLDING_ICON_PRESETS:category?[...CATEGORY_ICON_PRESETS,...WALLET_ICON_PRESETS]:WALLET_ICON_PRESETS).find(p=>p.key===row.key)?.label||String(row.account.label||row.account.name||row.key);throw e;}}));
     if(!current())return;
     const data=decoded.flatMap(row=>(row.items||[row.account]).map(account=>({account,data:row.data,preset:row.key||'__name__'})));
     stage='recovery';previousRecovery=localStorage.getItem(recoveryKey);
-    if(holding){const ids=new Set();if(data.some(({account})=>{const key=JSON.stringify([String(account.id),holdingIconGroupKey(account)]);if(ids.has(key))return true;ids.add(key);return (S.portfolio||[]).filter(p=>String(p.id)===String(account.id)&&holdingIconGroupKey(p)===holdingIconGroupKey(account)).length!==1;}))throw Error('Ambiguous holding record');}
+    if(compact){const ids=new Set();if(data.some(({account})=>{const key=JSON.stringify([String(account.id),holding?holdingIconGroupKey(account):'category']);if(ids.has(key))return true;ids.add(key);return iconMatchItems(draft.kind).filter(p=>String(p.id)===String(account.id)&&(!holding||holdingIconGroupKey(p)===holdingIconGroupKey(account))).length!==1;}))throw Error('Ambiguous holding record');}
     checkpointWalletIcons(profileKey(),data.map(r=>r.account),draft.kind);
     stage='save';const before=data.map(({account})=>({account,...captureIconMetadata(account)}));
     // Bundled images are already cached offline. A tiny trusted key avoids repeating
     // base64 PNGs on every historical lot on browsers without a WebP encoder.
-    data.forEach(({account,data,preset})=>{if(holding){delete account.iconImage;account.iconPreset=preset;}else account.iconImage=data;});
-    if(!saveS()){before.forEach(icon=>restoreIconMetadata(icon.account,icon,holding));if(previousRecovery===null)localStorage.removeItem(recoveryKey);else localStorage.setItem(recoveryKey,previousRecovery);throw Error('Save failed');}
-    closeM('wallet-icon-match-modal');renderSettings();refreshAllViews();showToast(tt('已更新 ','Updated ')+decoded.length+(holding?tt(' 項持倉圖示',' holding icons'):tt(' 個戶口圖示',' account icons')));
+    data.forEach(({account,data,preset})=>{if(compact){delete account.iconImage;account.iconPreset=preset;}else account.iconImage=data;});
+    if(!saveS()){before.forEach(icon=>restoreIconMetadata(icon.account,icon,compact));if(previousRecovery===null)localStorage.removeItem(recoveryKey);else localStorage.setItem(recoveryKey,previousRecovery);throw Error('Save failed');}
+    closeM('wallet-icon-match-modal');renderSettings();refreshAllViews();showToast(tt('已更新 ','Updated ')+decoded.length+(holding?tt(' 項持倉圖示',' holding icons'):category?tt(' 個分類圖示',' category icons'):tt(' 個戶口圖示',' account icons')));
   }catch(e){if(current())document.getElementById('wallet-icon-match-error').textContent=stage==='images'?tt('圖片未能處理：','Could not process image: ')+imageLabel+tt('。原圖示未改，請連線後重試。','. Original icons are unchanged. Connect and retry.'):stage==='recovery'?tt('未能建立復原副本；原圖示未改。請先匯出備份，並檢查儲存空間。','Could not create a recovery copy; original icons are unchanged. Export a backup and check storage.'):tt('未能儲存，原圖示已保留。請檢查儲存空間。','Could not save; original icons retained. Check storage.');}
   finally{draft.applying=false;if(walletIconMatchDraft===draft)renderWalletIconMatchPage();}
 }
 
 function validIconImage(value){return typeof value==='string'&&value.length<=32768&&/^data:image\/(?:png|jpeg|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value);}
-function itemIcon(item){return validIconImage(item?.iconImage)?'<img class="item-image-icon" src="'+item.iconImage+'" alt="" draggable="false">':escapeHtml(item?.icon||'');}
+function itemIcon(item){
+  if(validIconImage(item?.iconImage))return '<img class="item-image-icon" src="'+item.iconImage+'" alt="" draggable="false">';
+  if(item?.iconPreset&&validItemIconPreset(item.iconPreset)){const src=item.iconPreset==='__name__'?itemMonogram(item):iconPresetAsset(item.iconPreset);return '<img class="item-image-icon" src="'+src+'" alt="" draggable="false">';}
+  return escapeHtml(item?.icon||'');
+}
 function iconEditButton(kind,item){return `<button type="button" class="icon-edit-btn" onclick="openImageIcon(${inlineJsString(kind)},${inlineJsString(item.id)})" aria-label="${escapeHtml(tt('更改圖示：','Change icon: ')+(item.label||item.id))}">${itemIcon(item)}<small>${tt('圖片','Image')}</small></button>`;}
 // Holding icons are display metadata; changing one never invokes a purchase or sale save.
 const HOLDING_ICON_PRESETS=[
@@ -5895,7 +5914,7 @@ const HOLDING_ICON_PRESETS=[
   {key:'bnb',label:'BNB',path:'assets/holding-icons/bnb.png'},
   ...['futu','mpfa','hsbc-logo','longbridge','mexc','metamask','polymarket','natural8'].map(key=>({...WALLET_ICON_PRESETS.find(p=>p.key===key),path:walletIconAsset(key)}))
 ];
-function iconPresetAsset(key){return WALLET_ICON_PRESETS.some(p=>p.key===key)?walletIconAsset(key):HOLDING_ICON_PRESETS.find(p=>p.key===key)?.path;}
+function iconPresetAsset(key){return WALLET_ICON_PRESETS.some(p=>p.key===key)?walletIconAsset(key):CATEGORY_ICON_PRESETS.find(p=>p.key===key)?.path||HOLDING_ICON_PRESETS.find(p=>p.key===key)?.path;}
 function suggestedHoldingIcon(p){
   const name=String(p?.name||'').trim(),symbol=String(p?.apiSymbol||name).trim().toUpperCase().replace(/^(NASDAQ|NYSE|HKEX):/,'').split(':')[0];
   const tickers={GOOG:'google',GOOGL:'google',AMZN:'amazon',NVDA:'nvidia',VOO:'vanguard',VT:'vanguard',QQQ:'invesco',BTC:'bitcoin',BITCOIN:'bitcoin',ETH:'ethereum',ETHEREUM:'ethereum',BNB:'bnb',FUTU:'futu',HSBC:'hsbc-logo','0005.HK':'hsbc-logo','0005':'hsbc-logo'};
@@ -5930,7 +5949,7 @@ function openImageIcon(kind,id){
   const labels={'icon-crop-title':tt('自訂圖示 · ','Custom icon · ')+(item.label||item.name||id),'icon-crop-hint':tt('選擇圖片後，拖動或用滑桿調整裁剪。只保存小圖示，會隨帳戶備份及已啟用的同步保留。','Choose an image, then drag or use the sliders to crop. Only the small icon is saved, including in backups and enabled sync.'),'icon-file-label':tt('選擇圖片（JPG / PNG / WebP）','Choose image (JPG / PNG / WebP)'),'icon-zoom-label':tt('放大','Zoom'),'icon-x-label':tt('左右位置','Horizontal'),'icon-y-label':tt('上下位置','Vertical'),'icon-restore':kind==='holding'?tt('還原預設圖示','Restore default icon'):tt('還原圖示','Restore emoji'),'icon-cancel':tt('取消','Cancel'),'icon-save':tt('儲存','Save')};
   Object.entries(labels).forEach(([id,text])=>document.getElementById(id).textContent=text);
   document.getElementById('icon-crop-error').textContent='';document.getElementById('icon-preview').innerHTML=kind==='holding'?holdingIcon(item):itemIcon(item);
-  document.getElementById('icon-restore').disabled=!imageIconDraft.items.some(x=>validIconImage(x.iconImage)||(kind==='holding'&&validHoldingIconPreset(x.iconPreset)));document.getElementById('icon-save').disabled=true;
+  document.getElementById('icon-restore').disabled=!imageIconDraft.items.some(x=>validIconImage(x.iconImage)||((kind==='holding'?validHoldingIconPreset(x.iconPreset):kind==='category'&&validItemIconPreset(x.iconPreset))));document.getElementById('icon-save').disabled=true;
   ['zoom','x','y'].forEach(k=>{document.getElementById('icon-'+k).value=imageIconDraft[k];document.getElementById('icon-'+k).disabled=true;});
   const canvas=document.getElementById('icon-crop-canvas');canvas.getContext('2d').clearRect(0,0,240,240);
   let drag=null;
@@ -5969,8 +5988,8 @@ function saveImageIcon(restore){
   if(!restore&&!d.image)return;
   const value=restore?null:croppedIconImage();if(value&&!validIconImage(value)){document.getElementById('icon-crop-error').textContent=tt('圖片太大，請選擇較簡單的圖片。','Icon is too large. Choose a simpler image.');return;}
   const before=d.items.map(item=>({item,...captureIconMetadata(item)}));
-  d.items.forEach(item=>{if(restore){delete item.iconImage;if(d.kind==='holding')delete item.iconPreset;}else item.iconImage=value;});
-  if(!saveS()){before.forEach(icon=>restoreIconMetadata(icon.item,icon,d.kind==='holding'));document.getElementById('icon-crop-error').textContent=tt('儲存失敗，原圖示已保留。','Save failed; the original icon was retained.');return;}
+  d.items.forEach(item=>{if(restore){delete item.iconImage;if(d.kind==='holding'||d.kind==='category')delete item.iconPreset;}else item.iconImage=value;});
+  if(!saveS()){before.forEach(icon=>restoreIconMetadata(icon.item,icon,d.kind==='holding'||d.kind==='category'));document.getElementById('icon-crop-error').textContent=tt('儲存失敗，原圖示已保留。','Save failed; the original icon was retained.');return;}
   closeM('image-icon-modal');renderSettings();refreshAllViews();
   const imageEdit=document.getElementById('port-image-edit');if(d.kind==='holding'&&imageEdit&&!imageEdit.hidden)imageEdit.innerHTML=holdingImageEditRow(d.item);
   showToast(tt('圖示已更新','Icon updated'));
@@ -5978,6 +5997,7 @@ function saveImageIcon(restore){
 
 function renderAcctMgr(){
   const el=document.getElementById('acct-mgr');if(!el)return;document.getElementById('wallet-icon-match-btn').textContent=tt('按戶口名稱配圖','Match account icons');
+  document.getElementById('category-icon-match-btn').textContent=tt('按分類名稱配圖','Match category icons');
   document.querySelectorAll('[data-holding-icon-match]').forEach(el=>el.textContent=el.id==='pnl-holding-icon-match-btn'?tt('配圖','Icons'):tt('按持倉名稱配圖','Match holding icons'));
   el.innerHTML=(S.accounts||[]).map(a=>{
     const opts=ACCT_KINDS.map(k=>`<option value="${k}"${(a.kind||'other')===k?' selected':''}>${kindLabel(k)}</option>`).join('');
