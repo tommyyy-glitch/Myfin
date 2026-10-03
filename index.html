@@ -2106,6 +2106,7 @@ body:has(#s-home.active) #global-fab{display:none!important;}
  <div class="modal">
   <div class="mtitle" id="wallet-icon-match-title"></div><p id="wallet-icon-match-hint" style="font-size:13px;color:var(--ink3)"></p>
   <div id="wallet-icon-match-list"></div><p id="wallet-icon-match-error" role="status" style="color:var(--r3);font-size:13px"></p>
+  <button type="button" id="wallet-icon-match-restore" onclick="restoreWalletIconMatch()" style="min-height:44px;margin-bottom:8px;border:1px solid var(--bdr2);border-radius:12px;background:var(--surf2);color:var(--ink);font:inherit" hidden></button>
   <div class="icon-crop-actions"><button id="wallet-icon-match-cancel" onclick="closeM('wallet-icon-match-modal')"></button><button id="wallet-icon-match-save" class="icon-save" onclick="applyWalletIconMatch()"></button></div>
  </div>
 </div>
@@ -5739,6 +5740,23 @@ async function chooseWalletIconPreset(key){
     ['zoom','x','y'].forEach(k=>document.getElementById('icon-'+k).disabled=false);drawIconCrop();document.getElementById('icon-save').disabled=false;
   }catch(e){if(request===imageIconLoad){document.getElementById('icon-crop-error').textContent=tt('圖示未能載入，請連線後再試。','Could not load icon. Connect and try again.');document.getElementById('icon-save').disabled=!draft.image;}}
 }
+function walletIconRecovery(key){
+  try{const data=JSON.parse(localStorage.getItem('myfin.icon-recovery.v1.'+key)||'null');return data&&data.v===1&&data.profile===key&&Array.isArray(data.icons)&&data.icons.length&&data.icons.every(r=>r&&typeof r.id==='string'&&typeof r.had==='boolean'&&(!r.had||validIconImage(r.value)))?data:null;}catch(e){return null;}
+}
+function checkpointWalletIcons(key,accounts){
+  // Only icon metadata is changing. Do not duplicate the financial ledger or
+  // overwrite its existing full recovery copy merely to change an icon.
+  localStorage.setItem('myfin.icon-recovery.v1.'+key,JSON.stringify({v:1,profile:key,createdAt:Date.now(),icons:accounts.map(account=>({id:String(account.id),had:validIconImage(account.iconImage),...(validIconImage(account.iconImage)?{value:account.iconImage}:{})}))}));
+}
+function restoreWalletIconMatch(){
+  const draft=walletIconMatchDraft,recovery=walletIconRecovery(profileKey());if(!draft||draft.state!==S||draft.profile!==profileKey()||!recovery)return;
+  const rows=recovery.icons.map(icon=>({icon,account:(S.accounts||[]).find(a=>String(a.id)===icon.id)}));
+  if(rows.some(r=>!r.account)){document.getElementById('wallet-icon-match-error').textContent=tt('戶口已變更，請逐個還原圖示。','Accounts have changed. Restore the icons individually.');return;}
+  const before=rows.map(({account})=>({account,had:Object.hasOwn(account,'iconImage'),value:account.iconImage}));
+  rows.forEach(({icon,account})=>{if(icon.had)account.iconImage=icon.value;else delete account.iconImage;});
+  if(!saveS()){before.forEach(({account,had,value})=>{if(had)account.iconImage=value;else delete account.iconImage;});document.getElementById('wallet-icon-match-error').textContent=tt('未能儲存，圖示保持不變。','Could not save; icons are unchanged.');return;}
+  closeM('wallet-icon-match-modal');renderSettings();refreshAllViews();showToast(tt('已還原上次配圖','Previous icons restored'));
+}
 function openWalletIconMatch(){
   const rows=(S.accounts||[]).map(account=>({account,key:suggestedWalletIcon(account)})).filter(r=>r.key);
   walletIconMatchDraft={state:S,profile:profileKey(),rows};
@@ -5748,6 +5766,7 @@ function openWalletIconMatch(){
   document.getElementById('wallet-icon-match-error').textContent='';
   document.getElementById('wallet-icon-match-save').textContent=tt('套用圖示','Apply icons');document.getElementById('wallet-icon-match-save').disabled=!rows.length;
   document.getElementById('wallet-icon-match-cancel').textContent=tt('取消','Cancel');
+  const restore=document.getElementById('wallet-icon-match-restore');restore.textContent=tt('還原上次配圖','Restore previous icons');restore.hidden=!walletIconRecovery(profileKey());
   document.getElementById('wallet-icon-match-modal').classList.add('open');
 }
 async function applyWalletIconMatch(){
@@ -5760,7 +5779,7 @@ async function applyWalletIconMatch(){
   try{
     const data=await Promise.all(chosen.map(async row=>{try{return {...row,data:await walletPresetRaster(row.key)};}catch(e){imageLabel=WALLET_ICON_PRESETS.find(p=>p.key===row.key)?.label||row.key;throw e;}}));
     if(!current())return;
-    stage='recovery';checkpointProfile(profileKey());
+    stage='recovery';checkpointWalletIcons(profileKey(),data.map(r=>r.account));
     stage='save';const before=data.map(({account})=>({account,had:Object.hasOwn(account,'iconImage'),value:account.iconImage}));
     data.forEach(({account,data})=>account.iconImage=data);
     if(!saveS()){before.forEach(({account,had,value})=>{if(had)account.iconImage=value;else delete account.iconImage;});throw Error('Save failed');}
