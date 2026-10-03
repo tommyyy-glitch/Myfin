@@ -5756,16 +5756,16 @@ async function applyWalletIconMatch(){
   if(!current()){closeM('wallet-icon-match-modal');return;}
   const chosen=[...document.querySelectorAll('#wallet-icon-match-list input:checked')].map(el=>draft.rows[Number(el.dataset.index)]).filter(Boolean);
   if(!chosen.length)return;
-  const button=document.getElementById('wallet-icon-match-save');button.disabled=true;
+  const button=document.getElementById('wallet-icon-match-save');button.disabled=true;let stage='images',imageLabel='';
   try{
-    const data=await Promise.all(chosen.map(async row=>({...row,data:await walletPresetRaster(row.key)})));
+    const data=await Promise.all(chosen.map(async row=>{try{return {...row,data:await walletPresetRaster(row.key)};}catch(e){imageLabel=WALLET_ICON_PRESETS.find(p=>p.key===row.key)?.label||row.key;throw e;}}));
     if(!current())return;
-    checkpointProfile(profileKey());
-    const before=data.map(({account})=>({account,had:Object.hasOwn(account,'iconImage'),value:account.iconImage}));
+    stage='recovery';checkpointProfile(profileKey());
+    stage='save';const before=data.map(({account})=>({account,had:Object.hasOwn(account,'iconImage'),value:account.iconImage}));
     data.forEach(({account,data})=>account.iconImage=data);
     if(!saveS()){before.forEach(({account,had,value})=>{if(had)account.iconImage=value;else delete account.iconImage;});throw Error('Save failed');}
     closeM('wallet-icon-match-modal');renderSettings();refreshAllViews();showToast(tt('已更新 ','Updated ')+data.length+tt(' 個戶口圖示',' account icons'));
-  }catch(e){if(current())document.getElementById('wallet-icon-match-error').textContent=tt('未能儲存，原圖示已保留。請檢查連線及儲存空間。','Could not save; original icons retained. Check connection and storage.');}
+  }catch(e){if(current())document.getElementById('wallet-icon-match-error').textContent=stage==='images'?tt('圖片未能處理：','Could not process image: ')+imageLabel+tt('。原圖示未改，請連線後重試。','. Original icons are unchanged. Connect and retry.'):stage==='recovery'?tt('未能建立復原副本；原圖示未改。請先匯出備份，並檢查儲存空間。','Could not create a recovery copy; original icons are unchanged. Export a backup and check storage.'):tt('未能儲存，原圖示已保留。請檢查儲存空間。','Could not save; original icons retained. Check storage.');}
   finally{button.disabled=false;}
 }
 
