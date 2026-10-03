@@ -733,7 +733,9 @@ body:has(#s-home.active) #global-fab{display:none!important;}
 .wallet-icon-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0;}
 .wallet-icon-choice{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;border:1px solid var(--bdr2);border-radius:10px;background:var(--bg2);color:var(--ink);font-size:10px;min-height:66px;cursor:pointer;}
 .wallet-icon-choice img{width:36px;height:36px;object-fit:contain;background:white;border-radius:8px;}
-#wallet-icon-match-modal .modal{padding:20px 20px calc(20px + var(--sb));width:min(100%,480px);}
+#wallet-icon-match-modal .modal{padding:20px 20px calc(20px + var(--sb));width:min(100%,480px);display:flex;flex-direction:column;overflow:hidden;}
+#wallet-icon-match-modal .modal>*{flex-shrink:0;}
+#wallet-icon-match-list{min-height:0;flex-shrink:1!important;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;}
 #wallet-icon-match-modal .mtitle{padding:0;margin-bottom:10px;}
 .wallet-icon-match{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr);font-size:13px;}
 .wallet-icon-match input{width:22px;height:22px;accent-color:var(--g3);flex-shrink:0;}

@@ -15,6 +15,7 @@ try{
   const ledger=()=>page.evaluate(()=>JSON.stringify({accounts:S.accounts.map(({iconImage,...a})=>a),txns:S.txns,cats:S.cats,balance:acctCash('a0')}));const before=await ledger();
   await page.locator('.bottom-nav .tab-btn').nth(3).click();const entry=await page.locator('#wallet-icon-match-btn').boundingBox();assert(entry&&entry.y>=0&&entry.y+entry.height<height,'matching is visible before scrolling or expanding any settings');
   await page.locator('#wallet-icon-match-btn').click();assert.equal(await page.locator('#wallet-icon-match-list input:checked').count(),14);
+  for(const id of ['wallet-icon-match-save','wallet-icon-match-cancel']){const box=await page.locator('#'+id).boundingBox();assert(box&&box.y>=0&&box.y+box.height<=height,'confirmation controls stay visible with a long wallet list');}
   assert.equal(await page.evaluate(()=>suggestedWalletIcon({label:'MOP Cash'})),'lisboa');assert.equal(await page.evaluate(()=>suggestedWalletIcon({label:'Project budget'})),null);
   assert.equal(await page.evaluate(()=>suggestedWalletIcon({label:'HSBC Credit'})),null,'unknown credit card variant requires selection');
   await page.locator('#wallet-icon-match-cancel').click();assert.equal(await ledger(),before);assert.equal(await page.evaluate(()=>S.accounts.some(a=>a.iconImage)),false);

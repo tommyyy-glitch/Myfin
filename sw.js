@@ -1,7 +1,7 @@
 // Myfin offline cache — pure client-side, no server involved.
 // Network-first for the app shell (so updates land immediately when online),
 // cache fallback when offline. CDN assets (icons font, xlsx) are cache-first.
-const CACHE='myfin-v42';
+const CACHE='myfin-v43';
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html','./cloud-auth.js','./cloud-ui.js','./browser-chrome.js','./assets/wallet-icons/ibkr.jpg','./assets/wallet-icons/payme.jpg','./assets/wallet-icons/alipay-hk.jpg','./assets/wallet-icons/alipay.jpg','./assets/wallet-icons/wechat.jpg','./assets/wallet-icons/mexc.jpg','./assets/wallet-icons/futu.jpg','./assets/wallet-icons/octopus.jpg','./assets/wallet-icons/metamask.jpg','./assets/wallet-icons/app-store.png','./assets/wallet-icons/mpfa.svg','./assets/wallet-icons/lisboa.png','./assets/wallet-icons/polymarket.png','./assets/wallet-icons/hkd.jpg'])).catch(()=>{}));
   self.skipWaiting();
