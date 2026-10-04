@@ -154,6 +154,23 @@ body.no-dance .fab::after,body.no-dance .nav-island::before{display:none!importa
 }
 .ai-top-btn:active{transform:scale(0.96);opacity:0.85}
 .pnl-simple-metrics{display:flex;flex-wrap:wrap;gap:16px 22px;margin:12px 0 4px}
+.allocation-map{position:relative;width:100%;height:250px;overflow:hidden;border-radius:12px;background:var(--surf2);margin-top:8px}
+.allocation-tile{position:absolute;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:2px;border:1px solid var(--surf);border-radius:5px;overflow:hidden;background:var(--surf2);color:var(--ink2);cursor:pointer;font:inherit;min-width:0;min-height:0}
+.allocation-tile.gain{background:var(--g2);color:var(--g3)}
+.allocation-tile.loss{background:var(--r2);color:var(--r3)}
+.allocation-tile:focus-visible,.allocation-tile.selected{outline:2px solid var(--ink);outline-offset:-3px;z-index:1}
+.allocation-icon{display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;overflow:hidden}
+.allocation-icon .item-image-icon{display:block;width:100%!important;height:100%!important;max-width:none;vertical-align:0;object-fit:contain;border-radius:20%}
+.allocation-name,.allocation-share{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:11px;font-weight:700;line-height:1.2}
+.allocation-share{font-size:10px;font-weight:500}
+.allocation-detail{min-height:52px;padding:10px 0 4px;color:var(--ink2);font-size:12px;line-height:1.5;overflow-wrap:anywhere}
+.allocation-hint{font-size:11px;color:var(--ink3);line-height:1.5;margin-top:6px}
+.allocation-key{display:inline-flex;gap:10px;flex-wrap:wrap}
+.allocation-list summary{cursor:pointer;font-size:12px;color:var(--ink2);padding:10px 0}
+.allocation-list-row{display:flex;align-items:center;gap:8px;width:100%;min-height:44px;padding:6px 0;background:none;border:0;border-bottom:1px solid var(--bdr);color:var(--ink);text-align:left;font:inherit;cursor:pointer}
+.allocation-list-row .allocation-icon{width:24px;height:24px}
+.allocation-list-row .allocation-row-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;font-size:12px}
+.allocation-list-row .allocation-row-value{flex-shrink:0;font-size:12px;font-weight:700}
 .pnl-simple-metric{min-width:58px}
 .pnl-item-icon-btn{border:1px solid var(--bdr);background:var(--bg2);padding:0;flex-shrink:0}
 .slbl .pnl-item-icon-btn{width:44px;height:44px;display:inline-flex;vertical-align:middle;margin-right:5px}
@@ -1009,9 +1026,12 @@ body:has(#s-home.active) #global-fab{display:none!important;}
         <div class="pnl-simple-metric" data-sec="physical"><div class="mlabel" id="g-physical-label">固定資產</div><div class="pnl-simple-val" id="g-physical-pnl">HK$0</div></div>
         <div class="pnl-simple-metric" data-sec="loan"><div class="mlabel" data-i="privatedebt"></div><div class="pnl-simple-val" id="g-loan-pnl">HK$0</div></div>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:14px">
-        <canvas id="pnl-pie" width="160" height="160" style="width:160px;height:160px;flex-shrink:0"></canvas>
-        <div style="width:100%"><div class="mlabel" data-i="portfvalue" style="margin-bottom:8px"></div><div id="pnl-pie-legend" style="display:flex;flex-direction:column;gap:9px"></div></div>
+      <div style="margin-top:14px">
+        <div class="mlabel" data-i="portfvalue"></div>
+        <div id="pnl-allocation-map" class="allocation-map" role="group"></div>
+        <div id="pnl-allocation-detail" class="allocation-detail" aria-live="polite"></div>
+        <div id="pnl-allocation-hint" class="allocation-hint"></div>
+        <details class="allocation-list"><summary id="pnl-allocation-list-label"></summary><div id="pnl-pie-legend"></div></details>
       </div>
     </div>
     <div class="glass-card" id="pnl-calendar-card" style="padding:16px;margin-bottom:12px">
@@ -3066,6 +3086,56 @@ function renderCatPie(kind){
   const canvasId=kind==='spend'?'pie-canvas':'income-pie-canvas';
   const legendId=kind==='spend'?'pie-legend':'income-pie-legend';
   drawCatPie(canvasId,legendId,data,kind);
+}
+// Squarified rectangles preserve every positive allocation, including tiny holdings.
+// Layout and selection are presentation-only; neither writes portfolio state.
+function allocationRects(raw,width,height){
+  const rows=raw.map((d,index)=>({index,val:Number(d.val)})).filter(d=>Number.isFinite(d.val)&&d.val>0).sort((a,b)=>b.val-a.val||a.index-b.index);
+  const total=rows.reduce((n,d)=>n+d.val,0),out=[];
+  if(!total||!(width>0)||!(height>0))return out;
+  rows.forEach(d=>d.area=d.val/total*width*height);
+  let x=0,y=0,w=width,h=height,row=[];
+  const worst=(r,side)=>{if(!r.length||side<=0)return Infinity;const sum=r.reduce((n,d)=>n+d.area,0),min=r[r.length-1].area,max=r[0].area;return Math.max(side*side*max/(sum*sum),sum*sum/(side*side*min));};
+  const place=()=>{
+    const area=row.reduce((n,d)=>n+d.area,0),horizontal=w<=h,side=horizontal?w:h,thickness=area/side;let offset=0;
+    row.forEach((d,i)=>{const length=i===row.length-1?side-offset:d.area/thickness;out.push({index:d.index,x:horizontal?x+offset:x,y:horizontal?y:y+offset,w:horizontal?length:thickness,h:horizontal?thickness:length});offset+=length;});
+    if(horizontal){y+=thickness;h=Math.max(0,h-thickness);}else{x+=thickness;w=Math.max(0,w-thickness);}row=[];
+  };
+  rows.forEach(d=>{const side=Math.min(w,h);if(row.length&&worst([...row,d],side)>worst(row,side))place();row.push(d);});
+  if(row.length)place();return out;
+}
+function allocationShare(val,total){const pct=total?val/total*100:0;return (pct>0&&pct<0.1?'<0.1':pct.toFixed(1))+'%';}
+function allocationDirection(d){return Number.isFinite(d._pnl)?(d._pnl>0.004?'gain':d._pnl<-.004?'loss':'flat'):'flat';}
+function allocationDescription(d,total){return d.label+' · '+fmt(d.val)+' · '+allocationShare(d.val,total)+(Number.isFinite(d._pnl)?' · '+tt('損益','P&L')+' '+(d._pnl>0&&!S.privacy?'+':'')+fmt(d._pnl):' · '+tt('未有升跌資料','No change data'));}
+function selectAllocationTile(index){
+  const el=document.getElementById('pnl-allocation-map'),d=el&&el._allocationData&&el._allocationData[index];if(!d)return;
+  el._allocationSelected=index;const total=el._allocationData.reduce((n,r)=>n+r.val,0);
+  document.getElementById('pnl-allocation-detail').textContent=allocationDescription(d,total);
+  el.querySelectorAll('.allocation-tile').forEach(b=>{const selected=Number(b.dataset.index)===index;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected));});
+}
+function layoutAllocationMap(){
+  const el=document.getElementById('pnl-allocation-map');if(!el)return;
+  const data=el._allocationData||[],total=data.reduce((n,d)=>n+d.val,0),width=el.clientWidth,height=el.clientHeight;
+  if(!width||!height)return;
+  el.innerHTML=allocationRects(data,width,height).map(r=>{
+    const d=data[r.index],iconSize=Math.floor(Math.min(34,r.w-4,r.h-4)),hasIcon=iconSize>=10,hasName=r.w>=64&&r.h>=64,selected=el._allocationSelected===r.index;
+    const icon=hasIcon?`<span class="allocation-icon" aria-hidden="true" style="width:${iconSize}px;height:${iconSize}px;font-size:${iconSize}px">${d._icon||pnlSectionImage(d._kind||'cash')}</span>`:'';
+    return `<button type="button" class="allocation-tile ${allocationDirection(d)}${selected?' selected':''}" data-index="${r.index}" aria-pressed="${selected}" aria-label="${escapeHtml(allocationDescription(d,total))}" title="${escapeHtml(allocationDescription(d,total))}" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px">${icon}${hasName?`<span class="allocation-name">${escapeHtml(d.label)}</span><span class="allocation-share">${allocationShare(d.val,total)}</span>`:''}</button>`;
+  }).join('');
+  if(!total)el.innerHTML=`<div style="padding:20px;color:var(--ink3)">${tt('未有資產','No assets to display')}</div>`;
+}
+function renderAllocationMap(raw){
+  const el=document.getElementById('pnl-allocation-map');if(!el)return;
+  const data=raw.filter(d=>Number.isFinite(Number(d.val))&&Number(d.val)>0).map(d=>({...d,val:Number(d.val)})),total=data.reduce((n,d)=>n+d.val,0);
+  el._allocationData=data;el._allocationSelected=null;el.setAttribute('aria-label',tt('資產分佈熱力圖','Asset allocation heatmap'));
+  el.onclick=e=>{const b=e.target.closest('.allocation-tile');if(b&&el.contains(b))selectAllocationTile(Number(b.dataset.index));};
+  document.getElementById('pnl-allocation-detail').textContent=tt('點格仔查看名稱、市值、佔比及損益。','Tap a tile for its name, value, share and P&L.');
+  document.getElementById('pnl-allocation-hint').innerHTML=tt('面積按市值佔比；顏色按下面持倉損益，並非單日升跌。','Area shows value share; colour follows holding P&L below, not daily change.')+` <span class="allocation-key"><span style="color:var(--g3)">● ${tt('盈利','Gain')}</span><span style="color:var(--r3)">● ${tt('虧損','Loss')}</span><span>● ${tt('持平／未有資料','Flat / unavailable')}</span></span>`;
+  document.getElementById('pnl-allocation-list-label').textContent=tt('全部項目','All items')+' · '+data.length;
+  const legend=document.getElementById('pnl-pie-legend');legend.innerHTML=data.map((d,i)=>`<button type="button" class="allocation-list-row" data-index="${i}"><span class="allocation-icon" aria-hidden="true">${d._icon||pnlSectionImage(d._kind||'cash')}</span><span class="allocation-row-name">${escapeHtml(d.label)} <span style="color:var(--ink3)">${allocationShare(d.val,total)}</span></span><span class="allocation-row-value">${fmt(d.val)}</span></button>`).join('');
+  legend.onclick=e=>{const b=e.target.closest('.allocation-list-row');if(b&&legend.contains(b))selectAllocationTile(Number(b.dataset.index));};
+  if(!el._allocationObserver&&typeof ResizeObserver!=='undefined'){el._allocationObserver=new ResizeObserver(layoutAllocationMap);el._allocationObserver.observe(el);}
+  layoutAllocationMap();
 }
 // Group slices < minPct% (or beyond cap) into "Other"; returns {data,total}. Carries through fields like color/_cash.
 function piePrepData(arr,opts){
@@ -5187,7 +5257,7 @@ function renderPnlCalendar(){
   const {y,m}=_pnlCalMonth,all=pnlCalendarEvents(),title=document.getElementById('pnl-cal-title'),detail=document.getElementById('pnl-cal-detail'),summary=document.getElementById('pnl-cal-summary');
   document.getElementById('pnl-cal-mode-month').classList.toggle('active',_pnlCalMode==='month');document.getElementById('pnl-cal-mode-year').classList.toggle('active',_pnlCalMode==='year');grid.classList.toggle('year',_pnlCalMode==='year');
   const label=document.getElementById('pnl-cal-label');if(label)label.textContent=tt('損益日曆','P&L calendar');const hint=document.getElementById('pnl-cal-hint');if(hint)hint.textContent=tt('股票按美股收市日；紅綠顯示損益，金色代表估算或實際追蹤分界','Stocks use the US market close date; red/green show P&L and gold marks estimates or the live-tracking boundary');
-  const currencyLabel=document.getElementById('pnl-currency-label'),currencyBtn=document.getElementById('pnl-currency-btn'),displayCurrency=S.dispCur||'HKD';if(currencyLabel)currencyLabel.textContent=displayCurrency;if(currencyBtn){const currencyHint=tt('快速切換顯示貨幣','Quick switch display currency')+' · '+displayCurrency;currencyBtn.title=currencyHint;currencyBtn.setAttribute('aria-label',currencyHint);}const filterLabel=document.getElementById('pnl-filter-label');if(filterLabel)filterLabel.textContent=tt('資產篩選','Asset filter');const filterHint=document.getElementById('pnl-filter-hint');if(filterHint)filterHint.textContent=tt('只會套用到上方資產圓形圖。','Only applies to the allocation chart above.');const calendarFilterHint=document.getElementById('pnl-cal-filter-hint');if(calendarFilterHint)calendarFilterHint.textContent=tt('只會套用到呢張損益日曆。','Only applies to this P&L calendar.');
+  const currencyLabel=document.getElementById('pnl-currency-label'),currencyBtn=document.getElementById('pnl-currency-btn'),displayCurrency=S.dispCur||'HKD';if(currencyLabel)currencyLabel.textContent=displayCurrency;if(currencyBtn){const currencyHint=tt('快速切換顯示貨幣','Quick switch display currency')+' · '+displayCurrency;currencyBtn.title=currencyHint;currencyBtn.setAttribute('aria-label',currencyHint);}const filterLabel=document.getElementById('pnl-filter-label');if(filterLabel)filterLabel.textContent=tt('資產篩選','Asset filter');const filterHint=document.getElementById('pnl-filter-hint');if(filterHint)filterHint.textContent=tt('只會套用到資產分佈熱力圖。','Only applies to the asset allocation heatmap.');const calendarFilterHint=document.getElementById('pnl-cal-filter-hint');if(calendarFilterHint)calendarFilterHint.textContent=tt('只會套用到呢張損益日曆。','Only applies to this P&L calendar.');
   if(_pnlCalMode==='year'){
     if(title)title.textContent=String(y);const months=Array.from({length:12},()=>[]);all.forEach(e=>{const d=parseDateOnly(e.date);if(!Number.isNaN(d.getTime())&&d.getFullYear()===y)months[d.getMonth()].push(e);});const names=S.lang==='en'?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']:Array.from({length:12},(_,i)=>(i+1)+'月');
     grid.innerHTML=months.map((rows,i)=>{const v=rows.reduce((n,e)=>n+pnlEventDisplayValue(e),0),has=Math.abs(v)>0.004,estimated=rows.some(e=>e.estimated||e.boundary),sel=_pnlCalSelected===i?' sel':'',full=names[i]+' '+(v>=0?'+':'−')+pnlDisplayAmount(v);return `<button type="button" class="pnl-cal-month${has?(v>=0?' pos':' neg'):''}${sel}${estimated?' estimated':''}" onclick="togglePnlCalendarMonth(${i})" aria-label="${escapeHtml(full)}"><strong>${names[i]}</strong>${has?`<span class="amt" style="color:${v>=0?'var(--g3)':'var(--r3)'}">${escapeHtml(pnlCalendarBlockAmount(v))}</span>`:'<span class="amt" style="color:var(--ink3)">—</span>'}${estimated?'<span class="pnl-quality" style="margin-top:6px">◆</span>':''}</button>`;}).join('');
@@ -5365,33 +5435,21 @@ function renderGamble(){
   document.getElementById('g-stock-pnl').className='pnl-simple-val '+(stockPnl>=0?' pos':' neg');
   document.getElementById('g-crypto-pnl').textContent=fmt(cryptoPnl);
   document.getElementById('g-crypto-pnl').className='pnl-simple-val '+(cryptoPnl>=0?' pos':' neg');
-  // ── PIE CHART (asset allocation: each open position + idle investment-account cash) ──
+  // ── ASSET ALLOCATION MAP (same open-position and idle-cash scope as the previous pie) ──
   // Cash = money sitting in an INVESTMENT account with no position deployed against it, so the
-  // pie reads as "where is my invested money": stock A / stock B / crypto / poker / dry powder.
-  const POS_COLORS=['#534AB7','#BA7517','#185FA5','#1D9E75','#D85A30','#0F6E56','#3C3489','#854F0B','#2E86AB','#7C3AED'];
+  // map reads as "where is my invested money": stock A / stock B / crypto / poker / dry powder.
   let pieRaw=[];
   // margin positions: only the equity (value minus the borrowed cost) belongs to the user, so the
-  // slice reconciles with totalWorth (which already subtracts margin debt) instead of overstating exposure
-  S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0&&portCountsInNet(p)).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v,_kind:pnlSecForPort(p),_icon:holdingIcon(p)});});
+  // tile reconciles with totalWorth (which already subtracts margin debt) instead of overstating exposure
+  S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0&&portCountsInNet(p)).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v,_kind:pnlSecForPort(p),_icon:holdingIcon(p),_pnl:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0)});});
   S.gamble.filter(g=>g.open&&g.buyinHKD>0&&gambleCountsInNet(g)).forEach(g=>pieRaw.push({label:g.venue,val:g.buyinHKD,_kind:pnlSecForGamble(g),_icon:pnlItemIcon('poker',g)}));
   (S.privateLoans||[]).forEach(l=>{const v=loanOutstandingPrincipal(l)+loanAccruedOutstanding(l);if(v>0)pieRaw.push({label:l.borrower,val:v,_kind:'loan',_icon:pnlItemIcon('loan',l)});});
-  if(!pnlNetExcluded('physical'))(S.physicalAssets||[]).filter(a=>!a.excluded&&!a.soldAt).forEach(a=>{const v=physicalAssetValue(a);if(v>0)pieRaw.push({label:a.name,val:v,_kind:'physical',_icon:pnlItemIcon('physical',a)});});
+  if(!pnlNetExcluded('physical'))(S.physicalAssets||[]).filter(a=>!a.excluded&&!a.soldAt).forEach(a=>{const v=physicalAssetValue(a);if(v>0)pieRaw.push({label:a.name,val:v,_kind:'physical',_icon:pnlItemIcon('physical',a),_pnl:v-(Number(a.costHKD)||0)});});
   const allCash=netAccts.filter(ac=>ac.kind==='invest'&&!acctIsPhysical(ac)).reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
   if(allCash>0)pieRaw.push({label:t('positioncash'),val:allCash,_cash:true,_kind:'cash'});
   netAccts.filter(ac=>ac.kind==='invest'&&acctIsPhysical(ac)).forEach(ac=>{const v=Math.max(acctCash(ac.id),0);if(v>0)pieRaw.push({label:acctLabel(ac),val:v,_kind:'physical',_icon:itemIcon(ac)});});
   const pieFilters=Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[];if(pieFilters.length)pieRaw=pieRaw.filter(d=>pieFilters.includes(d._kind));renderPnlPieFilters();
-  const {data:pieData,total:pieTotal}=piePrepData(pieRaw,{minPct:1.5,cap:9});
-  let pci=0;pieData.forEach(d=>{const isOther=d._other||String(d.label||'').toLowerCase()==='other'||String(d.label||'')==='其他';d.color=d._cash?'#667085':(isOther?'#FFB020':POS_COLORS[pci++%POS_COLORS.length]);});
-  const pieCanvas=document.getElementById('pnl-pie');
-  const pieLegend=document.getElementById('pnl-pie-legend');
-  if(pieCanvas){
-    const ctx=pieCanvas.getContext('2d');
-    const W=160,H=160,cx=80,cy=80,R=74;
-    pieCanvas.width=W*2;pieCanvas.height=H*2;ctx.scale(2,2);ctx.clearRect(0,0,W,H);
-    if(!pieTotal){ctx.beginPath();ctx.arc(cx,cy,R,0,Math.PI*2);ctx.fillStyle=document.body.classList.contains('dark')?'#222':'#eee';ctx.fill();}
-    else drawSolidPie(ctx,cx,cy,R,pieData,pieTotal);
-    pieLegend.innerHTML=pieTotal?pieData.map(d=>{const _pr=(d.val/pieTotal)*100;const pctShare=(_pr>0&&_pr<0.5)?'<1':_pr.toFixed(0);return `<div style="display:flex;align-items:center;gap:7px;min-width:0"><div style="width:12px;height:12px;border-radius:50%;background:${d.color};flex-shrink:0;box-shadow:0 0 0 1px rgba(0,0,0,0.08)"></div><span style="font-size:12px;color:var(--ink2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${d._icon||pnlSectionImage(d._kind||'total')} ${escapeHtml(d.label)} <span style="color:var(--ink3)">${pctShare}%</span></span><span style="font-size:12px;font-weight:700;color:var(--ink);flex-shrink:0">${fmt(d.val)}</span></div>`;}).join(''):`<span style="font-size:12px;color:var(--ink3)">${t('portfvalue')}: HK$0</span>`;
-  }
+  renderAllocationMap(pieRaw);
   // ── POSITION ROW BUILDER ──
   function portRow(p,color,bgColor,realizedHKD){
     realizedHKD=realizedHKD||0;
