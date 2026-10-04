@@ -24,12 +24,14 @@ try{
    S.portfolio=Array.from({length:16},(_,i)=>({id:'p'+i,name:i===2?'Unsafe <img src=x onerror=alert(1)>':i%2?'Bitcoin':'VOO',type:i%2?'crypto':'stock',acctId:'invest',costHKD:i<2?9500:100,valueHKD:i<2?10000:i===2?500:(18-i)*10,cur:'HKD',date:today()}));
    S.portfolio.push({id:'margin',name:'Synthetic margin',type:'stock',margin:true,costHKD:100,valueHKD:130,acctId:'invest'});
    S.physicalAssets=[{id:'phone',name:'iPhone',costHKD:200,marketValue:100,cur:'HKD',costBasis:'opening',fundingMode:'existing',valuationHistory:[{date:today(),value:100}]}];
+   S.privateLoans=[{id:'loan',borrower:'Synthetic borrower',principal:100,principalHKD:100,cur:'HKD',acctId:'invest',startDate:'2025-01-01',dueDate:'2025-02-01',interestMode:'fixed',fixedInterest:20,fixedInterestHKD:20,payments:[]}];
    saveS({skipCloud:true});applyTheme();goTab('gamble',document.querySelectorAll('.bottom-nav .tab-btn')[2]);
   },theme);
   await page.waitForFunction(()=>document.querySelectorAll('.allocation-tile').length>16);
   const before=await page.evaluate(()=>JSON.stringify(profileSnapshot()));const stored=await page.evaluate(()=>localStorage.getItem(profileKey()));
   const data=await page.evaluate(()=>document.getElementById('pnl-allocation-map')._allocationData);
-  assert.equal(data.length,19,'all 17 holdings, physical asset and idle cash');
+  assert.equal(data.length,20,'all 17 holdings, physical asset, loan and idle cash');
+  assert.equal(data.find(d=>d.label==='Synthetic borrower')._pnl,20,'loan colour includes recorded accrual');
   assert.equal(data.find(d=>d.label==='Synthetic margin').val,30,'margin area is equity');
   assert.equal(await page.locator('.allocation-tile').count(),data.length);
   const tiles=await page.locator('.allocation-tile').evaluateAll(rows=>rows.map(b=>({index:+b.dataset.index,w:b.getBoundingClientRect().width,h:b.getBoundingClientRect().height,icon:!!b.querySelector('.allocation-icon'),direction:b.className})));
@@ -53,7 +55,7 @@ try{
   await page.evaluate(()=>{document.querySelector('.allocation-list').open=false;document.getElementById('pnl-allocation-map').scrollIntoView({block:'center'});});
   await page.screenshot({path:fileURLToPath(new URL('allocation-'+width+'.png',reports))});
   await page.setViewportSize({width:width+20,height});await page.waitForFunction(()=>{const el=document.getElementById('pnl-allocation-map');return [...el.querySelectorAll('button')].every(b=>parseFloat(b.style.left)+parseFloat(b.style.width)<=el.clientWidth+.1);});
-  await page.reload();await page.evaluate(()=>goTab('gamble',document.querySelectorAll('.bottom-nav .tab-btn')[2]));await page.waitForFunction(()=>document.querySelectorAll('.allocation-tile').length===19);assert.equal(await page.evaluate(()=>JSON.stringify(profileSnapshot())),before,'reload preserves full synthetic ledger');
+  await page.reload();await page.evaluate(()=>goTab('gamble',document.querySelectorAll('.bottom-nav .tab-btn')[2]));await page.waitForFunction(()=>document.querySelectorAll('.allocation-tile').length===20);assert.equal(await page.evaluate(()=>JSON.stringify(profileSnapshot())),before,'reload preserves full synthetic ledger');
   results.push({width,height,theme,smallIcons:true,filters:true,privacy:true,currency:true,readOnly:true,coldReload:true});await context.close();
  }
  assert.deepEqual(errors,[]);console.log(JSON.stringify({results,errors},null,2));

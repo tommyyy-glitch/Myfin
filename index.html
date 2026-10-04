@@ -5443,7 +5443,7 @@ function renderGamble(){
   // tile reconciles with totalWorth (which already subtracts margin debt) instead of overstating exposure
   S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0&&portCountsInNet(p)).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v,_kind:pnlSecForPort(p),_icon:holdingIcon(p),_pnl:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0)});});
   S.gamble.filter(g=>g.open&&g.buyinHKD>0&&gambleCountsInNet(g)).forEach(g=>pieRaw.push({label:g.venue,val:g.buyinHKD,_kind:pnlSecForGamble(g),_icon:pnlItemIcon('poker',g)}));
-  (S.privateLoans||[]).forEach(l=>{const v=loanOutstandingPrincipal(l)+loanAccruedOutstanding(l);if(v>0)pieRaw.push({label:l.borrower,val:v,_kind:'loan',_icon:pnlItemIcon('loan',l)});});
+  (S.privateLoans||[]).forEach(l=>{const v=loanOutstandingPrincipal(l)+loanAccruedOutstanding(l);if(v>0)pieRaw.push({label:l.borrower,val:v,_kind:'loan',_icon:pnlItemIcon('loan',l),_pnl:loanInterestReceived(l)+loanAccruedOutstanding(l)+loanPrincipalFx(l)});});
   if(!pnlNetExcluded('physical'))(S.physicalAssets||[]).filter(a=>!a.excluded&&!a.soldAt).forEach(a=>{const v=physicalAssetValue(a);if(v>0)pieRaw.push({label:a.name,val:v,_kind:'physical',_icon:pnlItemIcon('physical',a),_pnl:v-(Number(a.costHKD)||0)});});
   const allCash=netAccts.filter(ac=>ac.kind==='invest'&&!acctIsPhysical(ac)).reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
   if(allCash>0)pieRaw.push({label:t('positioncash'),val:allCash,_cash:true,_kind:'cash'});
