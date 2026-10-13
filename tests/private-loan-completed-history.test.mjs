@@ -1,0 +1,16 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import vm from 'node:vm';
+const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
+const declaration=name=>{const start=html.indexOf(`function ${name}(`);assert.ok(start>=0,name);const end=html.indexOf('\nfunction ',start+10);return html.slice(start,end);};
+const names=['privateLoanCompleted','loanOutstandingPrincipal','loanPrincipalReturned','loanPaymentsThrough','loanPayments','loanPaymentBasis','loanBasisRate','loanInterestMode','loanInterestSettled','loanAccruedTotal','recordEffective','dateOnly','parseDateOnly'];
+const ctx={};vm.createContext(ctx);vm.runInContext(names.map(declaration).join('\n')+"\nfunction today(){return '2026-10-13';}",ctx);
+const base={principalHKD:100,startDate:'2026-09-01',dueDate:'2026-10-01',interestMode:'fixed',fixedInterestHKD:10,payments:[]};
+assert.equal(ctx.privateLoanCompleted(base),false,'principal and interest outstanding');
+assert.equal(ctx.privateLoanCompleted({...base,payments:[{date:'2026-10-01',principalHKD:100}]}),false,'unpaid interest stays active');
+assert.equal(ctx.privateLoanCompleted({...base,payments:[{date:'2099-01-01',principalHKD:100,interestHKD:10}]}),false,'future repayment cannot complete loan');
+assert.equal(ctx.privateLoanCompleted({...base,startDate:'2099-01-01',dueDate:'2099-02-01',fixedInterestHKD:0}),false,'future loan stays scheduled');
+assert.equal(ctx.privateLoanCompleted({...base,payments:[{date:'2026-10-01',principalHKD:100,interestHKD:10}]}),true);
+assert.equal(ctx.privateLoanCompleted({...base,principal:100,principalHKD:800,fixedInterest:10,fixedInterestHKD:80,payments:[{date:'2026-10-01',principal:100,principalHKD:780,interest:10,interestHKD:78}]}),true,'foreign currency settled at original basis');
+assert.equal(ctx.privateLoanCompleted({...base,interestMode:'rate',annualRate:0,payments:[{date:'2026-10-01',principalHKD:100}]}),true,'zero-interest completed');
+console.log('Completed loan history: principal, interest, future dates and foreign-currency classification passed.');

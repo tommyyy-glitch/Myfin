@@ -26,6 +26,8 @@ try{
     assert.equal(await page.evaluate(()=>acctCash('cash')),10580);
     assert.equal(await page.evaluate(()=>privateLoanStats().asset),0);assert.equal(await page.evaluate(()=>privateLoanStats().pnl),580);
     assert.equal(await page.evaluate(()=>pnlCalendarEvents().filter(e=>e.kind==='loan').reduce((s,e)=>s+e.value,0)),580);
+    assert.equal(await page.locator('#loan-completed-history').getAttribute('open'),null);
+    await page.locator('#loan-completed-history > summary').click();
     assert.match(await page.locator('#loan-list').innerText(),/已完成/);assert.match(await page.locator('#loan-list').innerText(),/本金匯兌損益/);
     await page.locator('[onclick="openLoanModal(\'loan\')"]').click();await page.locator('#loan-notes').fill('Synthetic reviewed note');await page.locator('[onclick="savePrivateLoan()"]').click();
     assert.equal(await page.evaluate(()=>S.privateLoans[0].principalHKD),8000);assert.equal(await page.evaluate(()=>S.privateLoans[0].notes),'Synthetic reviewed note');
