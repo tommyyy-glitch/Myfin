@@ -5259,7 +5259,7 @@ function renderPnlCalendar(){
   const {y,m}=_pnlCalMonth,all=pnlCalendarEvents(),title=document.getElementById('pnl-cal-title'),detail=document.getElementById('pnl-cal-detail'),summary=document.getElementById('pnl-cal-summary');
   document.getElementById('pnl-cal-mode-month').classList.toggle('active',_pnlCalMode==='month');document.getElementById('pnl-cal-mode-year').classList.toggle('active',_pnlCalMode==='year');grid.classList.toggle('year',_pnlCalMode==='year');
   const label=document.getElementById('pnl-cal-label');if(label)label.textContent=tt('損益日曆','P&L calendar');const hint=document.getElementById('pnl-cal-hint');if(hint)hint.textContent=tt('股票按美股收市日；紅綠顯示損益，金色代表估算或實際追蹤分界','Stocks use the US market close date; red/green show P&L and gold marks estimates or the live-tracking boundary');
-  const currencyLabel=document.getElementById('pnl-currency-label'),currencyBtn=document.getElementById('pnl-currency-btn'),displayCurrency=S.dispCur||'HKD';if(currencyLabel)currencyLabel.textContent=displayCurrency;if(currencyBtn){const currencyHint=tt('快速切換顯示貨幣','Quick switch display currency')+' · '+displayCurrency;currencyBtn.title=currencyHint;currencyBtn.setAttribute('aria-label',currencyHint);}const filterLabel=document.getElementById('pnl-filter-label');if(filterLabel)filterLabel.textContent=tt('資產篩選','Asset filter');const filterHint=document.getElementById('pnl-filter-hint');if(filterHint)filterHint.textContent=tt('只會套用到資產分佈熱力圖。','Only applies to the asset allocation heatmap.');const calendarFilterHint=document.getElementById('pnl-cal-filter-hint');if(calendarFilterHint)calendarFilterHint.textContent=tt('只會套用到呢張損益日曆。','Only applies to this P&L calendar.');
+  const currencyLabel=document.getElementById('pnl-currency-label'),currencyBtn=document.getElementById('pnl-currency-btn'),displayCurrency=S.dispCur||'HKD';if(currencyLabel)currencyLabel.textContent=displayCurrency;if(currencyBtn){const currencyHint=tt('快速切換顯示貨幣','Quick switch display currency')+' · '+displayCurrency;currencyBtn.title=currencyHint;currencyBtn.setAttribute('aria-label',currencyHint);}const filterLabel=document.getElementById('pnl-filter-label');if(filterLabel)filterLabel.textContent=tt('資產篩選','Asset filter');const filterHint=document.getElementById('pnl-filter-hint');if(filterHint)filterHint.textContent=tt('套用到上方損益、ROI、市值、現金、已投入及資產分佈圖；日曆及下面記錄使用各自範圍。','Applies to the overview P&L, ROI, value, cash, deployed capital and allocation map. The calendar and records below keep their own scope.');const calendarFilterHint=document.getElementById('pnl-cal-filter-hint');if(calendarFilterHint)calendarFilterHint.textContent=tt('只會套用到呢張損益日曆。','Only applies to this P&L calendar.');
   if(_pnlCalMode==='year'){
     if(title)title.textContent=String(y);const months=Array.from({length:12},()=>[]);all.forEach(e=>{const d=parseDateOnly(e.date);if(!Number.isNaN(d.getTime())&&d.getFullYear()===y)months[d.getMonth()].push(e);});const names=S.lang==='en'?['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']:Array.from({length:12},(_,i)=>(i+1)+'月');
     grid.innerHTML=months.map((rows,i)=>{const v=rows.reduce((n,e)=>n+pnlEventDisplayValue(e),0),has=Math.abs(v)>0.004,estimated=rows.some(e=>e.estimated||e.boundary),sel=_pnlCalSelected===i?' sel':'',full=names[i]+' '+(v>=0?'+':'−')+pnlDisplayAmount(v);return `<button type="button" class="pnl-cal-month${has?(v>=0?' pos':' neg'):''}${sel}${estimated?' estimated':''}" onclick="togglePnlCalendarMonth(${i})" aria-label="${escapeHtml(full)}"><strong>${names[i]}</strong>${has?`<span class="amt" style="color:${v>=0?'var(--g3)':'var(--r3)'}">${escapeHtml(pnlCalendarBlockAmount(v))}</span>`:'<span class="amt" style="color:var(--ink3)">—</span>'}${estimated?'<span class="pnl-quality" style="margin-top:6px">◆</span>':''}</button>`;}).join('');
@@ -5322,6 +5322,44 @@ function renderPhysicalAssets(){
   document.getElementById('physical-value').textContent=fmt(st.value);document.getElementById('physical-cash').textContent=fmt(st.realizedCash);document.getElementById('physical-cost-label').textContent=(S.physicalAssets||[]).some(a=>a.costBasis==='opening')?tt('成本／追蹤基準','Cost / tracking basis'):tt('持有成本','Active cost');document.getElementById('physical-cost').textContent=fmt(st.cost);document.getElementById('physical-ct').textContent=st.count+(st.soldCount?' · '+st.soldCount+' '+tt('已售','sold'):'');
   const gp=document.getElementById('g-physical-pnl');gp.textContent=fmt(st.pnl);gp.className='pnl-simple-val '+(st.pnl>=0?'pos':'neg');
   list.innerHTML=rows.length?rows.map(a=>{const sold=!!a.soldAt,value=sold?(Number(a.saleValueHKD)||0):physicalAssetValue(a),delta=value-(Number(a.costHKD)||0),metal=a.category==='metal'&&a.weight?` · ${escapeHtml(a.weight)} ${escapeHtml(a.weightUnit||'g')} · ${escapeHtml(a.purityPct||0)}%`:'',tracked=!sold&&a.category==='metal'&&a.priceTracking&&a.priceTracking!=='manual'?`<span class="badge bg" style="margin-left:5px">↻ ${escapeHtml(a.apiSymbol||defaultMetalApiSymbol(a.metalType))}</span>`:'',linked=!physicalAssetDeductsCash(a)?`<span class="badge bb" style="margin-left:5px">${tt('已有資產 · 不扣款','Existing · no deduction')}</span>`:'',hist=ensurePhysicalAssetHistory(a).slice(-3).map(v=>`${escapeHtml(v.date||'')} ${escapeHtml(a.cur||'HKD')} ${escapeHtml(Number(v.value).toLocaleString())}`).join(' → '),basis=a.costBasis==='opening'?tt('加入後變動','Change since added'):'',actions=sold?`<span class="badge bgr" style="margin-left:0">${tt('已變現','Sold')} · ${escapeHtml(a.soldAt)}</span><button onclick="deletePhysicalAsset(${inlineJsString(a.id)})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button>`:`<button onclick="openPhysicalAssetModal(${inlineJsString(a.id)})" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${tt('更新市值','Update value')}</button><button onclick="openPhysicalSale(${inlineJsString(a.id)})" style="font-size:12px;padding:7px 12px;border:1px solid var(--g);border-radius:20px;background:var(--g2);color:var(--g3);cursor:pointer">${tt('出售／變現','Sell')}</button><button onclick="deletePhysicalAsset(${inlineJsString(a.id)})" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button>`;return `<div class="crow" style="${sold?'opacity:.72':''}">${pnlItemIconButton('physical',a)}<div class="rinfo"><div class="rtitle">${escapeHtml(a.name)}${tracked}${linked}</div><div class="rsub">${escapeHtml(physicalCategoryLabel(a.category))}${metal} · ${escapeHtml(a.purchaseDate||tt('日期不詳','Date unknown'))}${a.acctLabel?' · '+escapeHtml(a.acctLabel):''}${!physicalAssetDeductsCash(a)?' · '+tt('只連結，不扣款','Linked only, no deduction'):''}</div><div class="rsub" style="margin-top:3px">${tt('市值記錄','Market history')} · ${hist||'—'}</div>${a.marketQuoteUpdatedAt?`<div class="rsub" style="margin-top:3px">Twelve Data · ${escapeHtml(new Date(a.marketQuoteUpdatedAt).toLocaleString())}</div>`:''}${a.notes?`<div class="rsub" style="margin-top:3px">${escapeHtml(a.notes)}</div>`:''}<div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap">${actions}</div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800">${fmt(value)}</div><div class="${delta>=0?'pos':'neg'}" style="font-size:11px">${basis||((delta>=0?'+':'')+fmt(delta))}</div><div class="rsub">${sold?tt('實收現金','cash received'):tt('目前市值','market value')}</div></div></div>`;}).join(''):`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">${tt('未有固定資產','No physical fixed assets yet')}</div>`;
+}
+// Partition the existing P&L board scope without changing accounts or ledger data.
+// Cash belongs to its own filter, except physical/locked-account cash which follows
+// the same physical classification used by the allocation map.
+function pnlBoardTotals(filters){
+  const groups=Object.create(null),blank=()=>({pnl:0,cost:0,worth:0,cash:0,deployed:0,margin:0});
+  const group=kind=>groups[kind]||(groups[kind]=blank());
+  const accounts=(S.accounts||[]).filter(acctCountsInNet),netIds=new Set(accounts.map(ac=>ac.id));
+  (S.portfolio||[]).forEach(p=>{
+    const b=group(pnlSecForPort(p)),cost=Number(p.costHKD)||0,value=Number(p.valueHKD)||0;
+    b.pnl+=value-cost;b.cost+=cost;
+    if(!p.exitPrice){if(!p.margin)b.deployed+=cost;if(netIds.has(p.acctId)&&portCountsInNet(p)){b.worth+=value-(p.margin?cost:0);if(p.margin)b.margin+=cost;}}
+  });
+  (S.gamble||[]).forEach(g=>{
+    const b=group(pnlSecForGamble(g)),cost=Number(g.buyinHKD)||0;b.cost+=cost;
+    if(!g.open)b.pnl+=(Number(g.cashoutHKD)||0)-cost;
+    else{if(!g.margin)b.deployed+=cost;if(netIds.has(g.acctId)&&gambleCountsInNet(g)){b.worth+=g.margin?0:cost;if(g.margin)b.margin+=cost;}}
+  });
+  const loan=group('loan'),ls=privateLoanStats();loan.pnl+=ls.pnl;loan.cost+=(S.privateLoans||[]).reduce((n,l)=>n+(Number(l.principalHKD)||0),0);loan.deployed+=ls.principal;if(!pnlNetExcluded('loan'))loan.worth+=ls.asset;
+  const physical=group('physical'),ps=physicalAssetsStats();physical.pnl+=ps.pnl;physical.cost+=ps.totalCost;physical.deployed+=ps.cost;if(!pnlNetExcluded('physical'))physical.worth+=ps.value;
+  accounts.filter(ac=>ac.kind==='invest').forEach(ac=>{const b=group(acctIsPhysical(ac)?'physical':'cash'),cash=acctCash(ac.id);b.cash+=cash;b.worth+=cash;});
+  const selected=new Set(Array.isArray(filters)?filters:[]),total=blank();
+  Object.entries(groups).forEach(([kind,b])=>{if(!selected.size||selected.has(kind))Object.keys(total).forEach(k=>total[k]+=b[k]);});
+  return {...total,groups};
+}
+function renderFilteredPnlBoard(){
+  const filters=Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],row=document.getElementById('pnl-metric-row');
+  row.querySelectorAll('[data-filter-metric]').forEach(el=>el.remove());
+  row.querySelectorAll('[data-sec]').forEach(el=>{el.style.display=(S.pnlHidden&&S.pnlHidden[el.dataset.sec])||(filters.length&&!filters.includes(el.dataset.sec))?'none':'';});
+  if(!filters.length)return; // All retains the original board, including its historical totals.
+  const totals=pnlBoardTotals(filters),positive=totals.pnl>=0;
+  document.getElementById('g-pnl').textContent=fmt(totals.pnl);document.getElementById('g-pnl').className='mval'+(positive?' pos':' neg');
+  document.getElementById('g-roi').textContent='ROI '+(positive?'+':'')+(totals.cost?totals.pnl/totals.cost*100:0).toFixed(1)+'%';
+  ['worth','cash','deployed','margin'].forEach(k=>document.getElementById('g-'+k).textContent=fmt(totals[k]));
+  document.getElementById('g-margin-wrap').style.display=totals.margin>0?'':'none';
+  row.querySelectorAll('[data-sec]').forEach(el=>{const b=totals.groups[el.dataset.sec],val=el.querySelector('.pnl-simple-val');if(val){const pnl=b?b.pnl:0;val.textContent=fmt(pnl);val.className='pnl-simple-val '+(pnl>=0?'pos':'neg');}});
+  const breakdown=document.getElementById('g-breakdown');if(breakdown){breakdown.textContent=(positive?'+':'')+fmt(totals.pnl);breakdown.style.color=positive?'var(--g3)':'var(--r3)';}
+  (S.customSections||[]).filter(cs=>filters.includes(cs.id)).forEach(cs=>{const pnl=(totals.groups[cs.id]||{}).pnl||0,el=document.createElement('div');el.className='pnl-simple-metric';el.dataset.filterMetric='1';el.innerHTML=`<div class="mlabel">${pnlSectionImage(cs.id)} ${escapeHtml(cs.name||cs.id)}</div><div class="pnl-simple-val ${pnl>=0?'pos':'neg'}">${fmt(pnl)}</div>`;row.appendChild(el);});
 }
 function renderGamble(){
   const pageTitle=document.querySelector('#s-gamble .nav-title');if(pageTitle){pageTitle.removeAttribute('data-i');pageTitle.textContent=tt('資產與損益','Assets & P&L');}
@@ -5636,6 +5674,7 @@ function renderGamble(){
   renderPnlCalendar();
   renderDebts();
   renderPnlSectionImages();
+  renderFilteredPnlBoard();
 }
 // open the right add-modal targeted at a custom section
 function addToSection(secId,base){
