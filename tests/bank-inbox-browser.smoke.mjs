@@ -1,0 +1,48 @@
+// Public assets and synthetic categories only. Never read an installed phone ledger.
+import fs from 'node:fs';
+import http from 'node:http';
+import assert from 'node:assert/strict';
+import {fileURLToPath} from 'node:url';
+const {chromium}=await import(process.env.MYFIN_PLAYWRIGHT_PATH||'playwright');
+const root=new URL('../',import.meta.url),allowed=new Set(['index.html','cloud-auth.js','cloud-ui.js','browser-chrome.js']);
+const server=http.createServer((req,res)=>{
+ const name=new URL(req.url,'http://localhost').pathname.slice(1)||'index.html';
+ if(!['GET','HEAD'].includes(req.method)||(!allowed.has(name)&&!/^assets\/(?:wallet-icons|holding-icons|category-icons|pnl-icons)\/[\w-]+\.(?:svg|png|jpe?g|webp)$/.test(name))){res.writeHead(404);return res.end();}
+ try{const data=fs.readFileSync(new URL(name,root));res.setHeader('Content-Type',name.endsWith('.js')?'text/javascript':name.endsWith('.svg')?'image/svg+xml':name.endsWith('.png')?'image/png':/\.jpe?g$/.test(name)?'image/jpeg':'text/html');res.end(req.method==='HEAD'?undefined:data);}catch{res.writeHead(404);res.end();}
+});
+await new Promise(r=>server.listen(0,'127.0.0.1',r));
+const origin='http://127.0.0.1:'+server.address().port,browser=await chromium.launch({headless:true,executablePath:process.env.MYFIN_BROWSER_EXECUTABLE}),results=[],errors=[];
+const reports=new URL('../reports/bank-inbox/',import.meta.url);fs.mkdirSync(reports,{recursive:true});
+try{
+ for(const [width,height,theme] of [[360,640,'dark'],[393,852,'light'],[852,393,'dark'],[1280,900,'light']]){
+  const context=await browser.newContext({viewport:{width,height},serviceWorkers:'block'});await context.route('**/*',r=>new URL(r.request().url()).origin===origin?r.continue():r.abort());
+  const page=await context.newPage();page.on('pageerror',e=>errors.push(e.message));await page.goto(origin);await page.waitForFunction(()=>!_refreshing);
+  await page.evaluate(theme=>{localStorage.clear();ensureProfiles();S=createAppState();S.theme=theme;S.automationPaused=true;S.fx={...DEFAULT_FX,updated:Date.now()};S.accounts=[{id:'hsbc',label:'HSBC Red',kind:'credit',secondaryKind:'none',cur:'HKD',opening:0},{id:'hang',label:'Hang Seng',kind:'bank',secondaryKind:'none',cur:'HKD',opening:1000}];saveS({skipCloud:true});applyTheme();renderHome();},theme);
+  const balances=()=>page.evaluate(()=>JSON.stringify({txns:S.txns,b:balanceSheetBreakdown()}));const initial=await balances();
+  await page.locator('#bank-inbox-open').click();await page.locator('#bank-raw').fill('Purchase HKD 123.45 card ending 1234');await page.getByRole('button',{name:'辨識金額／尾四位 / Extract amount & last 4',exact:true}).click();assert.equal(await page.locator('#bank-amount').inputValue(),'123.45');assert.equal(await page.locator('#bank-last4').inputValue(),'1234');assert.equal(await page.locator('#bank-acct').inputValue(),'');
+  await page.locator('#bank-merchant').fill('Synthetic cafe <test>');await page.locator('#bank-type').selectOption('expense');await page.getByRole('button',{name:'保留草稿 / Save draft',exact:true}).click();
+  assert.equal(await balances(),initial,'unlabelled capture does not affect accounts');assert.equal(await page.evaluate(()=>S.bankInbox.length),1);assert.ok((await page.locator('#home-attention').textContent()).includes('1 筆待分類'));assert.equal(await page.evaluate(()=>JSON.stringify(profileSnapshot()).includes('Purchase HKD')),false,'raw notice is not stored');
+  await page.locator('#bank-post').click();assert.equal(await page.evaluate(()=>S.txns.length),0,'cannot post without account and label');
+  await page.locator('#bank-acct').selectOption('hsbc');await page.locator('#bank-post').click();assert.equal(await page.evaluate(()=>S.txns.length),0,'category remains mandatory');
+  await page.locator('#bank-cat').selectOption('food');await page.locator('#bank-remember').check();await page.locator('#bank-link').check();
+  await page.evaluate(()=>{window._save=saveS;saveS=()=>false;postBankDraft();saveS=window._save;});assert.equal(await balances(),initial,'failed save rolls back transaction');assert.equal(await page.evaluate(()=>S.bankMerchantRules.length),0);assert.equal(await page.evaluate(()=>bankPending().length),1);
+  await page.locator('#bank-post').click();assert.equal(await page.evaluate(()=>S.txns.length),1);assert.equal(await page.evaluate(()=>bankPending().length),0);assert.equal(await page.evaluate(()=>S.txns[0].catId),'food');assert.equal(await page.evaluate(()=>S.txns[0].acctId),'hsbc');
+  await page.evaluate(()=>postBankDraft());assert.equal(await page.evaluate(()=>S.txns.length),1,'confirming twice cannot double post');
+  await page.locator('#bank-merchant').fill('Synthetic cafe <test>');await page.locator('#bank-type').selectOption('expense');await page.locator('#bank-last4').fill('1234');await page.evaluate(()=>applyBankSuggestions());assert.equal(await page.locator('#bank-cat').inputValue(),'food');assert.equal(await page.locator('#bank-acct').inputValue(),'hsbc');
+  await page.locator('#bank-bank').selectOption('hangseng');assert.equal(await page.locator('#bank-acct').inputValue(),'');assert.equal(await page.locator('#bank-cat').inputValue(),'','bank-specific rules never leak');
+  await page.locator('#bank-raw').fill('OTP 123456 HKD 55');await page.locator('#bank-amount').fill('55');await page.getByRole('button',{name:'保留草稿 / Save draft',exact:true}).click();assert.equal(await page.evaluate(()=>S.bankInbox.length),1,'OTP notice rejected');
+  await page.locator('#bank-raw').fill('Transfer HKD 55');await page.locator('#bank-type').selectOption('transfer');await page.locator('#bank-merchant').fill('Card repayment');await page.getByRole('button',{name:'保留草稿 / Save draft',exact:true}).click();const pendingId=await page.evaluate(()=>bankPending()[0].id);
+  await page.evaluate(id=>setBankDraftStatus(id,'dismissed'),pendingId);assert.equal(await page.evaluate(()=>bankPending().length),0);await page.evaluate(id=>setBankDraftStatus(id,'pending'),pendingId);assert.equal(await page.evaluate(()=>bankPending().length),1);
+  await page.evaluate(id=>reviewBankDraft(id),pendingId);await page.locator('#bank-acct').selectOption('hang');await page.locator('#bank-to').selectOption('hsbc');await page.locator('#bank-post').click();assert.equal(await page.evaluate(()=>S.txns.length),2);assert.equal(await page.evaluate(()=>S.txns[0].type),'transfer');assert.equal(await page.evaluate(()=>S.txns.filter(t=>t.type==='expense').length),1,'repayment is not a second expense');
+  const transferred=await page.evaluate(()=>transferProfileData(profileSnapshot(),localStorage));assert.equal(transferred.bankInbox.length,2);assert.equal(transferred.bankMerchantRules.length,1);assert.equal(transferred.bankCardLinks.length,1);
+  await page.evaluate(()=>{bankField('amount').value='99';saveBankDraft();});assert.equal(await page.evaluate(()=>bankPending().length),1);
+  await page.reload();await page.evaluate(()=>openBankInbox());assert.equal(await page.evaluate(()=>bankPending().length),1,'reminder survives reopening');assert.ok((await page.locator('#home-attention').textContent()).includes('1 筆待分類'));
+  await page.evaluate(()=>{window._state=S;S=createAppState();postBankDraft();S=window._state;});assert.equal(await page.evaluate(()=>S.txns.length),2,'profile change guards writes');
+  await page.screenshot({path:fileURLToPath(new URL('inbox-'+width+'.png',reports))});
+  await page.evaluate(()=>{window._links=S.bankCardLinks;S.bankCardLinks=[...S.bankCardLinks,{bank:'hsbc',last4:'1234',acctId:'hang'}];bankField('bank').value='hsbc';bankField('last4').value='1234';applyBankSuggestions();});assert.equal(await page.locator('#bank-acct').inputValue(),'','ambiguous last four digits never choose an account');await page.evaluate(()=>S.bankCardLinks=window._links);
+  await page.evaluate(()=>resetBankForm());await page.locator('#bank-raw').fill('Purchase HKD 10 card ending 1234');await page.evaluate(()=>parseBankNotice());await page.locator('#bank-raw').fill('HKD 20 balance HKD 100');await page.evaluate(()=>parseBankNotice());assert.equal(await page.locator('#bank-amount').inputValue(),'','ambiguous new notice clears old amount');assert.equal(await page.locator('#bank-last4').inputValue(),'','new notice cannot inherit last card');
+  const payload=encodeURIComponent(JSON.stringify({bank:'hsbc',text:'Purchase HKD 12.34 card ending 9999'}));await page.goto(origin+'/#bank-capture='+payload);await page.waitForFunction(()=>document.getElementById('m-bank-inbox').classList.contains('open'));assert.equal(await page.evaluate(()=>location.hash),'');assert.equal(await page.locator('#bank-amount').inputValue(),'12.34');assert.equal(await page.evaluate(()=>bankPending().length),1,'capture link only prefills; never silently saves');
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);results.push({width,height,draftOnly:true,persistentReminder:true,labelsAndAccountsRequired:true,bankSpecificRules:true,repaymentTransfer:true,saveRollback:true,profileGuard:true,backupTransfer:true,capturePrefill:true});await context.close();
+ }
+ assert.deepEqual(errors,[]);console.log(JSON.stringify({results,errors},null,2));
+}finally{await browser.close();await new Promise(r=>server.close(r));}
