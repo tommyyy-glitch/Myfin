@@ -883,7 +883,7 @@ body:has(#s-home.active) #global-fab{display:none!important;}
         <button class="metric-card" type="button" onclick="goTabIndex(1);setWalletPane('ar')" style="min-width:130px;flex:1;text-align:left;color:var(--ink);cursor:pointer"><div class="mlabel" id="home-rp-label"></div><div id="home-rp-value" style="font-size:13px;line-height:1.8;overflow-wrap:anywhere"></div></button>
       </div>
       <p class="msub" id="home-quick-hint" style="line-height:1.6"></p>
-      <button type="button" class="nav-btn" id="bank-inbox-open" onclick="openBankInbox()" style="margin-top:10px;min-height:44px" aria-label="Bank notification inbox">銀行通知待確認 / Bank inbox</button>
+      <button type="button" class="nav-btn" id="bank-inbox-open" hidden onclick="openBankInbox()" style="margin-top:10px;min-height:44px" aria-label="Bank notification inbox">銀行通知待確認 / Bank inbox</button>
       <div id="home-attention" class="glass-card" hidden style="padding:12px;margin-top:10px"></div>
     </div>
 
@@ -1230,6 +1230,12 @@ body:has(#s-home.active) #global-fab{display:none!important;}
         <button class="numfmt-btn" data-numfmt="abbr" onclick="setNumFmt('abbr')" data-i="numabbr"></button>
       </div>
       <div class="msub" data-i="numfmthint" style="margin-top:8px"></div>
+    </div>
+
+    <div class="slbl" id="bank-capture-settings-title" data-settings-key="bankcapture">銀行通知匯入</div>
+    <div class="glass-card" style="padding:15px;margin-bottom:12px">
+      <div class="frow" style="padding:0;gap:12px"><span class="flbl" id="bank-capture-setting-label" style="flex:1;width:auto">顯示銀行通知匯入</span><button type="button" class="toggle" id="bank-capture-toggle" style="flex-shrink:0" role="switch" aria-checked="false" aria-labelledby="bank-capture-setting-label" aria-describedby="bank-capture-setting-hint" onclick="toggleBankCapture()"></button></div>
+      <div class="msub" id="bank-capture-setting-hint" style="margin-top:10px;line-height:1.6"></div>
     </div>
 
     <div class="slbl" data-i="dispcur"></div>
@@ -2348,7 +2354,7 @@ function hasQuoteKey(kind){return quoteKeys(kind).length>0;}
 function quoteApiCloudSafe(){const q=defaultQuoteApis();Object.keys(q).forEach(k=>{const src=ensureQuoteApis()[k];q[k].provider=src.provider;q[k].cursor=0;});return q;}
 
 function createAppState(){return {
-  bankInbox:[],bankMerchantRules:[],bankCardLinks:[],txns:[],people:[],gamble:[],autopay:[],autoincome:[],portfolio:[],physicalAssets:[],debts:[],privateLoans:[],friends:[],rpLabels:{},tuScores:[],customSections:[],changelog:[],priceHist:[],
+  bankCaptureEnabled:false,bankInbox:[],bankMerchantRules:[],bankCardLinks:[],txns:[],people:[],gamble:[],autopay:[],autoincome:[],portfolio:[],physicalAssets:[],debts:[],privateLoans:[],friends:[],rpLabels:{},tuScores:[],customSections:[],changelog:[],priceHist:[],
   cats:DEF_CATS.map(c=>({...c,aliases:[...(c.aliases||[])]})),accounts:DEF_ACCTS.map(a=>({...a})),
   lang:'zh',theme:'auto',motionMode:'dance',dispCur:'HKD',period:'month',privacy:false,numFmt:'full',
   budget:{amount:0,cur:'HKD',mode:'cycle',startDay:1,cutoffDay:31,customStart:'',customEnd:'',excludedCats:[]},tax:{year:0,allowance:145000,deductions:0,excludedCats:[]},
@@ -2438,7 +2444,7 @@ if(!Array.isArray(S.tax.excludedCats))S.tax.excludedCats=[];
 S.notify=notifyCfg();
 ensureDefaultCategories();
 (S.accounts||[]).forEach(a=>{if(!a.kind){a.kind=a.isInvest?'invest':({cash:'cash',debit:'debit',credit:'credit',octopus:'ewallet'}[a.id]||'other');}});let needSave=false;if(typeof syncSectionAccountLinks==='function'&&syncSectionAccountLinks())needSave=true;if(typeof ensureDebtOpenMoves==='function'&&ensureDebtOpenMoves())needSave=true;if(typeof ensureRPIncomeAccruals==='function'&&ensureRPIncomeAccruals())needSave=true;if(needSave)saveS();}}catch(e){if(!S.portfolio)S.portfolio=[];if(!S.accounts)S.accounts=DEF_ACCTS.map(a=>({...a}));showStorageError('load',e);}}
-function profileSnapshot(){migrateRecurringRuns(S,localStorage);const cloud=S.cloud||{};return {recurringRuns:S.recurringRuns,recurringLedgerVersion:1,automationPaused:!!S.automationPaused,bankInbox:S.bankInbox||[],bankMerchantRules:S.bankMerchantRules||[],bankCardLinks:S.bankCardLinks||[],txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},pnlCalendarSections:S.pnlCalendarSections||{},pnlCalendarFilters:Array.isArray(S.pnlCalendarFilters)?S.pnlCalendarFilters:[],pnlImports:Array.isArray(S.pnlImports)?S.pnlImports:[],ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],rpLabels:S.rpLabels||{},customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],fixedAssetReviewedYear:Number(S.fixedAssetReviewedYear)||0,setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:S.priceHist||[],acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{authVersion:cloud.authVersion||0,linked:!!cloud.linked,userId:cloud.userId||'',vaultId:cloud.vaultId||'',url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
+function profileSnapshot(){migrateRecurringRuns(S,localStorage);const cloud=S.cloud||{};return {recurringRuns:S.recurringRuns,recurringLedgerVersion:1,automationPaused:!!S.automationPaused,bankCaptureEnabled:S.bankCaptureEnabled===true,bankInbox:S.bankInbox||[],bankMerchantRules:S.bankMerchantRules||[],bankCardLinks:S.bankCardLinks||[],txns:S.txns,people:S.people,gamble:S.gamble,autopay:S.autopay,cats:S.cats,accounts:S.accounts,lang:S.lang,portfolio:S.portfolio||[],physicalAssets:S.physicalAssets||[],assetLabels:S.assetLabels||createAppState().assetLabels,theme:S.theme||'auto',motionMode:S.motionMode||'dance',budget:S.budget||{},tax:S.tax||{},notify:S.notify||{},fx:S.fx||null,quoteApis:ensureQuoteApis(),tdKey:S.tdKey||'',dispCur:S.dispCur||'HKD',period:S.period||'month',privacy:!!S.privacy,pnlOrder:S.pnlOrder,pnlHidden:S.pnlHidden||{},pnlNetHidden:S.pnlNetHidden||{},pnlCalendarSections:S.pnlCalendarSections||{},pnlCalendarFilters:Array.isArray(S.pnlCalendarFilters)?S.pnlCalendarFilters:[],pnlImports:Array.isArray(S.pnlImports)?S.pnlImports:[],ai:S.ai||{},tuScores:S.tuScores||[],creditLimit:S.creditLimit||0,friends:S.friends||[],rpLabels:S.rpLabels||{},customSections:S.customSections||[],autoincome:S.autoincome||[],debts:S.debts||[],privateLoans:S.privateLoans||[],fixedAssetReviewedYear:Number(S.fixedAssetReviewedYear)||0,setCollapsed:S.setCollapsed||{},wealthGran:S.wealthGran||'month',trendGran:S.trendGran||'month',catMRU:S.catMRU||[],acctMRU:S.acctMRU||[],numFmt:S.numFmt||'full',priceHist:S.priceHist||[],acctFilter:S.acctFilter||'all',pnlPieNoCash:!!S.pnlPieNoCash,pnlPieFilters:Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],billMe:S.billMe!==false,changelog:(S.changelog||[]).slice(0,300),cloud:{authVersion:cloud.authVersion||0,linked:!!cloud.linked,userId:cloud.userId||'',vaultId:cloud.vaultId||'',url:cloud.url||'',key:cloud.key||'',pass:cloud.pass||'',salt:cloud.salt||'',on:!!cloud.on,ver:cloud.ver||0,last:cloud.last||0,pending:!!(cloud.pending||cloud._dirty),pendingAt:cloud.pendingAt||0,lastError:cloud.lastError||''}};}
 function saveS(opt){
   opt=opt||{};
   if(window._storageReadOnly&&!opt.force){showStorageError('load',new Error('storage is read-only after load failure'));return false;}
@@ -3679,12 +3685,29 @@ function openIncomeReceivableModal(){
 // Bank capture is a review inbox, never an unattended posting path.
 // Raw notification text stays in the input only; no OTP or notification payload is stored.
 let bankInboxContext=null;
+function bankCaptureEnabled(){return S.bankCaptureEnabled===true;}
+function renderBankCaptureControls(){
+  const enabled=bankCaptureEnabled(),entry=document.getElementById('bank-inbox-open'),toggle=document.getElementById('bank-capture-toggle');
+  if(entry){entry.hidden=!enabled;entry.style.display=enabled?'':'none';entry.textContent=tt('銀行通知待確認','Bank inbox');}
+  if(!enabled&&document.getElementById('m-bank-inbox')?.classList.contains('open'))closeM('m-bank-inbox');
+  if(toggle){toggle.classList.toggle('on',enabled);toggle.setAttribute('aria-checked',String(enabled));}
+  setSettingsSectionTitle('bank-capture-settings-title',tt('銀行通知匯入','Bank notification import'));
+  const label=document.getElementById('bank-capture-setting-label'),hint=document.getElementById('bank-capture-setting-hint');
+  if(label)label.textContent=tt('顯示銀行通知匯入','Show bank notification import');
+  if(hint)hint.textContent=tt('關閉會隱藏首頁入口及待分類提示，亦不會開啟通知匯入表單；已有草稿會保留。如要停止通知自動開啟 Myfin，請另於 iPhone「捷徑」關閉銀行自動化。','When off, the Home entry, unlabelled reminders and incoming capture forms are hidden. Existing drafts are kept. To stop notifications opening Myfin, also turn off the bank automations in iPhone Shortcuts.');
+}
+function toggleBankCapture(){
+  const before=S.bankCaptureEnabled;S.bankCaptureEnabled=!bankCaptureEnabled();
+  if(saveS()===false){S.bankCaptureEnabled=before;renderBankCaptureControls();return;}
+  renderBankCaptureControls();renderHome();
+}
 function bankPending(){return (Array.isArray(S.bankInbox)?S.bankInbox:[]).filter(d=>d.status==='pending');}
 function bankDraftNeedsLabel(d){return !['expense','income','transfer'].includes(d.type)||(d.type!=='transfer'&&!(S.cats||[]).some(c=>c.id===d.catId));}
 function bankMerchantKey(value){return String(value||'').trim().replace(/\s+/g,' ').toLocaleLowerCase();}
 function bankInboxCurrent(){return bankInboxContext&&bankInboxContext.state===S&&bankInboxContext.key===profileKey();}
 function bankField(id){return document.getElementById('bank-'+id);}
 function openBankInbox(){
+  if(!bankCaptureEnabled())return;
   bankInboxContext={state:S,key:profileKey(),id:null};
   bankField('title').textContent=tt('銀行通知待確認','Bank notification inbox');
   bankField('status').textContent=tt('iOS 27+ 可配合捷徑帶入通知；亦可貼上文字。請在手機捷徑確認自動化已啟用。草稿不計入帳目，請確認目前帳本。','iOS 27+ Shortcuts can open the capture link; pasting is also supported. Check that the automation is enabled in Shortcuts on your phone. Drafts do not affect balances. Check the current profile.');
@@ -3765,6 +3788,7 @@ function setBankDraftStatus(id,status){
 function receiveBankCapture(){
   if(!location.hash.startsWith('#bank-capture='))return;
   const payload=location.hash.slice('#bank-capture='.length);history.replaceState(null,'',location.pathname+location.search);
+  if(!bankCaptureEnabled()){showToast(tt('銀行通知匯入已隱藏，可於設定重新開啟。','Bank notification import is hidden. Re-enable it in Settings.'));return;}
   try{
     if(payload.length>20000)throw Error('size');
     const d=JSON.parse(decodeURIComponent(payload));
@@ -4687,7 +4711,7 @@ function toggleHomeLongDebt(){
 }
 function homeAttentionItems(){
   const items=[],c=S.cloud||{},q=S.fx?.quoteRefresh;
-  const pending=bankPending();if(pending.length)items.push({kind:'bank',label:tt('銀行通知：','Bank inbox: ')+pending.length+tt(' 筆待確認；',' pending; ')+pending.filter(bankDraftNeedsLabel).length+tt(' 筆待分類',' unlabelled')});
+  const pending=bankCaptureEnabled()?bankPending():[];if(pending.length)items.push({kind:'bank',label:tt('銀行通知：','Bank inbox: ')+pending.length+tt(' 筆待確認；',' pending; ')+pending.filter(bankDraftNeedsLabel).length+tt(' 筆待分類',' unlabelled')});
   if(c.linked&&c.pending&&['conflict','remote-newer','changed-during-download','insert-race','compare-and-swap'].includes(c.lastError))items.push({kind:'cloud',label:tt('同步版本有差異 — 前往安全核對','Sync versions differ — review safely')});
   if(q&&(q.saveFailed||Object.values(q.sources||{}).some(v=>v.ok<v.total)))items.push({kind:'quotes',label:tt('上次報價更新未完成 — 查看詳情','Last quote update incomplete — view details')});
   return items;
@@ -4714,6 +4738,7 @@ function renderHomePriority(bs){
   items.forEach(item=>{const button=document.createElement('button');button.type='button';button.textContent=item.label;button.style.cssText='display:block;width:100%;min-height:44px;text-align:left;padding:8px;border:0;border-radius:8px;background:var(--bg2);color:var(--ink);font:inherit;font-size:13px;margin:4px 0;cursor:pointer';button.onclick=()=>openHomeAttention(item.kind);box.appendChild(button);});
 }
 function renderHome(){
+  renderBankCaptureControls();
   syncPeriodUI();
   const nwLbl=document.querySelector('.hero-label[data-i="networth"]');
   if(nwLbl)nwLbl.textContent=t('networth')+' ('+(S.dispCur||'HKD')+')';
@@ -5902,7 +5927,7 @@ function calDayDetail(day){
   }).join('');
   det.innerHTML=html;
 }
-function setIcon(key){const ic={language:'world',theme:'palette',dispcur:'currency-dollar',pnlsections:'chart-pie',autopay:'repeat',autoincome:'coin',mergecats:'category',addalias:'tag',addcat:'plus',allcats:'list',accounts:'credit-card',allaccts:'wallet',aiassist:'message-circle',credit:'gauge',budgetplanner:'pig-money',taxestimate:'receipt-tax',stockapi:'chart-line',quoteapi:'chart-line',assetlabels:'category',dataexport:'file-spreadsheet',databackup:'database',mpimport:'file-import',notifications:'bell',cloudsync:'cloud-up'}[key]||'settings';return '<i class="ti ti-'+ic+'"></i>';}
+function setIcon(key){const ic={language:'world',theme:'palette',dispcur:'currency-dollar',pnlsections:'chart-pie',autopay:'repeat',autoincome:'coin',mergecats:'category',addalias:'tag',addcat:'plus',allcats:'list',accounts:'credit-card',allaccts:'wallet',aiassist:'message-circle',credit:'gauge',budgetplanner:'pig-money',taxestimate:'receipt-tax',stockapi:'chart-line',quoteapi:'chart-line',assetlabels:'category',dataexport:'file-spreadsheet',databackup:'database',mpimport:'file-import',notifications:'bell',bankcapture:'bell',cloudsync:'cloud-up'}[key]||'settings';return '<i class="ti ti-'+ic+'"></i>';}
 function renderAssetLabelSettings(){
   const el=document.getElementById('asset-label-mgr');if(!el)return;ensureAssetLabels();setSettingsSectionTitle('asset-labels-title',tt('資產分類名稱（可編輯）','Asset category labels (editable)'));
   const defs=[['fixed',tt('實體資產','Physical assets')],['receivable',tt('應收款','Receivables')],['investment',tt('股票／Crypto／Polymarket／未上市股權／私人債權','Stocks / crypto / Polymarket / private equity / private debt')],['quick',tt('現金類','Cash class')]],lang=S.lang==='en'?'en':'zh';
@@ -5910,6 +5935,7 @@ function renderAssetLabelSettings(){
 }
 function saveAssetLabel(key,value){ensureAssetLabels();const lang=S.lang==='en'?'en':'zh',v=String(value||'').trim();S.assetLabels[key][lang]=v||PHYSICAL_LABEL_DEFAULTS[key][lang];saveS();renderHome();renderAssetLabelSettings();if(S.activeTab==='gamble')renderGamble();}
 function renderSettings(){
+  renderBankCaptureControls();
   renderTransferControls();
   renderMoneyPlusRepairControls();
   renderAutopay();renderAutoincome();
@@ -6375,7 +6401,7 @@ function transferProfileData(raw,legacy){
   validateProfileData(raw);
   const src=JSON.parse(JSON.stringify(raw)),p={};
   // Explicit durable-data allowlist: never copy API credentials or runtime fields.
-  const fields='bankInbox bankMerchantRules bankCardLinks txns people gamble autopay cats accounts lang portfolio physicalAssets assetLabels theme motionMode budget tax notify fx dispCur period privacy pnlOrder pnlHidden pnlNetHidden pnlCalendarSections pnlCalendarFilters pnlImports tuScores creditLimit friends rpLabels customSections autoincome debts privateLoans fixedAssetReviewedYear setCollapsed wealthGran trendGran catMRU acctMRU numFmt priceHist acctFilter pnlPieNoCash pnlPieFilters billMe changelog recurringRuns recurringLedgerVersion'.split(' ');
+  const fields='bankCaptureEnabled bankInbox bankMerchantRules bankCardLinks txns people gamble autopay cats accounts lang portfolio physicalAssets assetLabels theme motionMode budget tax notify fx dispCur period privacy pnlOrder pnlHidden pnlNetHidden pnlCalendarSections pnlCalendarFilters pnlImports tuScores creditLimit friends rpLabels customSections autoincome debts privateLoans fixedAssetReviewedYear setCollapsed wealthGran trendGran catMRU acctMRU numFmt priceHist acctFilter pnlPieNoCash pnlPieFilters billMe changelog recurringRuns recurringLedgerVersion'.split(' ');
   fields.forEach(k=>{if(Object.prototype.hasOwnProperty.call(src,k))p[k]=src[k];});
   p.ai={provider:String(src.ai?.provider||'gemini'),model:String(src.ai?.model||''),key:''};p.quoteApis=defaultQuoteApis();p.tdKey='';
   p.cloud={url:'',key:'',pass:'',salt:'',on:false,ver:0,last:0,pending:false,pendingAt:0,lastError:''};

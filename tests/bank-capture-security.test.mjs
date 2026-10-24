@@ -5,7 +5,8 @@ import test from 'node:test';
 const src=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 function harness(){
  const fields=Object.fromEntries(['raw','amount','last4','type','cur','message'].map(k=>[k,{value:'',textContent:''}]));
- const c=vm.createContext({fields,bankField:k=>fields[k],tt:s=>s,applyBankSuggestions:()=>{},opened:0,toasts:[],openBankInbox(){c.opened++;},resetBankForm(){for(const f of Object.values(fields))f.value='';},showToast:s=>c.toasts.push(s),location:{hash:'',pathname:'/',search:''},history:{replaceState(){c.location.hash='';}}});
+ const c=vm.createContext({S:{bankCaptureEnabled:true},fields,bankField:k=>fields[k],tt:s=>s,applyBankSuggestions:()=>{},opened:0,toasts:[],openBankInbox(){c.opened++;},resetBankForm(){for(const f of Object.values(fields))f.value='';},showToast:s=>c.toasts.push(s),location:{hash:'',pathname:'/',search:''},history:{replaceState(){c.location.hash='';}}});
+ vm.runInContext(src.slice(src.indexOf('function bankCaptureEnabled('),src.indexOf('function renderBankCaptureControls(')),c);
  assert.ok(src.includes('function bankSecurityNotice('),'one security-notice guard is shared by paste, links and saving');
  vm.runInContext(src.slice(src.indexOf('function bankSecurityNotice('),src.indexOf('function applyBankSuggestions(')),c);
  vm.runInContext(src.slice(src.indexOf('function receiveBankCapture('),src.indexOf('function openTxnModal(')),c);
@@ -33,4 +34,11 @@ test('capture pages do not load third-party executable spreadsheet code and supp
  assert.match(src,/<meta name="referrer" content="no-referrer">/);
  assert.doesNotMatch(src,/<script[^>]*src="https?:\/\//);
  assert.match(src,/assets\/vendor\/xlsx-0\.20\.3\.full\.min\.js/);
+});
+
+test('disabled capture strips incoming payload without opening or populating the form',()=>{
+ const c=harness();c.S.bankCaptureEnabled=false;
+ c.location.hash='#bank-capture='+encodeURIComponent(JSON.stringify({bank:'hsbc',text:'Purchase HKD 12.34'}));
+ const before=JSON.stringify(c.S);c.receiveBankCapture();
+ assert.equal(c.location.hash,'');assert.equal(c.opened,0);assert.equal(c.fields.raw.value,'');assert.equal(JSON.stringify(c.S),before);assert.ok(c.toasts.length);
 });

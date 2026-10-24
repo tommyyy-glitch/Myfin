@@ -2,9 +2,15 @@
 
 Status: Myfin's review inbox and persistent unlabelled reminder are implemented. Complete HSBC and Hang Seng capture processors have passed 28 synthetic cases in the native Apple Shortcuts runtime. Both native iPhone Notification automations are enabled: HSBC HK and Hang Seng HK. Each reads Notification Body; the green Automation switch was visually verified, and HSBC's enabled state was rechecked after reopening. Installed-app routing and a real bank notification remain to be verified. The parser only suggests a single explicit currency amount and an explicitly labelled last-four card number; it does not infer a merchant, transaction date or purchase type from an unverified bank template.
 
+## Visibility control
+
+Bank notification import is hidden by default, including for existing profiles. Open **Settings → Bank notification import → Show bank notification import** to restore it. Turning the switch off hides the Home entry and bank-draft reminders and blocks capture links from opening a form. Drafts, category rules, card links and posted transactions are retained. The preference is saved per profile and included in backups/transfers.
+
+This Myfin switch cannot turn off the separate iPhone Shortcuts triggers. Those remain enabled unless switched off in Shortcuts; they may still open Myfin, but Myfin will discard the capture fragment without displaying or storing the notice while hidden.
+
 ## Daily flow
 
-Open **Bank inbox** on Home, or tap its pending/unlabelled reminder. Paste a transaction notice (never an OTP), extract suggested fields, review the date, and enter the merchant/description. Save a draft without affecting account balances. Later choose the actual account, transaction type and category and press **Confirm posting**. Category and account are mandatory; transfers/card repayments require distinct source and destination accounts and are not expenses. Dismissal is recoverable. Only explicitly confirmed merchant-category rules and bank/card-last-four account links are remembered.
+After enabling the visibility setting, open **Bank inbox** on Home, or tap its pending/unlabelled reminder. Paste a transaction notice (never an OTP), extract suggested fields, review the date, and enter the merchant/description. Save a draft without affecting account balances. Later choose the actual account, transaction type and category and press **Confirm posting**. Category and account are mandatory; transfers/card repayments require distinct source and destination accounts and are not expenses. Dismissal is recoverable. Only explicitly confirmed merchant-category rules and bank/card-last-four account links are remembered.
 
 An inbox reminder remains on Home until pending records are posted or dismissed. This is an in-app reminder, not a scheduled lock-screen notification. Existing uncategorised historical transactions are not reclassified.
 
