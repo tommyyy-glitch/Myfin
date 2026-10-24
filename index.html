@@ -2,6 +2,7 @@
 <html lang="zh-HK">
 <head>
 <meta charset="UTF-8">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-title" content="Finance OS">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -35,7 +36,7 @@
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="./assets/vendor/xlsx-0.20.3.full.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
 :root{
@@ -3686,7 +3687,7 @@ function bankField(id){return document.getElementById('bank-'+id);}
 function openBankInbox(){
   bankInboxContext={state:S,key:profileKey(),id:null};
   bankField('title').textContent=tt('銀行通知待確認','Bank notification inbox');
-  bankField('status').textContent=tt('iOS 27+ 可配合捷徑帶入通知；亦可貼上文字。手機捷徑尚未設定／驗證。草稿不計入帳目，請確認目前帳本。','iOS 27+ Shortcuts can open the capture link; pasting is also supported. The phone automation is not configured or verified. Drafts do not affect balances. Check the current profile.');
+  bankField('status').textContent=tt('iOS 27+ 可配合捷徑帶入通知；亦可貼上文字。請在手機捷徑確認自動化已啟用。草稿不計入帳目，請確認目前帳本。','iOS 27+ Shortcuts can open the capture link; pasting is also supported. Check that the automation is enabled in Shortcuts on your phone. Drafts do not affect balances. Check the current profile.');
   bankField('bank').innerHTML='<option value="hsbc">HSBC</option><option value="hangseng">Hang Seng / 恒生</option>';
   bankField('type').innerHTML=`<option value="">${tt('請確認交易類型','Confirm transaction type')}</option><option value="expense">${t('expense')}</option><option value="income">${t('income')}</option><option value="transfer">${tt('轉帳／信用卡還款','Transfer / credit-card repayment')}</option>`;
   bankField('cur').innerHTML=['HKD','USD','RMB','JPY'].map(c=>`<option>${c}</option>`).join('');
@@ -3696,15 +3697,17 @@ function openBankInbox(){
   resetBankForm();renderBankInbox();if(bankPending().length)reviewBankDraft(bankPending()[0].id);document.getElementById('m-bank-inbox').classList.add('open');
 }
 function resetBankForm(){if(bankInboxContext)bankInboxContext.id=null;['raw','merchant','amount','last4','acct','to','cat','type'].forEach(k=>bankField(k).value='');bankField('date').value=today();bankField('cur').value='HKD';bankField('remember').checked=false;bankField('link').checked=false;bankField('post').hidden=true;bankField('message').textContent='';}
+function bankSecurityNotice(value){return /\bOTP\b|one[\s-]*time|verification|security[\s-]*code|authentication|passcode|password|驗證|認證碼|一次性|密碼|登入|登錄|sign[\s-]*in|log[\s-]*in/i.test(String(value||''));}
 function parseBankNotice(){
   const raw=bankField('raw').value;
-  if(/\b(?:OTP|one.time.password|verification.code|security.code)\b|驗證碼|一次性密碼/i.test(raw)){bankField('message').textContent=tt('請勿貼上驗證碼或登入通知。','Do not paste verification codes or sign-in messages.');return;}
   bankField('amount').value='';bankField('last4').value='';bankField('type').value='';
+  if(bankSecurityNotice(raw)){bankField('raw').value='';bankField('message').textContent=tt('已清除驗證碼或登入通知，不能匯入。','Security or sign-in notice cleared; it cannot be imported.');return false;}
   const matches=[...raw.matchAll(/(HK\$|HKD|USD|US\$|JPY|CNY|RMB)\s*([\d,]+(?:\.\d{1,2})?)(?![\d.])/gi)];
   if(matches.length===1){const cur=matches[0][1].toUpperCase();bankField('cur').value=cur==='HK$'?'HKD':cur==='US$'?'USD':cur==='CNY'?'RMB':cur;bankField('amount').value=Number(matches[0][2].replace(/,/g,''));}
   const last=raw.match(/(?:ending(?:\s+in)?|尾號|末四位|\*{2,})\s*[:：]?\s*(\d{4})\b/i);if(last)bankField('last4').value=last[1];
   if(/repayment|card payment received|信用卡還款|信用卡還賬|還款成功/i.test(raw))bankField('type').value='transfer';
   applyBankSuggestions();bankField('message').textContent=tt('只作建議，請核對金額、商戶、日期及交易類型；多個金額不會自動選取。','Suggestions only: verify amount, merchant, date and type. Multiple amounts are not auto-selected.');
+  return true;
 }
 function applyBankSuggestions(){
   const bank=bankField('bank').value,merchant=bankMerchantKey(bankField('merchant').value),type=bankField('type').value,last4=bankField('last4').value;
@@ -3715,7 +3718,7 @@ function applyBankSuggestions(){
 function bankFormData(){return {bank:bankField('bank').value,merchant:bankField('merchant').value.trim().slice(0,160),amount:Number(bankField('amount').value),cur:bankField('cur').value,date:bankField('date').value,type:bankField('type').value,last4:bankField('last4').value.trim(),acctId:bankField('acct').value,toAcctId:bankField('to').value,catId:bankField('cat').value};}
 function saveBankDraft(){
   if(!bankInboxCurrent())return;
-  if(/\b(?:OTP|one.time.password|verification.code|security.code)\b|驗證碼|一次性密碼/i.test(bankField('raw').value)){bankField('message').textContent=tt('驗證碼通知不能匯入。','Verification notices cannot be imported.');return;}
+  if(bankSecurityNotice(bankField('raw').value)){parseBankNotice();return;}
   const d=bankFormData();if(!['hsbc','hangseng'].includes(d.bank)||!Number.isFinite(d.amount)||d.amount<=0||!/^\d{4}-\d{2}-\d{2}$/.test(d.date)||!['HKD','USD','RMB','JPY'].includes(d.cur)){bankField('message').textContent=tt('請先填寫有效金額、貨幣及日期。','Enter a valid amount, currency and date.');return;}
   if(d.last4&&!/^\d{4}$/.test(d.last4)){bankField('message').textContent=tt('只填卡號最後四位，唔好填完整卡號。','Enter only the last four card digits.');return;}
   const inbox=S.bankInbox||[],existing=inbox.find(x=>x.id===bankInboxContext.id);
@@ -3733,6 +3736,7 @@ function reviewBankDraft(id){
 }
 function postBankDraft(){
   if(!bankInboxCurrent()||!bankInboxContext.id)return;
+  if(bankSecurityNotice(bankField('raw').value)){parseBankNotice();return;}
   const draft=(S.bankInbox||[]).find(x=>x.id===bankInboxContext.id&&x.status==='pending');if(!draft)return;
   const d=bankFormData(),ac=(S.accounts||[]).find(a=>String(a.id)===d.acctId),to=(S.accounts||[]).find(a=>String(a.id)===d.toAcctId),cat=(S.cats||[]).find(c=>c.id===d.catId),amountHKD=toHKD(d.amount,d.cur);
   if(!['hsbc','hangseng'].includes(d.bank)||!ac||!['expense','income','transfer'].includes(d.type)||!d.merchant||!Number.isFinite(d.amount)||d.amount<=0||!Number.isFinite(amountHKD)||Number(amountHKD.toFixed(2))<=0||!/^\d{4}-\d{2}-\d{2}$/.test(d.date)||!['HKD','USD','RMB','JPY'].includes(d.cur)||(d.type==='transfer'?(!to||to.id===ac.id):!cat)||(d.last4&&!/^\d{4}$/.test(d.last4))){bankField('message').textContent=tt('請確認商戶／說明、類型、金額、日期、帳戶及分類；還款／轉帳需選兩個不同帳戶。','Confirm description, type, amount, date, accounts and category. Transfers need different accounts.');return;}
@@ -3761,7 +3765,15 @@ function setBankDraftStatus(id,status){
 function receiveBankCapture(){
   if(!location.hash.startsWith('#bank-capture='))return;
   const payload=location.hash.slice('#bank-capture='.length);history.replaceState(null,'',location.pathname+location.search);
-  try{if(payload.length>20000)throw Error('size');const d=JSON.parse(decodeURIComponent(payload));if(!['hsbc','hangseng'].includes(d.bank)||typeof d.text!=='string'||d.text.length>4000)throw Error('shape');openBankInbox();resetBankForm();bankField('bank').value=d.bank;bankField('raw').value=d.text;parseBankNotice();bankField('message').textContent=tt('通知已帶入，尚未儲存。請確認係正確帳本，再填商戶、核對日期及保留草稿。','Notice received but not saved. Check the profile, merchant and date, then save a draft.');}catch(e){showToast(tt('通知匯入內容無效。','Invalid notification input.'),1);}
+  try{
+    if(payload.length>20000)throw Error('size');
+    const d=JSON.parse(decodeURIComponent(payload));
+    if(!d||Array.isArray(d)||Object.keys(d).sort().join(',')!=='bank,text'||!['hsbc','hangseng'].includes(d.bank)||typeof d.text!=='string'||!d.text.trim()||d.text.length>4000)throw Error('shape');
+    if(bankSecurityNotice(d.text)){showToast(tt('已拒收驗證碼或登入通知。','Security or sign-in notice rejected.'),1);return;}
+    openBankInbox();resetBankForm();bankField('bank').value=d.bank;bankField('raw').value=d.text;
+    if(parseBankNotice()===false)return;
+    bankField('message').textContent=tt('通知已帶入，尚未儲存。請確認係正確帳本，再填商戶、核對日期及保留草稿。','Notice received but not saved. Check the profile, merchant and date, then save a draft.');
+  }catch(e){showToast(tt('通知匯入內容無效。','Invalid notification input.'),1);}
 }
 function openTxnModal(){S._editTxnId=null;S.amtStr='0';S.amtExpr='';updateAmtDisplay();document.getElementById('t-note').value='';document.getElementById('t-cur').value=S.dispCur||'HKD';document.getElementById('t-date').value=today();document.getElementById('t-person').value='';document.getElementById('oneoff-toggle').classList.remove('on');document.getElementById('recur-toggle').classList.remove('on');document.getElementById('recur-day-wrap').style.display='none';document.getElementById('inline-newcat').style.display='none';document.getElementById('inline-newacct').style.display='none';setTT('expense');renderCatChips();renderAcctChips();applyI18n();document.getElementById('m-txn').classList.add('open');}
 function editTxn(id){
@@ -3835,7 +3847,7 @@ function openGambleModal(editId,defaultSecId){
   document.getElementById('g-margin-toggle').classList.toggle('on',!!(g&&g.margin));
   applyI18n();document.getElementById('m-gamble').classList.add('open');
 }
-function closeM(id){document.getElementById(id).classList.remove('open');if(id==='image-icon-modal')cancelImageIcon();if(id==='wallet-icon-match-modal')walletIconMatchDraft=null;}
+function closeM(id){document.getElementById(id).classList.remove('open');if(id==='image-icon-modal')cancelImageIcon();if(id==='wallet-icon-match-modal')walletIconMatchDraft=null;if(id==='m-bank-inbox'){resetBankForm();bankInboxContext=null;}}
 // "Position" tab in the + modal: launcher buttons to add P&L holdings (same actions as the old P&L top bar)
 function renderPositionAdders(){
   const el=document.getElementById('pos-adders');if(!el)return;
