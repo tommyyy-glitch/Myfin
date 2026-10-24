@@ -1,6 +1,6 @@
 # HSBC / Hang Seng bank-notification capture
 
-Status: Myfin's review inbox and persistent unlabelled reminder are implemented. Complete HSBC and Hang Seng capture processors have passed 28 synthetic cases in the native Apple Shortcuts runtime. The original HSBC shortcut's actions have been updated through Mac/iCloud sync, and the Hang Seng workflow has been imported. Phone trigger enablement, installed-app routing and a real bank notification remain to be verified. The parser only suggests a single explicit currency amount and an explicitly labelled last-four card number; it does not infer a merchant, transaction date or purchase type from an unverified bank template.
+Status: Myfin's review inbox and persistent unlabelled reminder are implemented. Complete HSBC and Hang Seng capture processors have passed 28 synthetic cases in the native Apple Shortcuts runtime. Both native iPhone Notification automations are enabled: HSBC HK and Hang Seng HK. Each reads Notification Body; the green Automation switch was visually verified, and HSBC's enabled state was rechecked after reopening. Installed-app routing and a real bank notification remain to be verified. The parser only suggests a single explicit currency amount and an explicitly labelled last-four card number; it does not infer a merchant, transaction date or purchase type from an unverified bank template.
 
 ## Daily flow
 
@@ -10,7 +10,7 @@ An inbox reminder remains on Home until pending records are posted or dismissed.
 
 ## iOS 27+ Shortcuts connection
 
-Create a separate Notification automation for HSBC and Hang Seng. Filter for transaction notices and exclude verification/sign-in messages. The selected bank app's actual notification content must be tested before enabling routine capture.
+Create a separate Notification automation for HSBC and Hang Seng. Filter for transaction notices and exclude verification/sign-in messages. The configured processors reject security/sign-in notices locally. Both bank triggers are enabled, but real notification formats, locked-phone delivery and installed-app routing have not yet been verified; review every imported notice and do not treat capture as a complete bank ledger.
 
 The receiver accepts an **URL-encoded JSON object in the URL fragment**, with exactly these fields:
 
@@ -32,7 +32,7 @@ Apple references: [Notification triggers](https://support.apple.com/guide/shortc
 
 ## Reproducible shortcut processors
 
-`python3 scripts/build-bank-shortcuts.py --output-dir <folder> --include-tests` builds both bank helpers and test variants. Test variants only output their generated URL and cannot open it. `--notification-input` builds the full notification-Body workflows; its variable format was verified against the user's official exported HSBC draft. These workflows contain no credentials or user transactions. They do not invent local bank-app picker tokens or write the Shortcuts database. Bank notification triggers still need to be selected/enabled through the native iPhone interface. Ordinary shortcut actions can sync through iCloud; this does not prove that a device-specific trigger is enabled.
+`python3 scripts/build-bank-shortcuts.py --output-dir <folder> --include-tests` builds both bank helpers and test variants. Test variants only output their generated URL and cannot open it. `--notification-input` builds the full notification-Body workflows; its variable format was verified against the user's official exported HSBC draft. These workflows contain no credentials or user transactions. They do not invent local bank-app picker tokens or write the Shortcuts database. Bank notification triggers must be selected/enabled through the native iPhone interface; this was completed for HSBC HK and Hang Seng HK. Ordinary shortcut actions can sync through iCloud; this does not prove that a device-specific trigger is enabled.
 
 Sign with Apple's built-in `shortcuts sign --mode anyone`; only workflow configuration is submitted to Apple. This mode does not embed contact-only signing information. After importing the TEST workflows, `python3 tests/run-bank-shortcuts-native.py` checks both banks with synthetic text, including JSON escaping, Chinese notices, repayments, OTP/sign-in rejection, empty and oversized input. Native UI import was also verified.
 
@@ -45,4 +45,4 @@ Sign with Apple's built-in `shortcuts sign --mode anyone`; only workflow configu
 - The capture page loads no third-party executable script. SheetJS 0.20.3 is vendored from its official distribution with its Apache licence; the old external 0.18.5 script was removed. `no-referrer` suppresses outgoing page referrers. Existing opt-in Myfin cloud storage still follows the user's configured account and policies.
 - The receiver cannot silently save or post, and cannot choose an account/category from an unknown notification. Confirming an entry remains a deliberate user action. Verify the correct ledger before any confirmation, especially if Shortcuts opens Safari instead of the installed Home Screen app.
 
-These are scoped code, browser and native-runtime checks, not a claim that any system has zero security risk. Device permissions, real notification delivery and final enabled status must be verified separately.
+These are scoped code, browser and native-runtime checks, not a claim that any system has zero security risk. The native Automation switches are confirmed enabled. Real notification delivery, execution permissions and routing into the intended existing ledger still require an end-to-end device check.
