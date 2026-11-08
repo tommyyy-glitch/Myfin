@@ -5480,7 +5480,7 @@ function toggleSecBody(id){
   if(collapsed)_collapsedSecs.add(id);else _collapsedSecs.delete(id);
 }
 function privateLoanCompleted(l){return recordEffective(l&&l.startDate)&&loanOutstandingPrincipal(l)<0.005&&loanInterestSettled(l)+0.005>=loanAccruedTotal(l,l.dueDate||today());}
-function renderPrivateLoans(){const list=document.getElementById('loan-list');if(!list)return;const loans=S.privateLoans||[],st=privateLoanStats();const set=(id,val,cls)=>{const el=document.getElementById(id);if(el){el.textContent=fmt(val);if(cls)el.className=cls;}};set('loan-principal',st.principal,'mval');set('loan-accrued',st.accrued);set('loan-realized',st.realized);set('loan-asset',st.asset);const ct=document.getElementById('loan-ct');if(ct)ct.textContent=st.count;const gp=document.getElementById('g-loan-pnl');if(gp){gp.textContent=fmt(st.pnl);gp.className='pnl-simple-val '+(st.pnl>=0?'pos':'neg');}
+function renderPrivateLoans(){const list=document.getElementById('loan-list');if(!list)return;const loans=S.privateLoans||[],st=privateLoanStats();const set=(id,val,cls)=>{const el=document.getElementById(id);if(el){el.textContent=fmt(val);if(cls)el.className=cls;}};set('loan-principal',st.principal,'mval');set('loan-accrued',st.accrued);set('loan-realized',st.realized);set('loan-asset',st.asset);const ct=document.getElementById('loan-ct');if(ct)ct.textContent=st.count;const gp=document.getElementById('g-loan-pnl');if(gp){const boardPnl=privateLoanBoardStats().pnl;gp.textContent=fmt(boardPnl);gp.className='pnl-simple-val '+(boardPnl>=0?'pos':'neg');}
   const active=loans.filter(l=>!privateLoanCompleted(l)),completed=loans.filter(privateLoanCompleted);
   const renderLoan=l=>{const outstanding=loanOutstandingPrincipal(l),accrued=loanAccruedOutstanding(l),received=loanInterestReceived(l),asset=outstanding+accrued,expected=loanAccruedTotal(l,l.dueDate||today()),closed=privateLoanCompleted(l),overdue=!closed&&l.dueDate&&parseDateOnly(l.dueDate)<parseDateOnly(today()),status=!recordEffective(l.startDate)?tt('預定','scheduled'):closed?tt('已完成','completed'):overdue?tt('已逾期','overdue'):tt('進行中','active'),statusCls=closed?'bg':overdue?'br':'ba',key=friendNameKey(l.borrower),payments=loanPayments(l).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),interestDesc=loanInterestMode(l)==='fixed'?t('fixedinterest')+' '+loanFormatBasis(l,Number(l.fixedInterestHKD)||0,true):Number(l.annualRate||0)+'% / '+tt('年','yr');return `<div style="padding:14px 15px;border-bottom:0.5px solid var(--bdr)"><div style="display:flex;gap:10px;align-items:flex-start">${pnlItemIconButton('loan',l)}<div class="rinfo"><div class="rtitle">${notifyEsc(l.borrower)}</div><div style="margin:3px 0"><span class="badge ${statusCls}">${status}</span> ${rpLabelBadges(key)}</div><div class="rsub">${l.startDate||''}${l.dueDate?' → '+l.dueDate:''} · ${interestDesc}</div>${l.notes?`<div class="rsub" style="margin-top:3px">${notifyEsc(l.notes)}</div>`:''}<div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openLoanPayment('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--g);border-radius:20px;background:var(--g2);color:var(--g3);cursor:pointer">${t('recordpayment')}</button><button onclick="openLoanModal('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePrivateLoan('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800">${fmt(asset)}</div><div class="rsub">${t('principal')} ${loanFormatBasis(l,outstanding)}</div><div style="font-size:11px;color:var(--g3)">${t('accruedinterest')} ${loanFormatBasis(l,accrued,true)}</div></div></div><div style="margin-top:9px;padding:9px 10px;border-radius:11px;background:var(--bg2);font-size:11px;color:var(--ink3);display:flex;gap:10px;flex-wrap:wrap"><span>${tt('到期預計利息','Expected interest')}: <strong style="color:var(--ink)">${loanFormatBasis(l,expected,true)}</strong></span><span>${t('receivedinterest')}: <strong style="color:var(--g3)">${fmt(received)}</strong></span></div>${loanBasisRate(l)?`<div class="rsub" style="margin-top:6px">${tt('本金匯兌損益（已實現）','Realized principal FX')}: ${fmt(loanPrincipalFx(l))} · ${tt('帳面本金按歷史成本；不含未實現匯兌','Principal at historical cost; unrealized FX excluded')}</div>`:''}${payments.length?`<div style="margin-top:8px">${payments.map(p=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 2px;font-size:11px;color:var(--ink3)"><span style="flex:1">${p.date} · ${!recordEffective(p.date)?tt('預定還款（未入帳）','Scheduled repayment (not posted)')+' · ':''}${t('principalreturn')} ${loanFormatBasis(l,loanPaymentBasis(l,p))} · ${t('interestreceived')} ${loanFormatBasis(l,loanPaymentBasis(l,p,'interest'),true)}</span><button onclick="deleteLoanPayment('${l.id}','${p.id}')" aria-label="${t('deletepos')}" style="border:none;background:none;color:var(--r3);font-size:15px;padding:5px;cursor:pointer"><i class="ti ti-trash"></i></button></div>`).join('')}</div>`:''}</div>`;};
   list.innerHTML=loans.length?`<div id="loan-active-list">${active.map(renderLoan).join('')}</div>${completed.length?`<details id="loan-completed-history" class="loan-history"><summary>${tt('已完成記錄','Completed records')} · ${completed.length}</summary><div id="loan-completed-list">${completed.map(renderLoan).join('')}</div></details>`:''}`:`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
@@ -5496,6 +5496,9 @@ function renderPhysicalAssets(){
 // Partition the existing P&L board scope without changing accounts or ledger data.
 // Cash belongs to its own filter, except physical/locked-account cash which follows
 // the same physical classification used by the allocation map.
+// Board-only view: received interest and realized principal FX; no unpaid accrual.
+// The full loan stats remain unchanged for Home, loan details and records.
+function privateLoanBoardStats(){const st=privateLoanStats();return {principal:st.principal,asset:st.principal,pnl:st.realized+st.fx};}
 function pnlBoardTotals(filters){
   const groups=Object.create(null),blank=()=>({pnl:0,cost:0,worth:0,cash:0,deployed:0,margin:0});
   const group=kind=>groups[kind]||(groups[kind]=blank());
@@ -5510,7 +5513,7 @@ function pnlBoardTotals(filters){
     if(!g.open)b.pnl+=(Number(g.cashoutHKD)||0)-cost;
     else{if(!g.margin)b.deployed+=cost;if(netIds.has(g.acctId)&&gambleCountsInNet(g)){b.worth+=g.margin?0:cost;if(g.margin)b.margin+=cost;}}
   });
-  const loan=group('loan'),ls=privateLoanStats();loan.pnl+=ls.pnl;loan.cost+=(S.privateLoans||[]).reduce((n,l)=>n+(Number(l.principalHKD)||0),0);loan.deployed+=ls.principal;if(!pnlNetExcluded('loan'))loan.worth+=ls.asset;
+  const loan=group('loan'),ls=privateLoanBoardStats();loan.pnl+=ls.pnl;loan.cost+=(S.privateLoans||[]).reduce((n,l)=>n+(Number(l.principalHKD)||0),0);loan.deployed+=ls.principal;if(!pnlNetExcluded('loan'))loan.worth+=ls.asset;
   const physical=group('physical'),ps=physicalAssetsStats();physical.pnl+=ps.pnl;physical.cost+=ps.totalCost;physical.deployed+=ps.cost;if(!pnlNetExcluded('physical'))physical.worth+=ps.value;
   accounts.filter(ac=>ac.kind==='invest').forEach(ac=>{const b=group(acctIsPhysical(ac)?'physical':'cash'),cash=acctCash(ac.id);b.cash+=cash;b.worth+=cash;});
   const selected=new Set(Array.isArray(filters)?filters:[]),total=blank();
@@ -5521,7 +5524,7 @@ function renderFilteredPnlBoard(){
   const filters=Array.isArray(S.pnlPieFilters)?S.pnlPieFilters:[],row=document.getElementById('pnl-metric-row');
   row.querySelectorAll('[data-filter-metric]').forEach(el=>el.remove());
   row.querySelectorAll('[data-sec]').forEach(el=>{el.style.display=(S.pnlHidden&&S.pnlHidden[el.dataset.sec])||(filters.length&&!filters.includes(el.dataset.sec))?'none':'';});
-  if(!filters.length)return; // All retains the original board, including its historical totals.
+  if(!filters.length)return; // All uses the unfiltered board calculated by renderGamble.
   const totals=pnlBoardTotals(filters),positive=totals.pnl>=0;
   document.getElementById('g-pnl').textContent=fmt(totals.pnl);document.getElementById('g-pnl').className='mval'+(positive?' pos':' neg');
   document.getElementById('g-roi').textContent='ROI '+(positive?'+':'')+(totals.cost?totals.pnl/totals.cost*100:0).toFixed(1)+'%';
@@ -5614,7 +5617,7 @@ function renderGamble(){
   // ── TOTAL + PIE (grand total spans ALL holdings incl. custom sections) ──
   const allPosPnl=S.portfolio.reduce((a,p)=>a+((p.valueHKD||0)-(p.costHKD||0)),0);
   const allPosCost=S.portfolio.reduce((a,p)=>a+(p.costHKD||0),0);
-  const loanSt=privateLoanStats();
+  const loanSt=privateLoanBoardStats();
   const loanOriginalCost=(S.privateLoans||[]).reduce((a,l)=>a+(Number(l.principalHKD)||0),0);
   const physicalSt=physicalAssetsStats();
   const totalPnl=allPokerPnl+allPosPnl+loanSt.pnl+physicalSt.pnl;
@@ -5657,7 +5660,7 @@ function renderGamble(){
   // tile reconciles with totalWorth (which already subtracts margin debt) instead of overstating exposure
   S.portfolio.filter(p=>!p.exitPrice&&p.valueHKD>0&&portCountsInNet(p)).forEach(p=>{const v=p.margin?Math.max(0,p.valueHKD-p.costHKD):p.valueHKD;if(v>0)pieRaw.push({label:p.name,val:v,_kind:pnlSecForPort(p),_icon:holdingIcon(p),_pnl:(Number(p.valueHKD)||0)-(Number(p.costHKD)||0)});});
   S.gamble.filter(g=>g.open&&g.buyinHKD>0&&gambleCountsInNet(g)).forEach(g=>pieRaw.push({label:g.venue,val:g.buyinHKD,_kind:pnlSecForGamble(g),_icon:pnlItemIcon('poker',g)}));
-  (S.privateLoans||[]).forEach(l=>{const v=loanOutstandingPrincipal(l)+loanAccruedOutstanding(l);if(v>0)pieRaw.push({label:l.borrower,val:v,_kind:'loan',_icon:pnlItemIcon('loan',l),_pnl:loanInterestReceived(l)+loanAccruedOutstanding(l)+loanPrincipalFx(l)});});
+  if(!pnlNetExcluded('loan'))(S.privateLoans||[]).forEach(l=>{const v=loanOutstandingPrincipal(l);if(v>0)pieRaw.push({label:l.borrower,val:v,_kind:'loan',_icon:pnlItemIcon('loan',l),_pnl:loanInterestReceived(l)+loanPrincipalFx(l)});});
   if(!pnlNetExcluded('physical'))(S.physicalAssets||[]).filter(a=>!a.excluded&&!a.soldAt).forEach(a=>{const v=physicalAssetValue(a);if(v>0)pieRaw.push({label:a.name,val:v,_kind:'physical',_icon:pnlItemIcon('physical',a),_pnl:v-(Number(a.costHKD)||0)});});
   const allCash=netAccts.filter(ac=>ac.kind==='invest'&&!acctIsPhysical(ac)).reduce((a,ac)=>a+Math.max(acctCash(ac.id),0),0);
   if(allCash>0)pieRaw.push({label:t('positioncash'),val:allCash,_cash:true,_kind:'cash'});

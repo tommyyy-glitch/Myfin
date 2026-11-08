@@ -34,6 +34,14 @@ try{
   const original=await ledger();
   const board=()=>page.evaluate(()=>Object.fromEntries(['g-pnl','g-roi','g-worth','g-cash','g-deployed','g-margin'].map(id=>[id,document.getElementById(id).textContent])));
   const baseline=await board();
+  assert.equal(baseline['g-pnl'],'HK$117','All counts only received loan interest, keeping other P&L unchanged');
+  assert.equal(baseline['g-roi'],'ROI +21.3%','ROI keeps the existing cumulative cost denominator of 550');
+  assert.equal(await page.locator('#g-loan-pnl').textContent(),'HK$2');
+  assert.equal(await page.locator('#loan-accrued').textContent(),'HK$8','loan details retain unpaid accrued interest');
+  assert.equal(await page.locator('#loan-asset').textContent(),'HK$88','full loan value is preserved outside the board');
+  assert.equal(await page.evaluate(()=>privateLoanAssetTotal()),88,'Home retains the existing full-loan accounting');
+  const loanTile=await page.evaluate(()=>document.getElementById('pnl-allocation-map')._allocationData.find(d=>d._kind==='loan'));
+  assert.equal(loanTile.val,80,'allocation value excludes unpaid accrual');assert.equal(loanTile._pnl,2,'tile performance excludes unpaid accrual');
   await page.evaluate(()=>togglePnlFilterDrawer());
   await page.getByRole('button',{name:'股票',exact:true}).click();
   assert.equal(await page.locator('#g-pnl').textContent(),'HK$90','stock filter must change the board, including sold gains');
@@ -42,7 +50,7 @@ try{
   assert.ok(await page.locator('#g-stock-pnl').isVisible());assert.equal(await page.locator('#g-crypto-pnl').isVisible(),false);
   assert.equal(await page.evaluate(()=>document.getElementById('pnl-allocation-map')._allocationData.reduce((n,d)=>n+d.val,0)),170);
   await page.evaluate(()=>togglePnlPieFilter('crypto'));assert.equal(await page.locator('#g-pnl').textContent(),'HK$70');assert.equal(await page.locator('#g-worth').textContent(),'HK$200');
-  for(const [kind,pnl,worth,cost,deployed] of [['cs_stock',10,35,25,25],['cs_poker',10,0,5,0],['poker',-5,20,30,20],['loan',10,88,100,80],['physical',20,235,60,50],['cash',0,770,0,0],['pe',10,70,60,60]]){
+  for(const [kind,pnl,worth,cost,deployed] of [['cs_stock',10,35,25,25],['cs_poker',10,0,5,0],['poker',-5,20,30,20],['loan',2,80,100,80],['physical',20,235,60,50],['cash',0,770,0,0],['pe',10,70,60,60]]){
    await page.evaluate(kind=>{S.pnlPieFilters=[kind];renderGamble();},kind);
    assert.equal(await page.locator('#g-pnl').textContent(),pnl<0?'−HK$'+Math.abs(pnl):'HK$'+pnl,kind+' P&L');
    assert.equal(await page.locator('#g-worth').textContent(),'HK$'+worth,kind+' worth');assert.equal(await page.locator('#g-deployed').textContent(),'HK$'+deployed,kind+' deployed');
@@ -51,6 +59,19 @@ try{
   }
   await page.evaluate(()=>{S.pnlPieFilters=Object.keys(pnlPieFilterMeta());renderGamble();});assert.deepEqual(await board(),baseline,'selecting all kinds equals the original full board');
   await page.evaluate(()=>togglePnlPieFilter('all'));assert.deepEqual(await board(),baseline,'All restores original totals');
+  await page.evaluate(()=>{S.pnlPieFilters=['loan'];renderGamble();});
+  assert.equal(await page.locator('#g-roi').textContent(),'ROI +2.0%');
+  assert.equal(await page.evaluate(()=>document.getElementById('pnl-allocation-map')._allocationData.reduce((n,d)=>n+d.val,0)),80);
+  await page.evaluate(()=>{window._loanBeforeEdge=JSON.stringify(S.privateLoans[0]);S.privateLoans[0].payments[0].principalHKD=100;renderGamble();});
+  assert.equal(await page.locator('#g-worth').textContent(),'HK$0','unpaid interest alone cannot create a board asset');
+  assert.equal(await page.locator('#g-pnl').textContent(),'HK$2','received interest remains after all principal is returned');
+  assert.equal(await page.locator('#g-roi').textContent(),'ROI +2.0%','original loan cost remains the ROI denominator');
+  assert.equal(await page.locator('#loan-accrued').textContent(),'HK$8');assert.equal(await page.locator('#loan-asset').textContent(),'HK$8');
+  assert.equal(await page.evaluate(()=>document.getElementById('pnl-allocation-map')._allocationData.length),0);
+  await page.evaluate(()=>{S.privateLoans[0]=JSON.parse(window._loanBeforeEdge);renderGamble();});
+  await page.evaluate(()=>{S.pnlNetHidden.loan=true;renderGamble();});
+  assert.equal(await page.locator('#g-worth').textContent(),'HK$0');assert.equal(await page.locator('.allocation-tile').count(),0,'excluded loan value stays out of the allocation map');
+  await page.evaluate(()=>{delete S.pnlNetHidden.loan;togglePnlPieFilter('all');});
   assert.equal(await ledger(),original,'filtering never edits accounting or calendar data');
   await page.evaluate(()=>{S.pnlPieFilters=['stock'];S.privacy=true;renderGamble();});assert.equal(await page.locator('#g-pnl').textContent(),'••••');
   await page.evaluate(()=>{S.privacy=false;S.dispCur='USD';renderGamble();});assert.equal(await page.locator('#g-pnl').textContent(),await page.evaluate(()=>fmt(90)));
@@ -61,7 +82,7 @@ try{
   await page.screenshot({path:fileURLToPath(new URL('filtered-'+width+'.png',reports))});
   await page.reload();await page.evaluate(()=>{today=()=> '2026-10-16';goTabIndex(2);});assert.equal(await page.locator('#g-pnl').textContent(),'HK$70','cold reload reapplies saved filter to board');
   await page.evaluate(()=>togglePnlPieFilter('all'));assert.equal(await ledger(),original);
-  results.push({width,height,theme,boardAndMap:true,realizedIncluded:true,multiSelect:true,customSections:true,margin:true,cashAndPhysical:true,privacy:true,coldReload:true,ledgerUnchanged:true});await context.close();
+  results.push({width,height,theme,boardAndMap:true,receivedLoanInterestOnly:true,unpaidInterestPreservedOutsideBoard:true,zeroPrincipalEdge:true,realizedIncluded:true,multiSelect:true,customSections:true,margin:true,cashAndPhysical:true,privacy:true,coldReload:true,ledgerUnchanged:true});await context.close();
  }
  assert.deepEqual(errors,[]);console.log(JSON.stringify({results,errors},null,2));
 }finally{await browser.close();await new Promise(r=>server.close(r));}
