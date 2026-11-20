@@ -2062,22 +2062,23 @@ body:has(#s-home.active) #global-fab{display:none!important;}
 
 <div class="modal-wrap" id="m-loan" onclick="closeM('m-loan')"><div class="modal" onclick="event.stopPropagation()">
   <button class="mclose" onclick="closeM('m-loan')" aria-label="Close">&times;</button>
-  <div class="mhandle"></div><div class="mtitle" data-i="addloan"></div>
+  <div class="mhandle"></div><div class="mtitle" id="loan-modal-title"></div>
   <input type="hidden" id="loan-edit-id">
   <datalist id="loan-friends"></datalist>
   <div class="fsec">
     <div class="frow"><span class="flbl" data-i="borrower"></span><input class="fval" id="loan-borrower" list="loan-friends" placeholder="朋友 / 公司"></div>
     <div class="frow"><span class="flbl" data-i="principal"></span><input class="fval" type="number" inputmode="decimal" id="loan-principal-in" placeholder="0.00" style="text-align:right"></div>
     <div class="frow"><span class="flbl" data-i="interesttype"></span><select class="fval" id="loan-interest-mode" onchange="syncLoanInterestMode()"><option value="rate" data-i="annualrate"></option><option value="fixed" data-i="fixedinterest"></option></select></div>
-    <div class="frow" id="loan-rate-row"><span class="flbl" data-i="annualrate"></span><input class="fval" type="number" inputmode="decimal" id="loan-rate" placeholder="0" style="text-align:right"></div>
-    <div class="frow" id="loan-fixed-row" style="display:none"><span class="flbl" data-i="fixedinterest"></span><input class="fval" type="number" inputmode="decimal" id="loan-fixed-interest" placeholder="0.00" style="text-align:right"></div>
-    <div class="frow"><span class="flbl" data-i="currency"></span><select class="fval" id="loan-cur"><option>HKD</option><option>USD</option><option>RMB</option><option>JPY</option></select></div>
+    <div class="frow" id="loan-rate-row"><span class="flbl" id="loan-rate-label"></span><input class="fval" type="number" inputmode="decimal" id="loan-rate" placeholder="0" style="text-align:right"></div>
+    <div class="frow" id="loan-fixed-row" style="display:none"><span class="flbl" id="loan-fixed-label"></span><input class="fval" type="number" min="0" inputmode="decimal" id="loan-fixed-interest" placeholder="0.00" style="text-align:right"></div>
+    <div class="frow"><span class="flbl" data-i="currency"></span><select class="fval" id="loan-cur" onchange="syncLoanInterestMode()"><option>HKD</option><option>USD</option><option>RMB</option><option>JPY</option></select></div>
     <div class="frow"><span class="flbl" data-i="startdate"></span><input class="fval" type="date" id="loan-start" onchange="syncLoanDates()"></div>
     <div class="frow"><span class="flbl" data-i="duedate"></span><input class="fval" type="date" id="loan-due"></div>
     <div class="frow"><span class="flbl" data-i="account"></span><select class="fval" id="loan-acct"></select></div>
     <div class="frow"><span class="flbl" data-i="notes"></span><input class="fval" id="loan-notes" placeholder="用途 / 還款條款"></div>
   </div>
   <div class="msub" style="padding:0 18px 8px;line-height:1.5" data-i="loanhint"></div>
+  <div class="msub" id="loan-estimate-hint" hidden style="padding:0 18px 10px;line-height:1.6"></div>
   <button class="sbtn" onclick="savePrivateLoan()" data-i="save"></button>
 </div></div>
 
@@ -2543,6 +2544,22 @@ function loanPrincipalReturned(l,through){return loanPaymentsThrough(l,through).
 function loanInterestReceived(l,through){return loanPaymentsThrough(l,through).reduce((a,p)=>a+(Number(p.interestHKD)||0),0);}
 function loanOutstandingPrincipal(l,through){return recordEffective(l&&l.startDate,through)?Math.max(0,(Number(l&&l.principalHKD)||0)-loanPrincipalReturned(l,through)):0;}
 function loanInterestMode(l){return l&&l.interestMode==='fixed'?'fixed':'rate';}
+// Forecasts are optional metadata. Original principal/interest fields remain the
+// historical conversion basis for every existing and future payment.
+function loanEstimateTerms(l){
+  const mode=loanInterestMode(l),e=l&&l.interestEstimate;
+  if(e&&e.version===1&&e.mode===mode&&Number.isFinite(e.amount)&&e.amount>=0&&Number.isFinite(e.amountHKD)&&e.amountHKD>=0&&Number.isFinite(e.basisRate)&&e.basisRate>0&&Number.isFinite(e.annualRate)&&e.annualRate>=0&&typeof e.currency==='string'&&(e.currency==='HKD'||e.currency===(l.cur||'HKD')))return {...e};
+  const raw=l&&l.fixedInterest,basis=Math.max(0,Number(l&&l.fixedInterestHKD)||0),hasNative=raw!==null&&raw!==undefined&&raw!==''&&Number.isFinite(Number(raw))&&Number(raw)>=0;
+  const currency=hasNative?(l.cur||'HKD'):'HKD',amount=hasNative?Number(raw):basis;
+  const basisRate=currency==='HKD'?1:(amount>0&&basis>0?basis/amount:loanBasisRate(l));
+  // A legacy HKD-only estimate must not be guessed into a foreign currency.
+  const known=Number.isFinite(basisRate)&&basisRate>0;
+  return {version:1,mode,amount:known?amount:basis,amountHKD:basis,currency:known?currency:'HKD',basisRate:known?basisRate:1,annualRate:Math.max(0,Number(l&&l.annualRate)||0)};
+}
+function loanExpectedInterest(l){
+  if(loanInterestMode(l)==='fixed')return loanEstimateTerms(l).amountHKD;
+  return loanAccruedTotal({...l,annualRate:loanEstimateTerms(l).annualRate},l&&l.dueDate||today());
+}
 function loanAccruedTotal(l,through){if(!l)return 0;let end=parseDateOnly(through||today()),start=parseDateOnly(l.startDate||today());if(end<=start)return 0;if(loanInterestMode(l)==='fixed'){const fixed=Math.max(0,Number(l.fixedInterestHKD)||0);if(!fixed||!l.dueDate)return 0;const due=parseDateOnly(l.dueDate);if(due<=start)return 0;return end>=due?fixed:0;}const rate=Math.max(0,Number(l.annualRate)||0)/100;if(!rate)return 0;if(l.dueDate){const due=parseDateOnly(l.dueDate);if(due<end)end=due;}if(end<=start)return 0;let bal=Number(l.principalHKD)||0,last=start,total=0;const pays=loanPayments(l).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));pays.forEach(p=>{const d=parseDateOnly(p.date||today());if(d<start||d>end)return;const days=Math.max(0,(dateOnly(d)-dateOnly(last))/86400000);total+=bal*rate*days/365;bal=Math.max(0,bal-loanPaymentBasis(l,p));last=d;});const tail=Math.max(0,(dateOnly(end)-dateOnly(last))/86400000);total+=bal*rate*tail/365;return Math.max(0,total);}
 function loanAccruedOutstanding(l){return Math.max(0,loanAccruedTotal(l,today())-loanInterestSettled(l));}
 function privateLoanStats(){const rows=S.privateLoans||[];const principal=rows.reduce((a,l)=>a+loanOutstandingPrincipal(l),0),accrued=rows.reduce((a,l)=>a+loanAccruedOutstanding(l),0),realized=rows.reduce((a,l)=>a+loanInterestReceived(l),0),fx=rows.reduce((a,l)=>a+loanPrincipalFx(l),0);return {principal,accrued,realized,fx,asset:principal+accrued,pnl:realized+accrued+fx,count:rows.filter(l=>loanOutstandingPrincipal(l)>0.005||loanAccruedOutstanding(l)>0.005||loanInterestSettled(l)+0.005<loanAccruedTotal(l,l.dueDate||today())).length};}
@@ -2715,10 +2732,114 @@ async function researchPhysicalAsset(){
   try{out.textContent=await callAI(S.ai,[{role:'user',content:'Research this physical asset for a manual valuation. Details: '+JSON.stringify(details)}],sys,null)||tt('未有結果','No result');}catch(e){out.textContent=t('aierr')+': '+(e.message||e);}
 }
 function syncLoanOpenTxn(l){S.txns=S.txns||[];let tx=S.txns.find(x=>x.type==='loan_move'&&String(x.loanId)===String(l.id)&&x.loanPhase==='open');const ac=getAcct(l.acctId);const rec={type:'loan_move',direction:'out',amount:Number(l.principal)||0,amtHKD:Number(l.principalHKD)||0,cur:l.cur||'HKD',acctId:l.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:t('privatedebt')+' · '+l.borrower,date:l.startDate||today(),loanId:l.id,loanPhase:'open',oneOff:true};if(tx)Object.assign(tx,rec);else{tx={id:'loan_open_'+l.id,...rec};S.txns.unshift(tx);}return tx;}
-function syncLoanInterestMode(){const mode=document.getElementById('loan-interest-mode')?.value||'rate',rate=document.getElementById('loan-rate-row'),fixed=document.getElementById('loan-fixed-row');if(rate)rate.style.display=mode==='rate'?'flex':'none';if(fixed)fixed.style.display=mode==='fixed'?'flex':'none';}
+function syncLoanInterestMode(){
+  const mode=document.getElementById('loan-interest-mode').value;
+  document.getElementById('loan-rate-row').style.display=mode==='rate'?'flex':'none';
+  document.getElementById('loan-fixed-row').style.display=mode==='fixed'?'flex':'none';
+  const id=document.getElementById('loan-edit-id').value;
+  const loan=(S.privateLoans||[]).find(l=>String(l.id)===id);
+  const selected=document.getElementById('loan-cur').value;
+  const keepBasis=loan&&selected===(loan.cur||'HKD')&&mode===loanInterestMode(loan);
+  const currency=keepBasis?loanEstimateTerms(loan).currency:selected;
+  document.getElementById('loan-fixed-label').textContent=(loan?tt('預計利息','Estimated interest'):t('fixedinterest'))+' ('+currency+')';
+  document.getElementById('loan-rate-label').textContent=keepBasis?tt('預計年利率 %','Estimated annual rate %'):t('annualrate');
+  const hint=document.getElementById('loan-estimate-hint');
+  hint.hidden=!keepBasis;
+  hint.textContent=tt('估算只用於預計還款；應計利息及完成狀態按原合約計算。超出估算嘅實收利息會獨立顯示，本金按實際還款計算。','The forecast estimates repayment. Accrual and completion follow the original contract. Interest received above the estimate is shown separately. Principal reflects actual repayments.');
+}
 function syncLoanDates(){const start=document.getElementById('loan-start'),due=document.getElementById('loan-due');if(!start||!due)return;due.disabled=false;due.readOnly=false;if(start.value){const d=parseDateOnly(start.value);d.setDate(d.getDate()+1);due.min=_dstr(d);}else due.removeAttribute('min');}
-function openLoanModal(editId){const l=editId?(S.privateLoans||[]).find(x=>String(x.id)===String(editId)):null;document.getElementById('loan-edit-id').value=editId||'';document.getElementById('loan-borrower').value=l?l.borrower:'';document.getElementById('loan-principal-in').value=l?l.principal:'';document.getElementById('loan-interest-mode').value=l?loanInterestMode(l):'rate';document.getElementById('loan-rate').value=l?l.annualRate:'';document.getElementById('loan-fixed-interest').value=l?(l.fixedInterest||''):'';document.getElementById('loan-cur').value=l?(l.cur||'HKD'):(S.dispCur||'HKD');document.getElementById('loan-start').value=l?(l.startDate||today()):today();document.getElementById('loan-due').value=l?(l.dueDate||''):'';document.getElementById('loan-notes').value=l?(l.notes||''):'';fillNormalAcctSelect('loan-acct',l?l.acctId:(normalLoanAccts()[0]||{}).id);const dl=document.getElementById('loan-friends');if(dl)dl.innerHTML=(S.friends||[]).map(f=>`<option value="${notifyEsc(f.name)}"></option>`).join('');applyI18n();syncLoanInterestMode();syncLoanDates();document.getElementById('m-loan').classList.add('open');}
-function savePrivateLoan(){const editId=document.getElementById('loan-edit-id').value,old=editId?(S.privateLoans||[]).find(x=>String(x.id)===String(editId)):null;const borrower=document.getElementById('loan-borrower').value.trim(),principal=parseFloat(document.getElementById('loan-principal-in').value)||0,interestMode=document.getElementById('loan-interest-mode').value||'rate',annualRate=interestMode==='rate'?Math.max(0,parseFloat(document.getElementById('loan-rate').value)||0):0,fixedInterest=interestMode==='fixed'?Math.max(0,parseFloat(document.getElementById('loan-fixed-interest').value)||0):0,cur=document.getElementById('loan-cur').value,startDate=document.getElementById('loan-start').value||today(),dueDate=document.getElementById('loan-due').value,acctId=document.getElementById('loan-acct').value,notes=document.getElementById('loan-notes').value.trim();if(!borrower||!Number.isFinite(principal)||!Number.isFinite(annualRate)||!Number.isFinite(fixedInterest)||principal<=0||!acctId){showToast(tt('請輸入借款人、本金及戶口','Enter borrower, principal and account'),1);return;}if(interestMode==='fixed'&&fixedInterest<=0){showToast(tt('請輸入固定利息金額','Enter the fixed interest amount'),1);return;}if(interestMode==='fixed'&&!dueDate){showToast(tt('固定利息需要設定到期日','A due date is required for fixed interest'),1);return;}if(old&&loanPayments(old).length&&(cur!==old.cur||principal!==Number(old.principal)||interestMode!==loanInterestMode(old)||annualRate!==Number(old.annualRate||0)||fixedInterest!==Number(old.fixedInterest||0)||startDate!==old.startDate||dueDate!==(old.dueDate||''))){showToast(tt('已有還款記錄，不可直接改寫本金、利息或日期；備註仍可修改。','Repayments exist: principal, interest and dates cannot be rewritten; notes can still be edited.'),1);return;}if(dueDate&&parseDateOnly(dueDate)<=parseDateOnly(startDate)){showToast(tt('到期日必須遲過借出日','Due date must be after start date'),1);return;}const samePrincipal=old&&cur===old.cur&&principal===Number(old.principal),sameInterest=old&&cur===old.cur&&fixedInterest===Number(old.fixedInterest||0);if(samePrincipal&&(!Number.isFinite(old.principalHKD)||old.principalHKD<=0)){showToast(tt('缺少歷史本金，請先核對原始記錄。','Historical principal is missing; review the original record first.'),1);return;}const principalHKD=samePrincipal?old.principalHKD:parseFloat(toHKD(principal,cur).toFixed(2)),fixedInterestHKD=sameInterest?(Number(old.fixedInterestHKD)||0):parseFloat(toHKD(fixedInterest,cur).toFixed(2)),alreadyReturned=old?loanPayments(old).reduce((sum,p)=>sum+loanPaymentBasis(old,p),0):0;if(principalHKD+0.005<alreadyReturned){showToast(tt('本金不可低過已收回本金','Principal cannot be below principal already returned'),1);return;}const available=acctCash(acctId)+(old&&old.acctId===acctId&&recordEffective(old.startDate)?(Number(old.principalHKD)||0):0);if(principalHKD>available+0.005){showToast(t('insufficient'),1);return;}S.privateLoans=S.privateLoans||[];let friend=(S.friends||[]).find(f=>friendNameKey(f.name)===friendNameKey(borrower));if(!friend){friend={id:newFriendId(),name:borrower};S.friends=S.friends||[];S.friends.push(friend);}const rec={borrower,friendId:friend.id,principal,principalHKD,interestMode,annualRate,fixedInterest,fixedInterestHKD,cur,startDate,dueDate,acctId,notes};let l;if(old){Object.assign(old,rec);l=old;}else{l={id:'loan_'+Date.now(),payments:[],...rec};S.privateLoans.unshift(l);}syncLoanOpenTxn(l);const ac=getAcct(l.acctId);(S.txns||[]).filter(tx=>String(tx.loanId)===String(l.id)).forEach(tx=>{tx.acctId=l.acctId;tx.acctLabel=ac?acctLabel(ac):'';tx.acctIcon=ac?ac.icon:'';});saveS();closeM('m-loan');renderGamble();renderHome();refreshWallet();}
+function loanHistoryFieldsMatch(l){
+  const val=id=>String(document.getElementById(id)?.value||'');
+  const principal=val('loan-principal-in'),raw=l.principal;
+  const samePrincipal=(raw==null||raw==='')?principal==='':principal!==''&&Number(principal)===Number(raw);
+  return samePrincipal&&val('loan-cur')===(l.cur||'HKD')&&val('loan-interest-mode')===loanInterestMode(l)&&val('loan-start')===(l.startDate||'')&&val('loan-due')===(l.dueDate||'')&&val('loan-acct')===String(l.acctId||'');
+}
+function syncLoanEditContext(l){
+  document.getElementById('loan-modal-title').textContent=l?tt('編輯私人借款','Edit private loan'):t('addloan');
+  const paid=!!l&&loanPayments(l).length>0;
+  ['loan-principal-in','loan-start','loan-due'].forEach(id=>{const el=document.getElementById(id);if(el)el.readOnly=paid;});
+  ['loan-cur','loan-interest-mode','loan-acct'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=paid;});
+}
+function loanEstimateChanges(l){
+  const terms=loanEstimateTerms(l),mode=loanInterestMode(l),input=document.getElementById(mode==='fixed'?'loan-fixed-interest':'loan-rate'),raw=String(input&&input.value||'').trim(),value=raw===''?NaN:Number(raw);
+  if(!Number.isFinite(value)||value<0){showToast(tt('預計金額或利率必須是零或正數。','Estimated amount or rate must be zero or positive.'),1);return null;}
+  const estimate={...terms,annualRate:mode==='rate'?value:terms.annualRate,amount:mode==='fixed'?value:terms.amount,amountHKD:mode==='fixed'?Number((value*terms.basisRate).toFixed(2)):terms.amountHKD};
+  if(!Number.isFinite(estimate.amountHKD)){showToast(tt('估算換算金額無效。','Invalid converted estimate.'),1);return null;}
+  const changed=value!==(mode==='fixed'?terms.amount:terms.annualRate);
+  return changed?{interestEstimate:estimate}:{};
+}
+function saveLoanForecast(l){
+  const estimate=loanEstimateChanges(l);
+  if(!estimate)return false;
+  const borrower=String(document.getElementById('loan-borrower')?.value||'').trim(),notes=String(document.getElementById('loan-notes')?.value||'').trim();
+  if(l.borrower&&!borrower){showToast(tt('借款人不能留空。','Borrower cannot be blank.'),1);return false;}
+  const changes={...estimate};
+  const friendsBefore=S.friends;
+  if(borrower!==String(l.borrower||'')){
+    changes.borrower=borrower;
+    let friend=(S.friends||[]).find(f=>friendNameKey(f.name)===friendNameKey(borrower));
+    if(!friend){
+      friend={id:newFriendId(),name:borrower};
+      S.friends=[...(S.friends||[]),friend];
+    }
+    changes.friendId=friend.id;
+  }
+  if(notes!==String(l.notes||''))changes.notes=notes;
+  const before=new Map(Object.keys(changes).map(key=>[key,{had:Object.hasOwn(l,key),value:l[key]}]));
+  Object.assign(l,changes);
+  if(saveS()===false){
+    before.forEach((v,key)=>{if(v.had)l[key]=v.value;else delete l[key];});
+    S.friends=friendsBefore;
+    return false;
+  }
+  closeM('m-loan');renderGamble();renderHome();refreshWallet();return true;
+}
+function openLoanModal(editId){const l=editId?(S.privateLoans||[]).find(x=>String(x.id)===String(editId)):null;document.getElementById('loan-edit-id').value=editId||'';document.getElementById('loan-borrower').value=l?(l.borrower||''):'';document.getElementById('loan-principal-in').value=l?l.principal:'';document.getElementById('loan-interest-mode').value=l?loanInterestMode(l):'rate';document.getElementById('loan-rate').value=l?loanEstimateTerms(l).annualRate:'';document.getElementById('loan-fixed-interest').value=l?loanEstimateTerms(l).amount:'';if(l&&l.cur&&![...document.getElementById('loan-cur').options].some(o=>o.value===l.cur)){const option=document.createElement('option');option.value=l.cur;option.textContent=l.cur;document.getElementById('loan-cur').appendChild(option);}document.getElementById('loan-cur').value=l?(l.cur||'HKD'):(S.dispCur||'HKD');document.getElementById('loan-start').value=l?(l.startDate||''):today();document.getElementById('loan-due').value=l?(l.dueDate||''):'';document.getElementById('loan-notes').value=l?(l.notes||''):'';fillNormalAcctSelect('loan-acct',l?l.acctId:(normalLoanAccts()[0]||{}).id);if(l&&!normalLoanAccts().some(a=>String(a.id)===String(l.acctId||''))){const option=document.createElement('option');option.value=l.acctId||'';option.textContent=tt('原戶口未連結（保持不變）','Original account unavailable (unchanged)');document.getElementById('loan-acct').appendChild(option);document.getElementById('loan-acct').value=l.acctId||'';}const dl=document.getElementById('loan-friends');if(dl)dl.innerHTML=(S.friends||[]).map(f=>`<option value="${notifyEsc(f.name)}"></option>`).join('');applyI18n();syncLoanInterestMode();syncLoanDates();syncLoanEditContext(l);document.getElementById('m-loan').classList.add('open');}
+function savePrivateLoan(){
+  const field=id=>document.getElementById('loan-'+id).value;
+  const editId=field('edit-id'),old=editId?(S.privateLoans||[]).find(l=>String(l.id)===String(editId)):null;
+  if(editId&&!old){showToast(tt('找不到原有債權，請重新開啟。','Loan no longer available. Reopen the list.'),1);return;}
+  if(old&&loanHistoryFieldsMatch(old)){saveLoanForecast(old);return;}
+  if(old&&loanPayments(old).length){
+    showToast(tt('已有還款，原始本金、幣別、戶口及日期不可改寫。','Original terms are locked after a repayment.'),1);return;
+  }
+  const borrower=field('borrower').trim(),principal=Number(field('principal-in')),cur=field('cur');
+  const interestMode=field('interest-mode')||'rate',acctId=field('acct'),notes=field('notes').trim();
+  const startDate=field('start')||today(),dueDate=field('due');
+  if(!borrower||!Number.isFinite(principal)||principal<=0||!acctId){showToast(tt('請輸入借款人、本金及戶口','Enter borrower, principal and account'),1);return;}
+  if(interestMode==='fixed'&&!dueDate){showToast(tt('固定利息需要設定到期日','A due date is required for fixed interest'),1);return;}
+  if(dueDate&&parseDateOnly(dueDate)<=parseDateOnly(startDate)){showToast(tt('到期日必須遲過借出日','Due date must be after start date'),1);return;}
+  const keepBasis=old&&cur===(old.cur||'HKD')&&interestMode===loanInterestMode(old);
+  const estimate=keepBasis?loanEstimateChanges(old):{};
+  if(!estimate)return;
+  const rec={borrower,principal,cur,interestMode,startDate,dueDate,acctId,notes,...estimate};
+  if(!keepBasis){
+    const entered=Number(field(interestMode==='fixed'?'fixed-interest':'rate'));
+    if(!Number.isFinite(entered)||entered<0||(interestMode==='fixed'&&entered===0)){showToast(tt('請核對利息金額或利率。','Check the interest amount or rate.'),1);return;}
+    rec.annualRate=interestMode==='rate'?entered:0;
+    rec.fixedInterest=interestMode==='fixed'?entered:0;
+    rec.fixedInterestHKD=Number(toHKD(rec.fixedInterest,cur).toFixed(2));
+  }
+  const samePrincipal=old&&cur===(old.cur||'HKD')&&principal===Number(old.principal);
+  rec.principalHKD=samePrincipal?old.principalHKD:Number(toHKD(principal,cur).toFixed(2));
+  if(!Number.isFinite(rec.principalHKD)||rec.principalHKD<=0||(!keepBasis&&!Number.isFinite(rec.fixedInterestHKD))){showToast(tt('請核對本金及換算金額。','Review principal and conversion amounts.'),1);return;}
+  const available=acctCash(acctId)+(old&&old.acctId===acctId&&recordEffective(old.startDate)?Number(old.principalHKD)||0:0);
+  if(rec.principalHKD>available+0.005){showToast(t('insufficient'),1);return;}
+  const previous={privateLoans:S.privateLoans,txns:S.txns,friends:S.friends};
+  let friend=(S.friends||[]).find(f=>friendNameKey(f.name)===friendNameKey(borrower));
+  if(!friend){friend={id:newFriendId(),name:borrower};S.friends=[...(S.friends||[]),friend];}
+  const loan={...(old||{id:'loan_'+Date.now(),payments:[]}),...rec,friendId:friend.id};
+  if(!keepBasis)delete loan.interestEstimate;
+  S.privateLoans=old?S.privateLoans.map(l=>l===old?loan:l):[loan,...(S.privateLoans||[])];
+  S.txns=(S.txns||[]).map(tx=>String(tx.loanId)===String(loan.id)?{...tx}:tx);
+  syncLoanOpenTxn(loan);
+  const ac=getAcct(acctId);
+  S.txns.filter(tx=>String(tx.loanId)===String(loan.id)).forEach(tx=>{
+    tx.acctId=acctId;tx.acctLabel=ac?acctLabel(ac):'';tx.acctIcon=ac?ac.icon:'';
+  });
+  if(saveS()===false){Object.assign(S,previous);return;}
+  closeM('m-loan');renderGamble();renderHome();refreshWallet();
+}
 function openLoanPayment(id){const l=(S.privateLoans||[]).find(x=>String(x.id)===String(id));if(!l)return;document.getElementById('loan-pay-id').value=l.id;document.getElementById('loan-pay-principal').value='';document.getElementById('loan-pay-interest').value='';document.getElementById('loan-pay-date').value=today();document.getElementById('loan-pay-name').textContent=l.borrower+' · '+tt('未收回 ','Outstanding ')+loanFormatBasis(l,loanOutstandingPrincipal(l));applyI18n();document.getElementById('m-loan-pay').classList.add('open');}
 function saveLoanPayment(){const l=(S.privateLoans||[]).find(x=>String(x.id)===String(document.getElementById('loan-pay-id').value));if(!l)return;const principal=Math.max(0,parseFloat(document.getElementById('loan-pay-principal').value)||0),interest=Math.max(0,parseFloat(document.getElementById('loan-pay-interest').value)||0),date=document.getElementById('loan-pay-date').value||today();if(!Number.isFinite(principal)||!Number.isFinite(interest)||(principal<=0&&interest<=0)){showToast(tt('請輸入還款金額','Enter a repayment amount'),1);return;}const principalHKD=parseFloat(toHKD(principal,l.cur).toFixed(2)),interestHKD=parseFloat(toHKD(interest,l.cur).toFixed(2));if(!Number.isFinite(principalHKD)||!Number.isFinite(interestHKD)||principalHKD<0||interestHKD<0){showToast(tt('換算金額無效，請先核對匯率。','Invalid converted amount; check the exchange rate first.'),1);return;}if(date<(l.startDate||date)){showToast(tt('還款日不可早於借出日','Repayment cannot precede the loan start'),1);return;}if(l.cur&&l.cur!=='HKD'&&!loanBasisRate(l)){showToast(tt('缺少原幣本金或歷史換算資料，請先核對記錄。','Original principal or historical conversion is missing; review the record first.'),1);return;}const remaining=Math.max(0,(Number(l.principalHKD)||0)-loanPayments(l).reduce((sum,p)=>sum+loanPaymentBasis(l,p),0));if(loanPaymentBasis(l,{principal,principalHKD})>remaining+0.005){showToast(tt('收回本金超過未收回本金','Principal returned exceeds outstanding principal'),1);return;}const pay={id:'lp_'+Date.now(),date,principal,interest,principalHKD,interestHKD};const previousPayments=l.payments,previousTxns=S.txns;l.payments=loanPayments(l).concat(pay);S.txns=(S.txns||[]).slice();const ac=getAcct(l.acctId);S.txns.unshift({id:'loan_pay_'+pay.id,type:'loan_move',direction:'in',amount:principal+interest,amtHKD:principalHKD+interestHKD,cur:l.cur,acctId:l.acctId,acctLabel:ac?acctLabel(ac):'',acctIcon:ac?ac.icon:'',note:t('recordpayment')+' · '+l.borrower,date,loanId:l.id,loanPaymentId:pay.id,loanPhase:'payment',principalHKD,interestHKD,oneOff:true});if(saveS()===false){l.payments=previousPayments;S.txns=previousTxns;return;}closeM('m-loan-pay');renderGamble();renderHome();refreshWallet();}
 function deleteLoanPayment(loanId,payId){if(!confirm(t('deltxnq')))return;const l=(S.privateLoans||[]).find(x=>String(x.id)===String(loanId));if(!l)return;l.payments=loanPayments(l).filter(p=>String(p.id)!==String(payId));S.txns=(S.txns||[]).filter(tx=>String(tx.loanPaymentId)!==String(payId));saveS();renderGamble();renderHome();refreshWallet();}
@@ -5482,7 +5603,7 @@ function toggleSecBody(id){
 function privateLoanCompleted(l){return recordEffective(l&&l.startDate)&&loanOutstandingPrincipal(l)<0.005&&loanInterestSettled(l)+0.005>=loanAccruedTotal(l,l.dueDate||today());}
 function renderPrivateLoans(){const list=document.getElementById('loan-list');if(!list)return;const loans=S.privateLoans||[],st=privateLoanStats();const set=(id,val,cls)=>{const el=document.getElementById(id);if(el){el.textContent=fmt(val);if(cls)el.className=cls;}};set('loan-principal',st.principal,'mval');set('loan-accrued',st.accrued);set('loan-realized',st.realized);set('loan-asset',st.asset);const ct=document.getElementById('loan-ct');if(ct)ct.textContent=st.count;const gp=document.getElementById('g-loan-pnl');if(gp){const boardPnl=privateLoanBoardStats().pnl;gp.textContent=fmt(boardPnl);gp.className='pnl-simple-val '+(boardPnl>=0?'pos':'neg');}
   const active=loans.filter(l=>!privateLoanCompleted(l)),completed=loans.filter(privateLoanCompleted);
-  const renderLoan=l=>{const outstanding=loanOutstandingPrincipal(l),accrued=loanAccruedOutstanding(l),received=loanInterestReceived(l),asset=outstanding+accrued,expected=loanAccruedTotal(l,l.dueDate||today()),closed=privateLoanCompleted(l),overdue=!closed&&l.dueDate&&parseDateOnly(l.dueDate)<parseDateOnly(today()),status=!recordEffective(l.startDate)?tt('預定','scheduled'):closed?tt('已完成','completed'):overdue?tt('已逾期','overdue'):tt('進行中','active'),statusCls=closed?'bg':overdue?'br':'ba',key=friendNameKey(l.borrower),payments=loanPayments(l).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),interestDesc=loanInterestMode(l)==='fixed'?t('fixedinterest')+' '+loanFormatBasis(l,Number(l.fixedInterestHKD)||0,true):Number(l.annualRate||0)+'% / '+tt('年','yr');return `<div style="padding:14px 15px;border-bottom:0.5px solid var(--bdr)"><div style="display:flex;gap:10px;align-items:flex-start">${pnlItemIconButton('loan',l)}<div class="rinfo"><div class="rtitle">${notifyEsc(l.borrower)}</div><div style="margin:3px 0"><span class="badge ${statusCls}">${status}</span> ${rpLabelBadges(key)}</div><div class="rsub">${l.startDate||''}${l.dueDate?' → '+l.dueDate:''} · ${interestDesc}</div>${l.notes?`<div class="rsub" style="margin-top:3px">${notifyEsc(l.notes)}</div>`:''}<div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openLoanPayment('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--g);border-radius:20px;background:var(--g2);color:var(--g3);cursor:pointer">${t('recordpayment')}</button><button onclick="openLoanModal('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePrivateLoan('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800">${fmt(asset)}</div><div class="rsub">${t('principal')} ${loanFormatBasis(l,outstanding)}</div><div style="font-size:11px;color:var(--g3)">${t('accruedinterest')} ${loanFormatBasis(l,accrued,true)}</div></div></div><div style="margin-top:9px;padding:9px 10px;border-radius:11px;background:var(--bg2);font-size:11px;color:var(--ink3);display:flex;gap:10px;flex-wrap:wrap"><span>${tt('到期預計利息','Expected interest')}: <strong style="color:var(--ink)">${loanFormatBasis(l,expected,true)}</strong></span><span>${t('receivedinterest')}: <strong style="color:var(--g3)">${fmt(received)}</strong></span></div>${loanBasisRate(l)?`<div class="rsub" style="margin-top:6px">${tt('本金匯兌損益（已實現）','Realized principal FX')}: ${fmt(loanPrincipalFx(l))} · ${tt('帳面本金按歷史成本；不含未實現匯兌','Principal at historical cost; unrealized FX excluded')}</div>`:''}${payments.length?`<div style="margin-top:8px">${payments.map(p=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 2px;font-size:11px;color:var(--ink3)"><span style="flex:1">${p.date} · ${!recordEffective(p.date)?tt('預定還款（未入帳）','Scheduled repayment (not posted)')+' · ':''}${t('principalreturn')} ${loanFormatBasis(l,loanPaymentBasis(l,p))} · ${t('interestreceived')} ${loanFormatBasis(l,loanPaymentBasis(l,p,'interest'),true)}</span><button onclick="deleteLoanPayment('${l.id}','${p.id}')" aria-label="${t('deletepos')}" style="border:none;background:none;color:var(--r3);font-size:15px;padding:5px;cursor:pointer"><i class="ti ti-trash"></i></button></div>`).join('')}</div>`:''}</div>`;};
+  const renderLoan=l=>{const settledInterest=loanInterestSettled(l),excess=Math.max(0,settledInterest-loanExpectedInterest(l));const outstanding=loanOutstandingPrincipal(l),accrued=loanAccruedOutstanding(l),received=loanInterestReceived(l),asset=outstanding+accrued,expected=loanExpectedInterest(l),closed=privateLoanCompleted(l),overdue=!closed&&l.dueDate&&parseDateOnly(l.dueDate)<parseDateOnly(today()),status=!recordEffective(l.startDate)?tt('預定','scheduled'):closed?tt('已完成','completed'):overdue?tt('已逾期','overdue'):tt('進行中','active'),statusCls=closed?'bg':overdue?'br':'ba',key=friendNameKey(l.borrower),payments=loanPayments(l).slice().sort((a,b)=>String(b.date).localeCompare(String(a.date))),interestDesc=loanInterestMode(l)==='fixed'?t('fixedinterest')+' '+loanFormatBasis(l,Number(l.fixedInterestHKD)||0,true):Number(l.annualRate||0)+'% / '+tt('年','yr');return `<div style="padding:14px 15px;border-bottom:0.5px solid var(--bdr)"><div style="display:flex;gap:10px;align-items:flex-start">${pnlItemIconButton('loan',l)}<div class="rinfo"><div class="rtitle">${notifyEsc(l.borrower)}</div><div style="margin:3px 0"><span class="badge ${statusCls}">${status}</span> ${rpLabelBadges(key)}</div><div class="rsub">${l.startDate||''}${l.dueDate?' → '+l.dueDate:''} · ${interestDesc}</div>${l.notes?`<div class="rsub" style="margin-top:3px">${notifyEsc(l.notes)}</div>`:''}<div style="margin-top:7px;display:flex;gap:7px;flex-wrap:wrap"><button onclick="openLoanPayment('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--g);border-radius:20px;background:var(--g2);color:var(--g3);cursor:pointer">${t('recordpayment')}</button><button onclick="openLoanModal('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid var(--bdr2);border-radius:20px;background:none;color:var(--ink3);cursor:pointer">${t('editpos')}</button><button onclick="deletePrivateLoan('${l.id}')" style="font-size:12px;padding:7px 12px;border:1px solid rgba(216,90,48,.3);border-radius:20px;background:none;color:var(--r3);cursor:pointer">${t('deletepos')}</button></div></div><div style="text-align:right;flex-shrink:0"><div style="font-size:14px;font-weight:800">${fmt(asset)}</div><div class="rsub">${t('principal')} ${loanFormatBasis(l,outstanding)}</div><div style="font-size:11px;color:var(--g3)">${t('accruedinterest')} ${loanFormatBasis(l,accrued,true)}</div></div></div><div style="margin-top:9px;padding:9px 10px;border-radius:11px;background:var(--bg2);font-size:11px;color:var(--ink3);display:flex;gap:10px;flex-wrap:wrap"><span>${tt('到期預計利息','Expected interest')}: <strong style="color:var(--ink)">${loanFormatBasis(l,expected,true)}</strong></span><span>${t('receivedinterest')}: <strong style="color:var(--g3)">${fmt(received)}</strong></span><span>${tt('預計尚欠（本金＋利息）','Estimated remaining (principal + interest)')}: <strong>${fmt(outstanding+Math.max(0,expected-settledInterest))}</strong></span>${excess>0.005?`<span>${tt('已收利息超出估算','Received interest above estimate')}: ${loanFormatBasis(l,excess,true)}</span>`:''}</div>${loanBasisRate(l)?`<div class="rsub" style="margin-top:6px">${tt('本金匯兌損益（已實現）','Realized principal FX')}: ${fmt(loanPrincipalFx(l))} · ${tt('帳面本金按歷史成本；不含未實現匯兌','Principal at historical cost; unrealized FX excluded')}</div>`:''}${payments.length?`<div style="margin-top:8px">${payments.map(p=>`<div style="display:flex;align-items:center;gap:7px;padding:6px 2px;font-size:11px;color:var(--ink3)"><span style="flex:1">${p.date} · ${!recordEffective(p.date)?tt('預定還款（未入帳）','Scheduled repayment (not posted)')+' · ':''}${t('principalreturn')} ${loanFormatBasis(l,loanPaymentBasis(l,p))} · ${t('interestreceived')} ${loanFormatBasis(l,loanPaymentBasis(l,p,'interest'),true)}</span><button onclick="deleteLoanPayment('${l.id}','${p.id}')" aria-label="${t('deletepos')}" style="border:none;background:none;color:var(--r3);font-size:15px;padding:5px;cursor:pointer"><i class="ti ti-trash"></i></button></div>`).join('')}</div>`:''}</div>`;};
   list.innerHTML=loans.length?`<div id="loan-active-list">${active.map(renderLoan).join('')}</div>${completed.length?`<details id="loan-completed-history" class="loan-history"><summary>${tt('已完成記錄','Completed records')} · ${completed.length}</summary><div id="loan-completed-list">${completed.map(renderLoan).join('')}</div></details>`:''}`:`<div style="text-align:center;padding:20px;color:var(--ink3);font-size:14px">—</div>`;
 }
 function renderPhysicalAssets(){

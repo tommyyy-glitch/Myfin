@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';import vm from 'node:vm';import test from 'node:test';
 const html=fs.readFileSync(new URL('../index.html',import.meta.url),'utf8');
 function declaration(name){const start=html.indexOf('function '+name+'(');if(start<0)return '';for(let end=html.indexOf('\n',start);end>=0;end=html.indexOf('\n',end+1)){const code=html.slice(start,end);try{new vm.Script(code);return code;}catch{}}throw Error(name);}
-function fixture(){const c=vm.createContext({S:{privateLoans:[]},today:()=> '2026-10-01'});vm.runInContext(['recordEffective','dateOnly','parseDateOnly','loanPayments','loanPaymentsThrough','loanBasisRate','loanPaymentBasis','loanInterestSettled','loanPrincipalFx','loanPaymentPnl','loanPrincipalReturned','loanInterestReceived','loanOutstandingPrincipal','loanInterestMode','loanAccruedTotal','loanAccruedOutstanding','privateLoanStats'].map(declaration).join('\n'),c);return c;}
+function fixture(){const c=vm.createContext({S:{privateLoans:[]},today:()=> '2026-10-01'});vm.runInContext(['recordEffective','dateOnly','parseDateOnly','loanPayments','loanPaymentsThrough','loanBasisRate','loanPaymentBasis','loanInterestSettled','loanPrincipalFx','loanPaymentPnl','loanPrincipalReturned','loanInterestReceived','loanOutstandingPrincipal','loanInterestMode','loanEstimateTerms','loanExpectedInterest','loanAccruedTotal','loanAccruedOutstanding','privateLoanStats'].map(declaration).join('\n'),c);return c;}
 const loan=()=>({principal:1000,principalHKD:8000,cur:'USD',interestMode:'fixed',fixedInterest:100,fixedInterestHKD:800,startDate:'2026-09-01',dueDate:'2026-10-01',payments:[]});
 test('native principal and fixed interest paid in full leave no phantom balance',()=>{
   const c=fixture(),l=loan();l.payments=[{date:'2026-10-01',principal:1000,principalHKD:7800,interest:100,interestHKD:780}];c.S.privateLoans=[l];
@@ -62,7 +62,7 @@ test('loan notes edit freezes historical principal and fixed-interest amounts',(
   const {c,l,fill}=paymentFixture();Object.assign(l,{borrower:'Test',acctId:'bank',annualRate:0});
   c.S.friends=[{id:'friend',name:'Test'}];c.friendNameKey=s=>s;c.acctCash=()=>10000;c.syncLoanOpenTxn=()=>{};
   for(const [id,value] of Object.entries({'edit-id':'l',borrower:'Test','principal-in':1000,'interest-mode':'fixed',rate:0,'fixed-interest':100,cur:'USD',start:l.startDate,due:l.dueDate,acct:'bank',notes:'Reviewed'}))fill('loan-'+id,value);
-  vm.runInContext(declaration('savePrivateLoan'),c);c.savePrivateLoan();
+  vm.runInContext(['loanHistoryFieldsMatch','loanEstimateChanges','saveLoanForecast','savePrivateLoan'].map(declaration).join('\n'),c);c.savePrivateLoan();
   assert.equal(l.principalHKD,8000);assert.equal(l.fixedInterestHKD,800);assert.equal(l.notes,'Reviewed');
   c.saveLoanPayment();const before=JSON.stringify(l);fill('loan-principal-in',900);c.savePrivateLoan();assert.equal(JSON.stringify(l),before);assert.match(c.message,/不可/);
 });
